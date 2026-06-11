@@ -89,7 +89,7 @@ GET http://127.0.0.1:8000/calendar?year=2024
     "start_date": "2024-11-21",
     "finish_date": "2024-11-24",
     "current_leader": "Thierry Neuville",
-    "current_leader_team": "Hyundai Shell Mobis WRT"
+    "current_leader_team_logo": "hyundai.png"
   },
   {
     "id": 634,
@@ -99,7 +99,7 @@ GET http://127.0.0.1:8000/calendar?year=2024
     "start_date": "2024-10-31",
     "finish_date": "2024-11-03",
     "current_leader": null,
-    "current_leader_team": null
+    "current_leader_team_logo": null
   }
 ]
 ```
@@ -136,7 +136,9 @@ GET http://127.0.0.1:8000/events/635/stages
     "start_time": "2024-11-21T17:00:00Z",
     "status": "Completed",
     "is_live": false,
-    "winner_name": "Sébastien Ogier"
+    "winner_name": "Sébastien Ogier",
+    "winner_team_logo": "toyota.png",
+    "winner_time": "12:45.3"
   },
   {
     "id": 10402,
@@ -146,7 +148,9 @@ GET http://127.0.0.1:8000/events/635/stages
     "start_time": "2024-11-22T10:04:00Z",
     "status": "Running",
     "is_live": true,
-    "winner_name": null
+    "winner_name": null,
+    "winner_team_logo": null,
+    "winner_time": null
   }
 ]
 ```

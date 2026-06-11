@@ -4,10 +4,10 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a62e5b2f-3708-4f63-8803-b0b454e614aa" name="Changes" comment="Create grid-pace workspace.">
-      <change afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.ai/01_architect.md" beforeDir="false" afterPath="$PROJECT_DIR$/.ai/01_architect.md" afterDir="false" />
+    <list default="true" id="a62e5b2f-3708-4f63-8803-b0b454e614aa" name="Changes" comment="Add readme file.&#10;Update architect agent.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/routers/events.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/routers/events.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/event.py" beforeDir="false" afterPath="$PROJECT_DIR$/models/event.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -78,7 +78,7 @@
       <option name="presentableId" value="Default" />
       <updated>1780908569186</updated>
       <workItem from="1780908570142" duration="1480000" />
-      <workItem from="1781016450033" duration="8995000" />
+      <workItem from="1781016450033" duration="10177000" />
     </task>
     <task id="LOCAL-00001" summary="GridPace server to get wrc information">
       <option name="closed" value="true" />
@@ -104,7 +104,15 @@
       <option name="project" value="LOCAL" />
       <updated>1781167749766</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="Add readme file.&#10;Update architect agent.">
+      <option name="closed" value="true" />
+      <created>1781169804978</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1781169804978</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -114,7 +122,8 @@
     <MESSAGE value="Create fork to" />
     <MESSAGE value="GridPace server to get wrc information" />
     <MESSAGE value="Create grid-pace workspace." />
-    <option name="LAST_COMMIT_MESSAGE" value="Create grid-pace workspace." />
+    <MESSAGE value="Add readme file.&#10;Update architect agent." />
+    <option name="LAST_COMMIT_MESSAGE" value="Add readme file.&#10;Update architect agent." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

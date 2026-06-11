@@ -11,3 +11,5 @@ class Stage(BaseModel):
     status: str
     is_live: bool = False
     winner_name: Optional[str] = None
+    winner_team_logo: Optional[str] = None
+    winner_time: Optional[str] = None

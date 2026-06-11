@@ -63,7 +63,7 @@ async def update_calendar_cache():
                             country_image_url = f"https://flagcdn.com/w320/{round_info.event.country.iso2.lower()}.png"
 
                     current_leader = None
-                    current_leader_team = None
+                    current_leader_team_logo = None
                     try:
                         event_metadata = await client.get_event_metadata(round_info.event.event_id)
                         if event_metadata and event_metadata.rallies:
@@ -78,7 +78,7 @@ async def update_calendar_cache():
                                     leader_entry = next((e for e in entries if e.entry_id == leader_entry_id), None)
                                     if leader_entry:
                                         current_leader = leader_entry.driver.full_name
-                                        current_leader_team = leader_entry.entrant.name
+                                        current_leader_team_logo = leader_entry.entrant.logo_filename
 
                     except httpx.HTTPStatusError as e:
                         if e.response.status_code != 404:
@@ -95,7 +95,7 @@ async def update_calendar_cache():
                             start_date=round_info.event.start_date,
                             finish_date=round_info.event.finish_date,
                             current_leader=current_leader,
-                            current_leader_team=current_leader_team,
+                            current_leader_team_logo=current_leader_team_logo,
                         )
                     )
         

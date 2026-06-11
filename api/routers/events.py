@@ -20,10 +20,22 @@ router = APIRouter(
     tags=["events"],
 )
 
+def format_ms_to_time(ms: int) -> str:
+    """Converts milliseconds to a formatted string (MM:SS.m)"""
+    if ms is None:
+        return None
+    
+    total_seconds = ms / 1000.0
+    minutes = int(total_seconds // 60)
+    seconds = int(total_seconds % 60)
+    tenths = int((total_seconds * 10) % 10)
+    
+    return f"{minutes:02d}:{seconds:02d}.{tenths}"
+
 @router.get("/{event_id}/stages", response_model=List[Stage])
 async def get_event_stages(event_id: int):
     """
-    Get all stages for a given event, including the stage winner if available.
+    Get all stages for a given event, including the stage winner, team logo, and time if available.
     """
     try:
         async with WrcApiClient() as client:
@@ -42,12 +54,12 @@ async def get_event_stages(event_id: int):
             if not itinerary or not itinerary.itinerary_legs:
                 return []
 
-            # Pre-fetch all entries (drivers) for this rally so we don't fetch them for every stage
+            # Pre-fetch all entries for this rally to map winners to names and teams
             entries_dict = {}
             try:
                 entries = await client.get_rally_entries(event_id, rally_id)
                 for entry in entries:
-                    entries_dict[entry.entry_id] = entry.driver.full_name
+                    entries_dict[entry.entry_id] = entry  # Store the full entry object
             except Exception as e:
                 logger.warning(f"Could not pre-fetch entries for event {event_id}, rally {rally_id}: {e}")
 
@@ -65,6 +77,8 @@ async def get_event_stages(event_id: int):
                         
                         # Fetch the stage winner if the stage is completed
                         winner_name = None
+                        winner_team_logo = None
+                        winner_time = None
                         if stage_details.status == "Completed":
                             try:
                                 stage_results = await client.get_event_stage_results(
@@ -74,9 +88,12 @@ async def get_event_stages(event_id: int):
                                 )
                                 if stage_results:
                                     # The winner is the entry with position 1
-                                    winner_entry_id = next((r.entry_id for r in stage_results if r.position == 1), None)
-                                    if winner_entry_id and winner_entry_id in entries_dict:
-                                        winner_name = entries_dict[winner_entry_id]
+                                    winner_result = next((r for r in stage_results if r.position == 1), None)
+                                    if winner_result and winner_result.entry_id in entries_dict:
+                                        winner_entry = entries_dict[winner_result.entry_id]
+                                        winner_name = winner_entry.driver.full_name
+                                        winner_team_logo = winner_entry.entrant.logo_filename
+                                        winner_time = format_ms_to_time(winner_result.stage_time_ms)
                             except httpx.HTTPStatusError as e:
                                 # Ignore 404s, some stages might be marked completed but have no results published yet
                                 if e.response.status_code != 404:
@@ -93,7 +110,9 @@ async def get_event_stages(event_id: int):
                                 start_time=start_time,
                                 status=stage_details.status,
                                 is_live=stage_details.status == "Running",
-                                winner_name=winner_name
+                                winner_name=winner_name,
+                                winner_team_logo=winner_team_logo,
+                                winner_time=winner_time
                             )
                         )
             
