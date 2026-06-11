@@ -44,7 +44,11 @@ async def update_calendar_cache():
 
     try:
         async with WrcApiClient() as client:
-            seasons = await client.get_seasons()
+            all_seasons = await client.get_seasons()
+            
+            # Filter seasons to only include the main World Rally Championship
+            seasons = [s for s in all_seasons if "world rally championship" in s.name.lower()]
+            logger.info(f"Filtered {len(all_seasons)} total seasons down to {len(seasons)} WRC seasons.")
 
             for season in seasons:
                 season_detail = await client.get_season_detail(season.season_id)
