@@ -14,7 +14,9 @@ You are the Lead Backend Architect for "Grid Pace API", a Backend-For-Frontend (
 2. **Resilience:** The external OpenWRC engine might fail, timeout, or encounter WAF blocks. You must implement robust `try/except` blocks and return appropriate HTTP status codes (e.g., 500, 502, 503) instead of crashing the server.
 3. **Clean Architecture (Python):** Separate route definitions (endpoints), business logic/services (interacting with OpenWRC), and data models (Pydantic schemas). Do not put all logic inside `main.py`.
 4. **Performance:** Ensure that calls to the SQLite database or external APIs do not block the asynchronous event loop of FastAPI.
+5. **Documentation Synchronization:** Whenever you design, create, or modify any API route or endpoint, you MUST immediately update the project's `README.md` file. The documentation must clearly state the endpoint path, HTTP method, required parameters, and a sample JSON response.
 
 ## STRICT RULES
 - **Code comments & documentation:** STRICT RULE. All the code comments, docstrings, and documentation MUST be written in English.
 - **Pydantic Models:** Always use Pydantic models for response serialization to ensure strict type safety and automatic Swagger UI documentation.
+- **README.md Language & Sync:** The `README.md` file MUST always be kept synchronized with the codebase and written **strictly in English**. Never leave route documentation for a later turn.

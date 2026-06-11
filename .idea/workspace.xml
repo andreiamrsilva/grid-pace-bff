@@ -4,7 +4,11 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a62e5b2f-3708-4f63-8803-b0b454e614aa" name="Changes" comment="GridPace server to get wrc information" />
+    <list default="true" id="a62e5b2f-3708-4f63-8803-b0b454e614aa" name="Changes" comment="Create grid-pace workspace.">
+      <change afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.ai/01_architect.md" beforeDir="false" afterPath="$PROJECT_DIR$/.ai/01_architect.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -48,7 +52,7 @@
     "RunOnceActivity.git.unshallow": "true",
     "RunOnceActivity.typescript.service.memoryLimit.init": "true",
     "codeWithMe.voiceChat.enabledByDefault": "false",
-    "git-widget-placeholder": "master",
+    "git-widget-placeholder": "main",
     "last_opened_file_path": "/Users/andreiasilva/PycharmProjects/grid-pace-bff",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
@@ -74,7 +78,7 @@
       <option name="presentableId" value="Default" />
       <updated>1780908569186</updated>
       <workItem from="1780908570142" duration="1480000" />
-      <workItem from="1781016450033" duration="7639000" />
+      <workItem from="1781016450033" duration="8995000" />
     </task>
     <task id="LOCAL-00001" summary="GridPace server to get wrc information">
       <option name="closed" value="true" />
@@ -92,7 +96,15 @@
       <option name="project" value="LOCAL" />
       <updated>1781167574337</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="Create grid-pace workspace.">
+      <option name="closed" value="true" />
+      <created>1781167749766</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1781167749766</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -101,7 +113,8 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Create fork to" />
     <MESSAGE value="GridPace server to get wrc information" />
-    <option name="LAST_COMMIT_MESSAGE" value="GridPace server to get wrc information" />
+    <MESSAGE value="Create grid-pace workspace." />
+    <option name="LAST_COMMIT_MESSAGE" value="Create grid-pace workspace." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
