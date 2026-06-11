@@ -10,6 +10,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".
 
 from openwrc.clients.wrc_api_client import WrcApiClient
 from models.event import Stage
+from api.utils import get_manufacturer_logo_url
 import logging
 import traceback
 
@@ -35,7 +36,7 @@ def format_ms_to_time(ms: int) -> str:
 @router.get("/{event_id}/stages", response_model=List[Stage])
 async def get_event_stages(event_id: int):
     """
-    Get all stages for a given event, including the stage winner, team logo, and time if available.
+    Get all stages for a given event, including the stage winner, manufacturer logo, and time if available.
     """
     try:
         async with WrcApiClient() as client:
@@ -54,7 +55,7 @@ async def get_event_stages(event_id: int):
             if not itinerary or not itinerary.itinerary_legs:
                 return []
 
-            # Pre-fetch all entries for this rally to map winners to names and teams
+            # Pre-fetch all entries for this rally to map winners to names and manufacturers
             entries_dict = {}
             try:
                 entries = await client.get_rally_entries(event_id, rally_id)
@@ -77,7 +78,7 @@ async def get_event_stages(event_id: int):
                         
                         # Fetch the stage winner if the stage is completed
                         winner_name = None
-                        winner_team_logo = None
+                        winner_manufacturer_logo_url = None
                         winner_time = None
                         if stage_details.status == "Completed":
                             try:
@@ -92,7 +93,8 @@ async def get_event_stages(event_id: int):
                                     if winner_result and winner_result.entry_id in entries_dict:
                                         winner_entry = entries_dict[winner_result.entry_id]
                                         winner_name = winner_entry.driver.full_name
-                                        winner_team_logo = winner_entry.entrant.logo_filename
+                                        if hasattr(winner_entry, 'manufacturer') and winner_entry.manufacturer:
+                                            winner_manufacturer_logo_url = get_manufacturer_logo_url(winner_entry.manufacturer.name)
                                         winner_time = format_ms_to_time(winner_result.stage_time_ms)
                             except httpx.HTTPStatusError as e:
                                 # Ignore 404s, some stages might be marked completed but have no results published yet
@@ -111,7 +113,7 @@ async def get_event_stages(event_id: int):
                                 status=stage_details.status,
                                 is_live=stage_details.status == "Running",
                                 winner_name=winner_name,
-                                winner_team_logo=winner_team_logo,
+                                winner_manufacturer_logo_url=winner_manufacturer_logo_url,
                                 winner_time=winner_time
                             )
                         )

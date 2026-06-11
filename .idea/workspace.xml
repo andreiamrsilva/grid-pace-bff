@@ -4,9 +4,15 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a62e5b2f-3708-4f63-8803-b0b454e614aa" name="Changes" comment="Add readme file.&#10;Update architect agent.">
+    <list default="true" id="a62e5b2f-3708-4f63-8803-b0b454e614aa" name="Changes" comment="Update events to return the team logo.">
+      <change afterPath="$PROJECT_DIR$/api/utils.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/grid-pace-bff.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/grid-pace-bff.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/routers/calendar.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/routers/calendar.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/api/routers/events.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/routers/events.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/utils/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/utils/country_flags.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/calendar.py" beforeDir="false" afterPath="$PROJECT_DIR$/models/calendar.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/models/event.py" beforeDir="false" afterPath="$PROJECT_DIR$/models/event.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -78,7 +84,7 @@
       <option name="presentableId" value="Default" />
       <updated>1780908569186</updated>
       <workItem from="1780908570142" duration="1480000" />
-      <workItem from="1781016450033" duration="10177000" />
+      <workItem from="1781016450033" duration="15946000" />
     </task>
     <task id="LOCAL-00001" summary="GridPace server to get wrc information">
       <option name="closed" value="true" />
@@ -112,7 +118,15 @@
       <option name="project" value="LOCAL" />
       <updated>1781169804978</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="Update events to return the team logo.">
+      <option name="closed" value="true" />
+      <created>1781180874458</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1781180874458</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -123,7 +137,8 @@
     <MESSAGE value="GridPace server to get wrc information" />
     <MESSAGE value="Create grid-pace workspace." />
     <MESSAGE value="Add readme file.&#10;Update architect agent." />
-    <option name="LAST_COMMIT_MESSAGE" value="Add readme file.&#10;Update architect agent." />
+    <MESSAGE value="Update events to return the team logo." />
+    <option name="LAST_COMMIT_MESSAGE" value="Update events to return the team logo." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

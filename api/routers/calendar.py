@@ -12,6 +12,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".
 
 from openwrc.clients.wrc_api_client import WrcApiClient
 from models.calendar import CalendarEvent
+from api.utils import get_manufacturer_logo_url
 import logging
 import traceback
 
@@ -63,7 +64,7 @@ async def update_calendar_cache():
                             country_image_url = f"https://flagcdn.com/w320/{round_info.event.country.iso2.lower()}.png"
 
                     current_leader = None
-                    current_leader_team_logo = None
+                    current_leader_manufacturer_logo_url = None
                     try:
                         event_metadata = await client.get_event_metadata(round_info.event.event_id)
                         if event_metadata and event_metadata.rallies:
@@ -71,14 +72,15 @@ async def update_calendar_cache():
                             results = await client.get_rally_results(round_info.event.event_id, rally_id)
                             
                             if results:
-                                leader_entry_id = next((r.entry_id for r in results if r.position == 1), None)
+                                leader_result = next((r for r in results if r.position == 1), None)
                                 
-                                if leader_entry_id:
+                                if leader_result:
                                     entries = await client.get_rally_entries(round_info.event.event_id, rally_id)
-                                    leader_entry = next((e for e in entries if e.entry_id == leader_entry_id), None)
+                                    leader_entry = next((e for e in entries if e.entry_id == leader_result.entry_id), None)
                                     if leader_entry:
                                         current_leader = leader_entry.driver.full_name
-                                        current_leader_team_logo = leader_entry.entrant.logo_filename
+                                        if hasattr(leader_entry, 'manufacturer') and leader_entry.manufacturer:
+                                            current_leader_manufacturer_logo_url = get_manufacturer_logo_url(leader_entry.manufacturer.name)
 
                     except httpx.HTTPStatusError as e:
                         if e.response.status_code != 404:
@@ -95,7 +97,7 @@ async def update_calendar_cache():
                             start_date=round_info.event.start_date,
                             finish_date=round_info.event.finish_date,
                             current_leader=current_leader,
-                            current_leader_team_logo=current_leader_team_logo,
+                            current_leader_manufacturer_logo_url=current_leader_manufacturer_logo_url,
                         )
                     )
         

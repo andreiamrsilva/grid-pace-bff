@@ -11,4 +11,4 @@ class CalendarEvent(BaseModel):
     start_date: date
     finish_date: date
     current_leader: Optional[str] = None
-    current_leader_team_logo: Optional[str] = None
+    current_leader_manufacturer_logo_url: Optional[str] = None
