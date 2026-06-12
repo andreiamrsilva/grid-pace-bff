@@ -4,9 +4,16 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a62e5b2f-3708-4f63-8803-b0b454e614aa" name="Changes" comment="Update events to return the team logo.">
+    <list default="true" id="a62e5b2f-3708-4f63-8803-b0b454e614aa" name="Changes" comment="Update the calendar to only return WRC events.">
+      <change afterPath="$PROJECT_DIR$/api/f1_client.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/api/routers/calendar.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/routers/calendar.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/routers/events.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/routers/events.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/utils.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/calendar.py" beforeDir="false" afterPath="$PROJECT_DIR$/models/calendar.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -77,7 +84,7 @@
       <option name="presentableId" value="Default" />
       <updated>1780908569186</updated>
       <workItem from="1780908570142" duration="1480000" />
-      <workItem from="1781016450033" duration="16739000" />
+      <workItem from="1781016450033" duration="25477000" />
     </task>
     <task id="LOCAL-00001" summary="GridPace server to get wrc information">
       <option name="closed" value="true" />
@@ -127,7 +134,15 @@
       <option name="project" value="LOCAL" />
       <updated>1781217512693</updated>
     </task>
-    <option name="localTasksCounter" value="7" />
+    <task id="LOCAL-00007" summary="Update the calendar to only return WRC events.">
+      <option name="closed" value="true" />
+      <created>1781221917978</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1781221917979</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -139,17 +154,7 @@
     <MESSAGE value="Create grid-pace workspace." />
     <MESSAGE value="Add readme file.&#10;Update architect agent." />
     <MESSAGE value="Update events to return the team logo." />
-    <option name="LAST_COMMIT_MESSAGE" value="Update events to return the team logo." />
-  </component>
-  <component name="XDebuggerManager">
-    <breakpoint-manager>
-      <breakpoints>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/main.py</url>
-          <line>30</line>
-          <option name="timeStamp" value="2" />
-        </line-breakpoint>
-      </breakpoints>
-    </breakpoint-manager>
+    <MESSAGE value="Update the calendar to only return WRC events." />
+    <option name="LAST_COMMIT_MESSAGE" value="Update the calendar to only return WRC events." />
   </component>
 </project>

@@ -10,7 +10,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".
 
 from openwrc.clients.wrc_api_client import WrcApiClient
 from models.event import Stage
-from api.utils import get_manufacturer_logo_url
+from api.utils import get_logo_path # Fixed import
 import logging
 import traceback
 
@@ -36,7 +36,7 @@ def format_ms_to_time(ms: int) -> str:
 @router.get("/{event_id}/stages", response_model=List[Stage])
 async def get_event_stages(event_id: int):
     """
-    Get all stages for a given event, including the stage winner, manufacturer logo, and time if available.
+    Get all stages for a given event, including the stage winner, logo path, and time if available.
     """
     try:
         async with WrcApiClient() as client:
@@ -78,7 +78,7 @@ async def get_event_stages(event_id: int):
                         
                         # Fetch the stage winner if the stage is completed
                         winner_name = None
-                        winner_manufacturer_logo_url = None
+                        winner_logo_path = None # Changed variable name
                         winner_time = None
                         if stage_details.status == "Completed":
                             try:
@@ -94,7 +94,7 @@ async def get_event_stages(event_id: int):
                                         winner_entry = entries_dict[winner_result.entry_id]
                                         winner_name = winner_entry.driver.full_name
                                         if hasattr(winner_entry, 'manufacturer') and winner_entry.manufacturer:
-                                            winner_manufacturer_logo_url = get_manufacturer_logo_url(winner_entry.manufacturer.name)
+                                            winner_logo_path = get_logo_path(winner_entry.manufacturer.name) # Fixed function call
                                         winner_time = format_ms_to_time(winner_result.stage_time_ms)
                             except httpx.HTTPStatusError as e:
                                 # Ignore 404s, some stages might be marked completed but have no results published yet
@@ -113,7 +113,7 @@ async def get_event_stages(event_id: int):
                                 status=stage_details.status,
                                 is_live=stage_details.status == "Running",
                                 winner_name=winner_name,
-                                winner_manufacturer_logo_url=winner_manufacturer_logo_url,
+                                winner_logo_path=winner_logo_path, # Changed field name
                                 winner_time=winner_time
                             )
                         )

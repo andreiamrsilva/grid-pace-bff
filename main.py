@@ -1,7 +1,9 @@
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 import asyncio
 from api.routers import calendar, events
+import os
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -21,6 +23,13 @@ async def lifespan(app: FastAPI):
         print("Cache updater task cancelled successfully.")
 
 app = FastAPI(title="Grid Pace BFF API", lifespan=lifespan)
+
+# Mount the logos directory
+# This makes files in the "logos" folder available at the "/logos" URL path
+if os.path.exists("logos"):
+    app.mount("/logos", StaticFiles(directory="logos"), name="logos")
+else:
+    print("Warning: 'logos' directory not found. Logo images will not be served.")
 
 app.include_router(calendar.router)
 app.include_router(events.router)

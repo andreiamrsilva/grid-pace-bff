@@ -5,3 +5,5 @@ curl-cffi
 httpx
 pydantic
 pydantic-extra-types
+fastf1
+pycountry
