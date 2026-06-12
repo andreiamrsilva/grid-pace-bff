@@ -1,0 +1,2 @@
+# Tell Git to use LFS for all PNG files
+*.png filter=lfs diff=lfs merge=lfs -text
