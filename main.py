@@ -3,14 +3,25 @@ from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 import asyncio
 from api.routers import calendar, events
+from api.database_service import init_db, archive_past_years
+from api.routers.calendar import fetch_wrc_events_for_years
 import os
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # On startup
     print("Server starting up...")
-    # Start the periodic task to keep the cache fresh.
-    # The first update will happen immediately on startup.
+    
+    # 1. Initialize the database
+    init_db()
+    
+    # 2. Start the one-time task to archive past events to the DB
+    asyncio.create_task(archive_past_years(fetch_wrc_events_for_years))
+    
+    # 3. Populate the recent cache for the first time
+    await calendar.update_recent_cache()
+    
+    # 4. Start the periodic task to keep the recent cache fresh
     app.state.cache_updater_task = asyncio.create_task(calendar.periodic_cache_updater())
     
     yield

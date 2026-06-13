@@ -15,6 +15,10 @@ if not os.path.exists(cache_path):
     os.makedirs(cache_path)
 fastf1.Cache.enable_cache(cache_path)
 
+# Increase the default timeout for network requests
+# This helps with slow community servers for historic data.
+fastf1.req.CACHE_TIMEOUT = 30 # seconds
+
 logger = logging.getLogger(__name__)
 
 async def get_f1_calendar_events(year: int) -> List[CalendarEvent]:
