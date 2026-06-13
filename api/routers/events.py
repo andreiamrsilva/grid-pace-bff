@@ -10,7 +10,8 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".
 
 from openwrc.clients.wrc_api_client import WrcApiClient
 from models.event import Stage
-from api.utils import get_logo_path # Fixed import
+from api.utils import get_logo_path
+from api.f1_client import get_f1_event_sessions
 import logging
 import traceback
 
@@ -33,34 +34,29 @@ def format_ms_to_time(ms: int) -> str:
     
     return f"{minutes:02d}:{seconds:02d}.{tenths}"
 
-@router.get("/{event_id}/stages", response_model=List[Stage])
-async def get_event_stages(event_id: int):
+async def get_wrc_event_stages(event_id: int) -> List[Stage]:
     """
-    Get all stages for a given event, including the stage winner, logo path, and time if available.
+    Fetches all stages for a given WRC event.
     """
     try:
         async with WrcApiClient() as client:
-            # First, we need the event metadata to find the itinerary ID for the main rally.
             event_metadata = await client.get_event_metadata(event_id)
             if not event_metadata or not event_metadata.rallies:
                 raise HTTPException(status_code=404, detail="Event not found or has no rallies.")
 
-            # Assume the first rally is the main one.
             main_rally = event_metadata.rallies[0]
             itinerary_id = main_rally.itinerary_id
             rally_id = main_rally.rally_id
 
-            # Fetch the itinerary which contains all stage details.
             itinerary = await client.get_event_itineraries(event_id, itinerary_id)
             if not itinerary or not itinerary.itinerary_legs:
                 return []
 
-            # Pre-fetch all entries for this rally to map winners to names and manufacturers
             entries_dict = {}
             try:
                 entries = await client.get_rally_entries(event_id, rally_id)
                 for entry in entries:
-                    entries_dict[entry.entry_id] = entry  # Store the full entry object
+                    entries_dict[entry.entry_id] = entry
             except Exception as e:
                 logger.warning(f"Could not pre-fetch entries for event {event_id}, rally {rally_id}: {e}")
 
@@ -68,17 +64,14 @@ async def get_event_stages(event_id: int):
             for leg in itinerary.itinerary_legs:
                 for section in leg.itinerary_sections:
                     for stage_details in section.stages:
-                        
-                        # Find the corresponding StageStart control to get the start time
                         start_time = None
                         for control in section.controls:
                             if control.type == "StageStart" and control.stage_id == stage_details.stage_id:
                                 start_time = control.first_car_due_date_time
                                 break
                         
-                        # Fetch the stage winner if the stage is completed
                         winner_name = None
-                        winner_logo_path = None # Changed variable name
+                        winner_logo_path = None
                         winner_time = None
                         if stage_details.status == "Completed":
                             try:
@@ -88,18 +81,13 @@ async def get_event_stages(event_id: int):
                                     rally_id=rally_id
                                 )
                                 if stage_results:
-                                    # The winner is the entry with position 1
                                     winner_result = next((r for r in stage_results if r.position == 1), None)
                                     if winner_result and winner_result.entry_id in entries_dict:
                                         winner_entry = entries_dict[winner_result.entry_id]
                                         winner_name = winner_entry.driver.full_name
                                         if hasattr(winner_entry, 'manufacturer') and winner_entry.manufacturer:
-                                            winner_logo_path = get_logo_path(winner_entry.manufacturer.name) # Fixed function call
+                                            winner_logo_path = get_logo_path(winner_entry.manufacturer.name)
                                         winner_time = format_ms_to_time(winner_result.stage_time_ms)
-                            except httpx.HTTPStatusError as e:
-                                # Ignore 404s, some stages might be marked completed but have no results published yet
-                                if e.response.status_code != 404:
-                                    logger.warning(f"HTTP error fetching results for stage {stage_details.stage_id}: {e}")
                             except Exception as e:
                                 logger.warning(f"Error fetching results for stage {stage_details.stage_id}: {e}")
                                 
@@ -113,14 +101,12 @@ async def get_event_stages(event_id: int):
                                 status=stage_details.status,
                                 is_live=stage_details.status == "Running",
                                 winner_name=winner_name,
-                                winner_logo_path=winner_logo_path, # Changed field name
+                                winner_logo_path=winner_logo_path,
                                 winner_time=winner_time
                             )
                         )
             
-            # Sort stages by number
             stages.sort(key=lambda s: s.number)
-            
             return stages
 
     except httpx.HTTPStatusError as e:
@@ -132,3 +118,21 @@ async def get_event_stages(event_id: int):
         logger.error(f"Unexpected error fetching stages for event {event_id}: {e}")
         logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail="An unexpected error occurred.")
+
+@router.get("/{category}/{event_id}/stages", response_model=List[Stage])
+async def get_event_details(category: str, event_id: int):
+    """
+    Get all stages/sessions for a given event, based on its category.
+    """
+    if category.lower() == "wrc":
+        return await get_wrc_event_stages(event_id)
+    elif category.lower() == "f1":
+        # The F1 event_id is YYYYRR (e.g., 202401). We need to extract year and round.
+        try:
+            year = int(str(event_id)[:4])
+            round_number = int(str(event_id)[4:])
+            return await get_f1_event_sessions(year, round_number)
+        except (ValueError, IndexError):
+            raise HTTPException(status_code=400, detail="Invalid F1 event ID format. Expected YYYYRR.")
+    else:
+        raise HTTPException(status_code=404, detail="Category not supported.")

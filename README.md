@@ -96,7 +96,7 @@ GET http://127.0.0.1:8000/calendar?year=2024&categories=WRC&categories=F1
     "current_leader_logo_path": "/logos/hyundai.png"
   },
   {
-    "id": 20241,
+    "id": 202401,
     "name": "Bahrain Grand Prix",
     "category": "F1",
     "country": "Bahrain",
@@ -113,23 +113,24 @@ GET http://127.0.0.1:8000/calendar?year=2024&categories=WRC&categories=F1
 
 ### 3.2. Events
 
-Provides details about a specific event. Currently fully supported for WRC.
+Provides details about a specific event, adapting the response based on the motorsport category.
 
-#### `GET /events/{event_id}/stages`
+#### `GET /events/{category}/{event_id}/stages`
 
-Returns a list of all stages for a given event.
+Returns a list of all stages (for WRC) or sessions (for F1) for a given event.
 
 **Path Parameters:**
 
--   `event_id` (Required, `int`): The unique identifier of the event.
+-   `category` (Required, `str`): The motorsport category (e.g., `WRC`, `F1`). Case-insensitive.
+-   `event_id` (Required, `int`): The unique identifier of the event. For F1, this is a combination of year and round number (e.g., `202401`).
 
-**Example Request:**
+**Example Request (WRC):**
 
 ```
-GET http://127.0.0.1:8000/events/635/stages
+GET http://127.0.0.1:8000/events/WRC/635/stages
 ```
 
-**Example Response (`200 OK`):**
+**Example Response (WRC - `200 OK`):**
 
 ```json
 [
@@ -144,6 +145,43 @@ GET http://127.0.0.1:8000/events/635/stages
     "winner_name": "Sébastien Ogier",
     "winner_logo_path": "/logos/toyota.png",
     "winner_time": "12:45.3"
+  }
+]
+```
+
+**Example Request (F1):**
+
+```
+GET http://127.0.0.1:8000/events/F1/202401/stages
+```
+
+**Example Response (F1 - `200 OK`):**
+
+```json
+[
+  {
+    "id": 2024011,
+    "name": "Practice 1",
+    "number": 1,
+    "distance": 0.0,
+    "start_time": "2024-02-29T14:30:00Z",
+    "status": "Completed",
+    "is_live": false,
+    "winner_name": "Daniel Ricciardo",
+    "winner_logo_path": "/logos/rb.png",
+    "winner_time": "01:32.869"
+  },
+  {
+    "id": 2024015,
+    "name": "Race",
+    "number": 5,
+    "distance": 0.0,
+    "start_time": "2024-03-02T15:00:00Z",
+    "status": "Completed",
+    "is_live": false,
+    "winner_name": "Max Verstappen",
+    "winner_logo_path": "/logos/red_bull.png",
+    "winner_time": "1:31:44.742"
   }
 ]
 ```

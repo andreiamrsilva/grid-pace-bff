@@ -9,11 +9,12 @@ import os
 async def lifespan(app: FastAPI):
     # On startup
     print("Server starting up...")
-    # Initial cache population
-    asyncio.create_task(calendar.update_calendar_cache())
-    # Start the periodic background task
+    # Start the periodic task to keep the cache fresh.
+    # The first update will happen immediately on startup.
     app.state.cache_updater_task = asyncio.create_task(calendar.periodic_cache_updater())
+    
     yield
+    
     # On shutdown
     print("Server shutting down...")
     app.state.cache_updater_task.cancel()
@@ -25,7 +26,6 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Grid Pace BFF API", lifespan=lifespan)
 
 # Mount the logos directory
-# This makes files in the "logos" folder available at the "/logos" URL path
 if os.path.exists("logos"):
     app.mount("/logos", StaticFiles(directory="logos"), name="logos")
 else:

@@ -4,7 +4,14 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a62e5b2f-3708-4f63-8803-b0b454e614aa" name="Changes" comment="Updated the logos files." />
+    <list default="true" id="a62e5b2f-3708-4f63-8803-b0b454e614aa" name="Changes" comment="Added missing logos.">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/f1_client.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/f1_client.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/routers/calendar.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/routers/calendar.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/routers/events.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/routers/events.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -55,6 +62,7 @@
     "node.js.selected.package.eslint": "(autodetect)",
     "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "org.jetbrains.plugins.github.ui.GithubSettingsConfigurable",
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
@@ -74,7 +82,7 @@
       <option name="presentableId" value="Default" />
       <updated>1780908569186</updated>
       <workItem from="1780908570142" duration="1480000" />
-      <workItem from="1781016450033" duration="25755000" />
+      <workItem from="1781016450033" duration="30966000" />
     </task>
     <task id="LOCAL-00001" summary="GridPace server to get wrc information">
       <option name="closed" value="true" />
@@ -140,7 +148,15 @@
       <option name="project" value="LOCAL" />
       <updated>1781290810360</updated>
     </task>
-    <option name="localTasksCounter" value="9" />
+    <task id="LOCAL-00009" summary="Added missing logos.">
+      <option name="closed" value="true" />
+      <created>1781291008820</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1781291008820</updated>
+    </task>
+    <option name="localTasksCounter" value="10" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -154,6 +170,7 @@
     <MESSAGE value="Update events to return the team logo." />
     <MESSAGE value="Update the calendar to only return WRC events." />
     <MESSAGE value="Updated the logos files." />
-    <option name="LAST_COMMIT_MESSAGE" value="Updated the logos files." />
+    <MESSAGE value="Added missing logos." />
+    <option name="LAST_COMMIT_MESSAGE" value="Added missing logos." />
   </component>
 </project>
