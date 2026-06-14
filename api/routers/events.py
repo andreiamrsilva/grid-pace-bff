@@ -166,7 +166,7 @@ async def get_wrc_stage_times(event_id: int, stage_id: int) -> StageStandings:
                         finished_drivers.append(DriverTime(
                             entry_id=result.entry_id,
                             driver_name=entry.driver.full_name,
-                            manufacturer_logo_path=logo_path,
+                            logo_path=logo_path,
                             status="Finished",
                             time=format_ms_to_time(result.stage_time_ms),
                             diff_to_first=format_ms_to_time(result.diff_first_ms) if result.diff_first_ms else None,
@@ -204,7 +204,7 @@ async def get_wrc_stage_times(event_id: int, stage_id: int) -> StageStandings:
                         on_track_drivers.append(DriverTime(
                             entry_id=e_id,
                             driver_name=entry.driver.full_name,
-                            manufacturer_logo_path=logo_path,
+                            logo_path=logo_path,
                             status="OnTrack",
                             time=format_ms_to_time(latest_split.elapsed_duration_ms),
                             last_split_id=latest_split.split_point_id

@@ -8,3 +8,6 @@ pydantic-extra-types
 fastf1
 pycountry
 sqlalchemy
+# test requirements
+pytest
+pytest-asyncio
