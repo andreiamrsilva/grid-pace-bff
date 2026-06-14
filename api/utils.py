@@ -35,7 +35,9 @@ def get_logo_path(name: str) -> Optional[str]:
         "haas": "haas.png",
         "alfa romeo": "alfa_romeo.png",
         "alphatauri": "alphatauri.png",
-        "renault": "renault.png"
+        "renault": "renault.png",
+        "audi": "audi.png",
+        "cadillac": "cadillac.png"
     }
     
     lower_name = name.lower()
