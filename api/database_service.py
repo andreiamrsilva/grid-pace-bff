@@ -1,12 +1,12 @@
 import asyncio
-from sqlalchemy import create_engine, Column, Integer, String, Date, MetaData, Table
+from sqlalchemy import create_engine, Column, Integer, String, Date, MetaData, Table, update
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
 from typing import List
 import logging
 
 from models.calendar import CalendarEvent
-from api.f1_client import get_f1_calendar_events
+from api.openf1_client import get_openf1_calendar_events
 
 DATABASE_URL = "sqlite:///./historic_events.db"
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
@@ -49,13 +49,11 @@ def get_last_archived_year() -> int:
 async def archive_past_years(fetch_wrc_events_for_years_func):
     """
     Fetches all events from last archived year up to the previous year 
-    and stores them in the database.
-    We pass the fetch_wrc function as an argument to avoid circular imports.
+    and stores/updates them in the database.
     """
     last_archived_year = get_last_archived_year()
     current_year = datetime.now().year
     
-    # We want to archive years up to the previous year
     years_to_archive = range(last_archived_year + 1, current_year)
     
     if not years_to_archive:
@@ -64,30 +62,38 @@ async def archive_past_years(fetch_wrc_events_for_years_func):
 
     logger.info(f"Archiving events for years: {list(years_to_archive)}")
     
-    # Fetch all events for the missing years
-    wrc_task = fetch_wrc_events_for_years_func(list(years_to_archive))
-    f1_tasks = [get_f1_calendar_events(year) for year in years_to_archive]
+    # Fetch WRC data
+    wrc_events = await fetch_wrc_events_for_years_func(list(years_to_archive))
     
-    results = await asyncio.gather(*([wrc_task] + f1_tasks), return_exceptions=True)
-    
-    all_events_to_archive = []
-    for result in results:
-        if isinstance(result, list):
-            all_events_to_archive.extend(result)
-        elif isinstance(result, Exception):
-            logger.error(f"Error fetching data for archiving: {result}")
+    # Fetch F1 data year by year with a delay
+    f1_events = []
+    for year in years_to_archive:
+        f1_events.extend(await get_openf1_calendar_events(year))
+        await asyncio.sleep(2) # Increased delay
 
-    # Save to database
+    all_events_to_archive = wrc_events + f1_events
+
+    # Save to database using an "upsert" logic
     db = SessionLocal()
     try:
         for event_data in all_events_to_archive:
-            # Check if event already exists
             existing = db.query(events_table).filter_by(id=event_data.id).first()
             if not existing:
                 stmt = events_table.insert().values(**event_data.model_dump())
                 db.execute(stmt)
+            # If the existing record has no winner but the new data does, update it.
+            elif existing.current_leader is None and event_data.current_leader is not None:
+                stmt = (
+                    update(events_table)
+                    .where(events_table.c.id == event_data.id)
+                    .values(
+                        current_leader=event_data.current_leader,
+                        current_leader_logo_path=event_data.current_leader_logo_path
+                    )
+                )
+                db.execute(stmt)
         db.commit()
-        logger.info(f"Successfully archived new events.")
+        logger.info(f"Successfully archived/updated new events.")
     except Exception as e:
         db.rollback()
         logger.error(f"Error saving events to database: {e}")

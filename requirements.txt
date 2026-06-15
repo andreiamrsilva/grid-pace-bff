@@ -1,13 +1,10 @@
 fastapi
 uvicorn
-requests
-curl-cffi
 httpx
 pydantic
 pydantic-extra-types
-fastf1
 pycountry
 sqlalchemy
-# test requirements
+redis
 pytest
 pytest-asyncio

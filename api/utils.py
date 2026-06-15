@@ -62,7 +62,8 @@ def get_country_iso_code(country_name: str) -> Optional[str]:
         "USA": "US",
         "UAE": "AE",
         "Russia": "RU",
-        "Korea": "KR"
+        "Korea": "KR",
+        "Abu Dhabi": "AE" # FastF1 sometimes uses the city/emirate instead of UAE
     }
 
     if country_name in country_map:

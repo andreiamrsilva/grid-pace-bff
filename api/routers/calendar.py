@@ -13,7 +13,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".
 from openwrc.clients.wrc_api_client import WrcApiClient
 from models.calendar import CalendarEvent
 from api.utils import get_logo_path
-from api.f1_client import get_f1_calendar_events
+from api.openf1_client import get_openf1_calendar_events # Changed import
 from api.database_service import get_historic_events_from_db
 import logging
 import traceback
@@ -106,17 +106,23 @@ async def update_recent_cache():
     current_year = datetime.now().year
     recent_years = [current_year, current_year + 1]
     
-    wrc_task = fetch_wrc_events_for_years(recent_years)
-    f1_tasks = [get_f1_calendar_events(year) for year in recent_years]
-    
-    results = await asyncio.gather(*([wrc_task] + f1_tasks), return_exceptions=True)
-    
     recent_events = []
-    for result in results:
-        if isinstance(result, list):
-            recent_events.extend(result)
-        elif isinstance(result, Exception):
-            logger.error(f"An error occurred during cache update: {result}")
+
+    # Fetch WRC data
+    try:
+        wrc_events = await fetch_wrc_events_for_years(recent_years)
+        recent_events.extend(wrc_events)
+    except Exception as e:
+        logger.error(f"An error occurred fetching WRC events during cache update: {e}")
+
+    # Fetch F1 data sequentially to avoid rate limits
+    for year in recent_years:
+        try:
+            f1_events = await get_openf1_calendar_events(year)
+            recent_events.extend(f1_events)
+            await asyncio.sleep(1) # Delay to respect rate limits
+        except Exception as e:
+            logger.error(f"An error occurred fetching F1 events for {year} during cache update: {e}")
 
     recent_events.sort(key=lambda x: x.start_date)
     
@@ -144,11 +150,12 @@ async def get_calendar(
     """
     global cache
     
+    # If cache is empty and not being updated, trigger a synchronous update for the first request.
+    # The periodic updater will handle subsequent updates in the background.
     if not cache["data"] and not cache["is_updating"]:
-        # If cache is empty on first request, populate it synchronously for the user
         await update_recent_cache()
     
-    # Wait if an update is in progress but cache is empty
+    # If a background update is happening for the first time, wait for it to complete.
     while not cache["data"] and cache["is_updating"]:
         await asyncio.sleep(0.5)
 

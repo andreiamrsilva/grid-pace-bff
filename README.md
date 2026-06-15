@@ -2,26 +2,46 @@
 
 ## 1. Overview
 
-**Grid Pace BFF (Backend For Frontend)** is a Python API built with FastAPI that serves as an optimized bridge between the **Grid Pace** Android application and the official motorsport data sources (currently focused on the Red Bull/WRC rally API and Formula 1 via fastf1).
+**Grid Pace BFF (Backend For Frontend)** is a Python API built with FastAPI that serves as an optimized bridge between the **Grid Pace** Android application and official motorsport data sources (WRC and OpenF1).
 
-Its mission is to fetch, clean, format, and serve data perfectly tailored for the application's UI needs, ensuring high performance, resilience, and a smooth user experience.
+Its mission is to fetch, clean, format, and serve data perfectly tailored for the application's UI needs. It is built on a modern, scalable, event-driven architecture to provide high performance and resilience.
 
 ### Architecture & Tech Stack
 
 - **Language:** Python 3.x
 - **Framework:** FastAPI
-- **Server:** Uvicorn
-- **Data Extraction:** 
-  - Integration with [OpenWRC](https://github.com/andreiamrsilva/OpenWRC.git) (personal fork) for WRC data.
-  - Integration with `fastf1` library for Formula 1 data.
-- **Data Validation:** Pydantic
+- **Server:** Uvicorn (for local development)
+- **Data Extraction:**
+  - [OpenWRC](https://github.com/andreiamrsilva/OpenWRC.git) for WRC data.
+  - [OpenF1 API](https://openf1.org/) for Formula 1 data.
+- **Database (Historic Data):** SQLite (local) / PostgreSQL (production) via SQLAlchemy.
+- **Cache & Live Data:** Redis.
+- **Data Validation:** Pydantic.
 
-## 2. Installation & Setup
+## 2. Architecture Deep Dive
+
+The system is composed of two main services designed for performance and scalability:
+
+1.  **FastAPI Server (`main.py`):**
+    *   The public-facing API that the Android app communicates with.
+    *   **It does not perform heavy computations or external API calls on demand.**
+    *   Its primary role is to read pre-processed data from the Redis cache or the historic database, ensuring responses are always fast (typically <50ms).
+
+2.  **Ingestion Worker (`ingestion_worker.py`):**
+    *   A background process that runs continuously.
+    *   It is the **only** part of the system that communicates with the slow, external WRC and OpenF1 APIs.
+    *   It periodically fetches data for live events, calculates standings, and updates the Redis cache.
+    *   It is also responsible for populating the historic database on startup.
+
+This separation ensures that the user-facing API remains fast and responsive, regardless of the performance or availability of the external data sources.
+
+## 3. Installation & Setup
 
 ### Prerequisites
 
-- Python 3.10+
-- Git
+-   Python 3.10+
+-   Git
+-   Docker (for running Redis locally)
 
 ### Setup Steps
 
@@ -31,157 +51,61 @@ Its mission is to fetch, clean, format, and serve data perfectly tailored for th
     cd grid-pace-bff
     ```
 
-2.  **Initialize the OpenWRC Submodule:**
-    The project depends on `OpenWRC` as a Git submodule. To initialize it:
+2.  **Initialize Submodules:**
     ```bash
     git submodule update --init --recursive
     ```
 
-3.  **Create a Virtual Environment and Install Dependencies:**
+3.  **Start Redis using Docker:**
+    Make sure Docker Desktop is running, then execute:
+    ```bash
+    docker run -d --name grid-pace-redis -p 6379:6379 redis
+    ```
+
+4.  **Create Virtual Environment & Install Dependencies:**
     ```bash
     python -m venv .venv
     source .venv/bin/activate  # On Windows: .venv\Scripts\activate
     pip install -r requirements.txt
     ```
 
-4.  **Run the Development Server:**
-    ```bash
-    uvicorn main:app --reload
-    ```
-    The API will be available at `http://127.0.0.1:8000`.
+5.  **Run the Application:**
+    You need to run **two separate processes** in two different terminals.
 
-## 3. API Documentation
+    *   **Terminal 1: Start the API Server:**
+        ```bash
+        uvicorn main:app --reload
+        ```
+    *   **Terminal 2: Start the Ingestion Worker:**
+        ```bash
+        python ingestion_worker.py
+        ```
 
-The API automatically generates interactive documentation. After starting the server, you can access:
+    The API will be available at `http://127.0.0.1:8000`. On the first run, the worker will take a few minutes to populate the historic database.
 
-- **Swagger UI:** `http://127.0.0.1:8000/docs`
-- **ReDoc:** `http://127.0.0.1:8000/redoc`
+## 4. API Documentation
+
+Interactive documentation is available after starting the server:
+
+-   **Swagger UI:** `http://127.0.0.1:8000/docs`
+-   **ReDoc:** `http://127.0.0.1:8000/redoc`
 
 ### Available Routes
 
 ---
 
-### 3.1. Calendar
+### 4.1. Calendar (`GET /calendar`)
 
-Retrieves the motorsport events calendar (WRC and F1).
-
-#### `GET /calendar`
-
-Returns a list of calendar events. The data is served from an in-memory cache that is automatically updated in the background.
-
-**Query Parameters:**
-
--   `year` (Optional, `int`): Filters the events for a specific year. If not provided, it returns events from all available years.
--   `categories` (Optional, `list[str]`): Filters by a list of categories (e.g., `WRC`, `F1`). If not provided, all are returned. Example: `?categories=WRC&categories=F1`.
-
-**Example Request:**
-
-```
-GET http://127.0.0.1:8000/calendar?year=2024&categories=WRC&categories=F1
-```
-
-**Example Response (`200 OK`):**
-
-```json
-[
-  {
-    "id": 635,
-    "name": "FORUM8 Rally Japan",
-    "category": "WRC",
-    "country": "Japan",
-    "country_image_url": "https://flagcdn.com/w320/jp.png",
-    "start_date": "2024-11-21",
-    "finish_date": "2024-11-24",
-    "current_leader": "Thierry Neuville",
-    "current_leader_logo_path": "/logos/hyundai.png"
-  },
-  {
-    "id": 202401,
-    "name": "Bahrain Grand Prix",
-    "category": "F1",
-    "country": "Bahrain",
-    "country_image_url": "https://flagcdn.com/w320/bh.png",
-    "start_date": "2024-03-02",
-    "finish_date": "2024-03-02",
-    "current_leader": "Max Verstappen",
-    "current_leader_logo_path": "/logos/red_bull.png"
-  }
-]
-```
+Retrieves the motorsport events calendar. It combines long-term historic data from a database with fresh, frequently updated data for the current and next year from a cache.
 
 ---
 
-### 3.2. Events
+### 4.2. Event Stages (`GET /events/{category}/{event_id}/stages`)
 
-Provides details about a specific event, adapting the response based on the motorsport category.
+Returns the list of stages (WRC) or sessions (F1) for a specific event. This data is served from a Redis cache that is pre-warmed and kept up-to-date by the background worker for active events, ensuring instant responses.
 
-#### `GET /events/{category}/{event_id}/stages`
+---
 
-Returns a list of all stages (for WRC) or sessions (for F1) for a given event.
+### 4.3. Stage Times (`GET /events/{category}/{event_id}/stages/{stage_id}/times`)
 
-**Path Parameters:**
-
--   `category` (Required, `str`): The motorsport category (e.g., `WRC`, `F1`). Case-insensitive.
--   `event_id` (Required, `int`): The unique identifier of the event. For F1, this is a combination of year and round number (e.g., `202401`).
-
-**Example Request (WRC):**
-
-```
-GET http://127.0.0.1:8000/events/WRC/635/stages
-```
-
-**Example Response (WRC - `200 OK`):**
-
-```json
-[
-  {
-    "id": 10401,
-    "name": "Isegami's Tunnel",
-    "number": 1,
-    "distance": 23.67,
-    "start_time": "2024-11-21T17:00:00Z",
-    "status": "Completed",
-    "is_live": false,
-    "winner_name": "Sébastien Ogier",
-    "winner_logo_path": "/logos/toyota.png",
-    "winner_time": "12:45.3"
-  }
-]
-```
-
-**Example Request (F1):**
-
-```
-GET http://127.0.0.1:8000/events/F1/202401/stages
-```
-
-**Example Response (F1 - `200 OK`):**
-
-```json
-[
-  {
-    "id": 2024011,
-    "name": "Practice 1",
-    "number": 1,
-    "distance": 0.0,
-    "start_time": "2024-02-29T14:30:00Z",
-    "status": "Completed",
-    "is_live": false,
-    "winner_name": "Daniel Ricciardo",
-    "winner_logo_path": "/logos/rb.png",
-    "winner_time": "01:32.869"
-  },
-  {
-    "id": 2024015,
-    "name": "Race",
-    "number": 5,
-    "distance": 0.0,
-    "start_time": "2024-03-02T15:00:00Z",
-    "status": "Completed",
-    "is_live": false,
-    "winner_name": "Max Verstappen",
-    "winner_logo_path": "/logos/red_bull.png",
-    "winner_time": "1:31:44.742"
-  }
-]
-```
+Returns the live or final timings for a specific stage/session. This endpoint reads directly from the Redis cache, which is populated every 15 seconds by the `ingestion_worker` for any live stage, providing a near-real-time experience.
