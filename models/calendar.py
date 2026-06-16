@@ -13,3 +13,4 @@ class CalendarEvent(BaseModel):
     finish_date: date
     current_leader: Optional[str] = None
     current_leader_logo_path: Optional[str] = None
+    status: str = "Future event" # "Completed", "Running", "Future event", "Canceled"

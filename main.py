@@ -1,54 +1,76 @@
+import logging
+import asyncio
+import os
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
-import asyncio
-from api.routers import calendar, events
-from api.database_service import init_db, archive_past_years
-from api.routers.calendar import fetch_wrc_events_for_years
-import os
 
-async def daily_historic_updater():
-    """Runs the historic archiver once a day."""
+from api.routers import calendar, events
+from api.database_service import init_db, archive_past_years, update_current_year_events
+from api.wrc_service import fetch_wrc_events_for_years # Changed import
+
+# --- Logging Configuration ---
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S',
+)
+logger = logging.getLogger(__name__)
+
+# --- Background Tasks ---
+
+async def daily_historic_archiver():
+    """Archives past years once a day."""
     while True:
-        # Sleep for 24 hours (86400 seconds)
-        await asyncio.sleep(86400)
+        await asyncio.sleep(86400) # 24 hours
         try:
-            print("Running daily historic database update...")
+            logger.info("Running daily historic database archive...")
             await archive_past_years(fetch_wrc_events_for_years)
         except Exception as e:
-            print(f"Error in daily historic update: {e}")
+            logger.error(f"Error in daily historic archive: {e}")
+
+async def frequent_current_year_updater():
+    """Frequently updates the current year's events to catch new winners."""
+    while True:
+        try:
+            logger.info("Running frequent update for current year events...")
+            await update_current_year_events(fetch_wrc_events_for_years)
+        except Exception as e:
+            logger.error(f"Error in frequent current year update: {e}")
+        await asyncio.sleep(900) # 15 minutes
+
+# --- Lifespan Manager ---
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # On startup
-    print("Server starting up...")
+    logger.info("Server starting up...")
     
     # 1. Initialize the database
     init_db()
     
-    # 2. Run the archiver on startup to catch up on any missing data
+    # 2. Start background tasks
+    app.state.historic_archiver_task = asyncio.create_task(daily_historic_archiver())
+    app.state.current_year_updater_task = asyncio.create_task(frequent_current_year_updater())
+    
+    # 3. Run initial data population tasks on startup
+    logger.info("Running initial database population...")
     asyncio.create_task(archive_past_years(fetch_wrc_events_for_years))
-    
-    # 3. Start the daily task to keep historic data updated (e.g. for new years or retrying failed records)
-    app.state.daily_historic_task = asyncio.create_task(daily_historic_updater())
-    
-    # 4. Populate the recent cache for the first time
-    await calendar.update_recent_cache()
-    
-    # 5. Start the periodic task to keep the recent cache fresh
-    app.state.cache_updater_task = asyncio.create_task(calendar.periodic_cache_updater())
+    asyncio.create_task(update_current_year_events(fetch_wrc_events_for_years))
     
     yield
     
     # On shutdown
-    print("Server shutting down...")
-    app.state.cache_updater_task.cancel()
-    app.state.daily_historic_task.cancel()
+    logger.info("Server shutting down...")
+    app.state.historic_archiver_task.cancel()
+    app.state.current_year_updater_task.cancel()
     try:
-        await app.state.cache_updater_task
-        await app.state.daily_historic_task
+        await app.state.historic_archiver_task
+        await app.state.current_year_updater_task
     except asyncio.CancelledError:
-        print("Background tasks cancelled successfully.")
+        logger.info("Background tasks cancelled successfully.")
+
+# --- FastAPI App ---
 
 app = FastAPI(title="Grid Pace BFF API", lifespan=lifespan)
 
@@ -56,7 +78,7 @@ app = FastAPI(title="Grid Pace BFF API", lifespan=lifespan)
 if os.path.exists("logos"):
     app.mount("/logos", StaticFiles(directory="logos"), name="logos")
 else:
-    print("Warning: 'logos' directory not found. Logo images will not be served.")
+    logger.warning("Warning: 'logos' directory not found. Logo images will not be served.")
 
 app.include_router(calendar.router)
 app.include_router(events.router)

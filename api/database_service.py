@@ -1,11 +1,13 @@
 import asyncio
-from sqlalchemy import create_engine, Column, Integer, String, Date, MetaData, Table, update
+from sqlalchemy import create_engine, Column, Integer, String, Date, MetaData, Table, update, Float, Boolean, DateTime
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 import logging
 
 from models.calendar import CalendarEvent
+from models.event import Stage
+from models.stage_times import StageStandings, DriverTime
 from api.openf1_client import get_openf1_calendar_events
 
 DATABASE_URL = "sqlite:///./historic_events.db"
@@ -13,6 +15,8 @@ engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 metadata = MetaData()
+
+# --- Table Definitions ---
 
 events_table = Table(
     'events', metadata,
@@ -25,17 +29,48 @@ events_table = Table(
     Column('finish_date', Date),
     Column('current_leader', String, nullable=True),
     Column('current_leader_logo_path', String, nullable=True),
+    Column('status', String, default="Future event", nullable=False),
+)
+
+stages_table = Table(
+    'stages', metadata,
+    Column('id', Integer, primary_key=True, autoincrement=False),
+    Column('event_id', Integer, index=True),
+    Column('name', String),
+    Column('number', Integer),
+    Column('distance', Float, nullable=True),
+    Column('start_time', DateTime, nullable=True),
+    Column('status', String),
+    Column('is_live', Boolean),
+    Column('winner_name', String, nullable=True),
+    Column('winner_logo_path', String, nullable=True),
+    Column('winner_time', String, nullable=True),
+)
+
+stage_times_table = Table(
+    'stage_times', metadata,
+    Column('id', Integer, primary_key=True),
+    Column('stage_id', Integer, index=True),
+    Column('entry_id', Integer),
+    Column('driver_name', String),
+    Column('logo_path', String, nullable=True),
+    Column('status', String),
+    Column('time', String, nullable=True),
+    Column('diff_to_first', String, nullable=True),
+    Column('position', Integer, nullable=True),
 )
 
 logger = logging.getLogger(__name__)
 
 def init_db():
-    """Creates the database and table if they don't exist."""
+    """Creates all database tables if they don't exist."""
     metadata.create_all(bind=engine)
     logger.info("Database initialized.")
 
+# ... (rest of the functions will be updated in subsequent steps)
+# For now, just adding the column is the first step.
+# The existing functions need to be preserved.
 def get_last_archived_year() -> int:
-    """Finds the most recent year stored in the historic database."""
     db = SessionLocal()
     try:
         last_year = db.query(events_table.c.start_date).order_by(events_table.c.start_date.desc()).first()
@@ -43,68 +78,89 @@ def get_last_archived_year() -> int:
             return last_year[0].year
     finally:
         db.close()
-    # Return a default start year if the DB is empty
-    return 2017 # Start before the first year we want to fetch (2018)
+    return 2017
 
-async def archive_past_years(fetch_wrc_events_for_years_func):
-    """
-    Fetches all events from last archived year up to the previous year 
-    and stores/updates them in the database.
-    """
-    last_archived_year = get_last_archived_year()
-    current_year = datetime.now().year
-    
-    years_to_archive = range(last_archived_year + 1, current_year)
-    
-    if not years_to_archive:
-        logger.info("Historic database is already up to date.")
-        return
-
-    logger.info(f"Archiving events for years: {list(years_to_archive)}")
-    
-    # Fetch WRC data
-    wrc_events = await fetch_wrc_events_for_years_func(list(years_to_archive))
-    
-    # Fetch F1 data year by year with a delay
-    f1_events = []
-    for year in years_to_archive:
-        f1_events.extend(await get_openf1_calendar_events(year))
-        await asyncio.sleep(2) # Increased delay
-
-    all_events_to_archive = wrc_events + f1_events
-
-    # Save to database using an "upsert" logic
+async def _upsert_events(events_to_upsert: List[CalendarEvent]):
     db = SessionLocal()
     try:
-        for event_data in all_events_to_archive:
+        for event_data in events_to_upsert:
             existing = db.query(events_table).filter_by(id=event_data.id).first()
-            if not existing:
+            if existing:
+                stmt = update(events_table).where(events_table.c.id == event_data.id).values(**event_data.model_dump())
+                db.execute(stmt)
+            else:
                 stmt = events_table.insert().values(**event_data.model_dump())
                 db.execute(stmt)
-            # If the existing record has no winner but the new data does, update it.
-            elif existing.current_leader is None and event_data.current_leader is not None:
-                stmt = (
-                    update(events_table)
-                    .where(events_table.c.id == event_data.id)
-                    .values(
-                        current_leader=event_data.current_leader,
-                        current_leader_logo_path=event_data.current_leader_logo_path
-                    )
-                )
-                db.execute(stmt)
         db.commit()
-        logger.info(f"Successfully archived/updated new events.")
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error saving events to database: {e}")
     finally:
         db.close()
 
-def get_historic_events_from_db() -> List[CalendarEvent]:
-    """Retrieves all events from the historic database."""
+async def archive_past_years(fetch_wrc_events_for_years_func):
+    last_archived_year = get_last_archived_year()
+    current_year = datetime.now().year
+    years_to_archive = range(last_archived_year + 1, current_year)
+    if not years_to_archive:
+        return
+    wrc_events = await fetch_wrc_events_for_years_func(list(years_to_archive))
+    f1_events = []
+    for year in years_to_archive:
+        f1_events.extend(await get_openf1_calendar_events(year))
+        await asyncio.sleep(2)
+    await _upsert_events(wrc_events + f1_events)
+
+async def update_current_year_events(fetch_wrc_events_for_years_func):
+    current_year = datetime.now().year
+    wrc_events = await fetch_wrc_events_for_years_func([current_year])
+    f1_events = await get_openf1_calendar_events(current_year)
+    await _upsert_events(wrc_events + f1_events)
+
+def get_all_events_from_db() -> List[CalendarEvent]:
     db = SessionLocal()
     try:
         result = db.query(events_table).all()
         return [CalendarEvent(**row._asdict()) for row in result]
+    finally:
+        db.close()
+
+def save_stages_to_db(event_id: int, stages: List[Stage]):
+    db = SessionLocal()
+    try:
+        db.execute(stages_table.delete().where(stages_table.c.event_id == event_id))
+        for stage_data in stages:
+            stmt = stages_table.insert().values(event_id=event_id, **stage_data.model_dump())
+            db.execute(stmt)
+        db.commit()
+    finally:
+        db.close()
+
+def get_stages_from_db(event_id: int) -> Optional[List[Stage]]:
+    db = SessionLocal()
+    try:
+        result = db.query(stages_table).filter_by(event_id=event_id).order_by(stages_table.c.number).all()
+        if result:
+            return [Stage(**row._asdict()) for row in result]
+        return None
+    finally:
+        db.close()
+
+def save_stage_times_to_db(stage_id: int, standings: StageStandings):
+    db = SessionLocal()
+    try:
+        db.execute(stage_times_table.delete().where(stage_times_table.c.stage_id == stage_id))
+        for driver_time in standings.standings:
+            stmt = stage_times_table.insert().values(stage_id=stage_id, **driver_time.model_dump())
+            db.execute(stmt)
+        db.commit()
+    finally:
+        db.close()
+
+def get_stage_times_from_db(stage_id: int, event_id: int, category: str) -> Optional[StageStandings]:
+    db = SessionLocal()
+    try:
+        result = db.query(stage_times_table).filter_by(stage_id=stage_id).order_by(stage_times_table.c.position).all()
+        if result:
+            standings = [DriverTime(**row._asdict()) for row in result]
+            return StageStandings(stage_id=stage_id, event_id=event_id, category=category, is_live=False, standings=standings)
+        return None
     finally:
         db.close()
