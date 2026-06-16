@@ -60,6 +60,7 @@ stage_times_table = Table(
     Column('diff_to_first', String, nullable=True),
     Column('position', Integer, nullable=True),
     Column('last_split_id', Integer, nullable=True),
+    Column('position_change', Integer, nullable=True),
 )
 
 overall_standings_table = Table(
@@ -72,6 +73,7 @@ overall_standings_table = Table(
     Column('time', String, nullable=True),
     Column('diff_to_first', String, nullable=True),
     Column('points', Integer, nullable=True),
+    Column('position_change', Integer, nullable=True),
 )
 
 logger = logging.getLogger(__name__)

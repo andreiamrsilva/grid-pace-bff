@@ -9,6 +9,7 @@ class OverallDriverStanding(BaseModel):
     time: Optional[str] = None
     diff_to_first: Optional[str] = None
     points: Optional[int] = None
+    position_change: Optional[int] = None # Positive for moving up, negative for dropping, 0 for no change
 
 class OverallStandings(BaseModel):
     """Represents the overall standings for an entire event."""

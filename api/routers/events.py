@@ -80,11 +80,6 @@ async def get_stage_times(category: str, event_id: int, stage_id: int):
     if category.lower() == "wrc":
         final_standings = await fetch_wrc_stage_times(event_id, stage_id)
     elif category.lower() == "f1":
-        # We need to know the session name to fetch the correct data
-        # This requires an extra call if not cached, which is acceptable for a cache miss.
-        # A better approach would be to pass the session name from the client.
-        # For now, we'll fetch it.
-        # This logic is now simplified as fetch_f1_session_times handles all session types.
         final_standings = await fetch_f1_session_times(stage_id, event_id)
         if final_standings:
             final_standings.is_live = False
@@ -97,14 +92,24 @@ async def get_stage_times(category: str, event_id: int, stage_id: int):
 @router.get("/{category}/{event_id}/overall", response_model=Optional[OverallStandings])
 async def get_overall_standings(category: str, event_id: int):
     """
-    Get the overall standings for a completed event.
-    Uses a database-first caching strategy.
+    Get the overall standings for an event.
+    Prioritizes Redis for live data, then falls back to DB for completed data.
     """
+    # 1. Check Redis for LIVE overall standings (populated by worker)
+    redis_key = f"overall:{category.lower()}:{event_id}"
+    cached_live_data = await get_cached_data(redis_key)
+    if cached_live_data:
+        logger.debug(f"Cache HIT for LIVE overall standings: {redis_key}")
+        return OverallStandings(**cached_live_data)
+
+    # 2. Check DB for COMPLETED data
     db_standings = get_overall_standings_from_db(event_id, category.upper())
     if db_standings:
+        logger.debug(f"DB HIT for final overall standings: {event_id}")
         return db_standings
 
-    logger.debug(f"DB MISS for overall standings: {event_id}. Fetching from source.")
+    # 3. Cache MISS: Fetch from source
+    logger.debug(f"Cache/DB MISS for overall standings: {event_id}. Fetching from source.")
     
     standings_to_cache = None
     if category.lower() == "wrc":

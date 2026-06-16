@@ -9,6 +9,8 @@ class DriverTime(BaseModel):
     time: Optional[str] = None  # Formatted string like "12:45.3" or "+1.2"
     diff_to_first: Optional[str] = None
     position: Optional[int] = None
+    position_change: Optional[int] = None # Positive for moving up, negative for dropping, 0 for no change
+
     # Additional fields to help order OnTrack drivers
     last_split_id: Optional[int] = None
 
