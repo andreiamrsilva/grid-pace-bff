@@ -4,17 +4,13 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a62e5b2f-3708-4f63-8803-b0b454e614aa" name="Changes" comment="Added the open f1 api to handle with the requests, and improve the architecture to handle with multiple requests.">
-      <change afterPath="$PROJECT_DIR$/api/wrc_service.py" afterDir="false" />
+    <list default="true" id="a62e5b2f-3708-4f63-8803-b0b454e614aa" name="Changes" comment="Added status field to the calendar event.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/api/database_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/database_service.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/api/openf1_client.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/openf1_client.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/routers/calendar.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/routers/calendar.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/routers/events.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/routers/events.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/historic_events.db" beforeDir="false" afterPath="$PROJECT_DIR$/historic_events.db" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/wrc_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/wrc_service.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/historic_events.db" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/ingestion_worker.py" beforeDir="false" afterPath="$PROJECT_DIR$/ingestion_worker.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/calendar.py" beforeDir="false" afterPath="$PROJECT_DIR$/models/calendar.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -87,7 +83,7 @@
       <updated>1780908569186</updated>
       <workItem from="1780908570142" duration="1480000" />
       <workItem from="1781016450033" duration="40867000" />
-      <workItem from="1781447061334" duration="35437000" />
+      <workItem from="1781447061334" duration="45350000" />
     </task>
     <task id="LOCAL-00001" summary="GridPace server to get wrc information">
       <option name="closed" value="true" />
@@ -209,7 +205,15 @@
       <option name="project" value="LOCAL" />
       <updated>1781541604828</updated>
     </task>
-    <option name="localTasksCounter" value="16" />
+    <task id="LOCAL-00016" summary="Added status field to the calendar event.">
+      <option name="closed" value="true" />
+      <created>1781616894753</created>
+      <option name="number" value="00016" />
+      <option name="presentableId" value="LOCAL-00016" />
+      <option name="project" value="LOCAL" />
+      <updated>1781616894753</updated>
+    </task>
+    <option name="localTasksCounter" value="17" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -230,6 +234,7 @@
     <MESSAGE value="Added unit tests." />
     <MESSAGE value="Fixed F1 stage dates." />
     <MESSAGE value="Added the open f1 api to handle with the requests, and improve the architecture to handle with multiple requests." />
-    <option name="LAST_COMMIT_MESSAGE" value="Added the open f1 api to handle with the requests, and improve the architecture to handle with multiple requests." />
+    <MESSAGE value="Added status field to the calendar event." />
+    <option name="LAST_COMMIT_MESSAGE" value="Added status field to the calendar event." />
   </component>
 </project>

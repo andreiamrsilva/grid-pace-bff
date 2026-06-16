@@ -13,20 +13,27 @@ OPENF1_API_URL = "https://api.openf1.org/v1"
 logger = logging.getLogger(__name__)
 
 def format_timedelta_to_time(seconds: float) -> str:
-    """Converts seconds to a formatted string (MM:SS.m)"""
+    """Converts seconds to a formatted string (HHh MMm SS.ms) with units."""
     if seconds is None:
         return None
     
-    minutes = int(seconds // 60)
-    remaining_seconds = int(seconds % 60)
-    tenths = int((seconds * 10) % 10)
+    total_milliseconds = int(seconds * 1000)
     
-    hours = int(minutes // 60)
+    hours = total_milliseconds // 3_600_000
+    total_milliseconds %= 3_600_000
+    minutes = total_milliseconds // 60_000
+    total_milliseconds %= 60_000
+    secs = total_milliseconds // 1_000
+    milliseconds = total_milliseconds % 1_000
+    
+    time_str = ""
     if hours > 0:
-        minutes = minutes % 60
-        return f"{hours}:{minutes:02d}:{remaining_seconds:02d}.{tenths}"
-    else:
-        return f"{minutes:02d}:{remaining_seconds:02d}.{tenths}"
+        time_str += f"{hours}h "
+    if minutes > 0 or hours > 0:
+        time_str += f"{minutes:02d}m "
+    time_str += f"{secs:02d}.{milliseconds:03d}s"
+    
+    return time_str.strip()
 
 async def get_race_winner_from_openf1(client: httpx.AsyncClient, session_key: int) -> Tuple[Optional[str], Optional[str]]:
     """
@@ -168,12 +175,13 @@ async def get_openf1_calendar_events(year: int) -> List[CalendarEvent]:
                     )
                 )
         return f1_events
-    except Exception as e:
-        logger.error(f"Error fetching F1 events: {e}")
+    except Exception:
         return []
 
 async def get_f1_event_sessions(meeting_key: int) -> List[Stage]:
-    # ... (function is the same)
+    """
+    Fetches the sessions for a specific F1 event using the OpenF1 API.
+    """
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
             sessions_response = await client.get(f"{OPENF1_API_URL}/sessions?meeting_key={meeting_key}")
@@ -220,42 +228,78 @@ async def get_f1_event_sessions(meeting_key: int) -> List[Stage]:
     except Exception:
         return []
 
+async def fetch_driver_final_position(client: httpx.AsyncClient, session_key: int, driver_info: dict) -> Optional[DriverTime]:
+    """Helper to fetch the final position of a single driver for a session."""
+    try:
+        driver_number = driver_info['driver_number']
+        pos_res = await client.get(f"{OPENF1_API_URL}/position?session_key={session_key}&driver_number={driver_number}")
+        pos_res.raise_for_status()
+        pos_data = pos_res.json()
+        
+        if not pos_data:
+            return None
+            
+        pos_data.sort(key=lambda x: x['date'], reverse=True)
+        final_pos = pos_data[0]['position']
+        
+        # 2. Get time from laps
+        laps_res = await client.get(f"{OPENF1_API_URL}/laps?session_key={session_key}&driver_number={driver_number}")
+        laps_data = laps_res.json()
+        
+        driver_time_str = None
+        if laps_data:
+            valid_laps = [lap for lap in laps_data if lap.get('lap_duration') is not None]
+            if valid_laps:
+                # Approximate the time
+                fastest_lap = min(valid_laps, key=lambda x: x['lap_duration'])
+                driver_time_str = format_timedelta_to_time(fastest_lap['lap_duration'])
+        
+        return DriverTime(
+            entry_id=driver_number,
+            driver_name=driver_info.get('full_name', f"Driver {driver_number}"),
+            logo_path=get_logo_path(driver_info.get('team_name')),
+            status="Finished",
+            time=driver_time_str,
+            position=final_pos
+        )
+    except Exception as e:
+        logger.debug(f"Could not fetch final position for driver {driver_info.get('driver_number')} in session {session_key}: {e}")
+        return None
+
 async def fetch_f1_session_times(session_key: int, meeting_key: int) -> Optional[StageStandings]:
-    # ... (function is the same)
+    """
+    Fetches the final classification for a completed F1 session.
+    Uses concurrent requests for each driver to avoid massive payload timeouts.
+    """
+    logger.info(f"Fetching final standings for F1 session {session_key}...")
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
-            laps_response = await client.get(f"{OPENF1_API_URL}/laps?session_key={session_key}")
-            laps_response.raise_for_status()
-            laps_data = laps_response.json()
+            drivers_response = await client.get(f"{OPENF1_API_URL}/drivers?session_key={session_key}")
+            drivers_response.raise_for_status()
+            drivers_data = drivers_response.json()
+            
+            if not drivers_data:
+                logger.warning(f"No driver data found for session {session_key}")
+                return None
+                
+            logger.info(f"Found {len(drivers_data)} drivers. Fetching final positions concurrently...")
+            tasks = [fetch_driver_final_position(client, session_key, d) for d in drivers_data]
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+            
+            standings = []
+            for res in results:
+                if isinstance(res, DriverTime):
+                    standings.append(res)
+                elif isinstance(res, Exception):
+                    logger.warning(f"Exception during driver position fetch: {res}")
 
-            if not laps_data:
+            if not standings:
+                logger.warning(f"Failed to extract any valid standings for session {session_key}")
                 return None
 
-            max_lap = max(lap['lap_number'] for lap in laps_data if lap.get('lap_number') is not None)
+            standings.sort(key=lambda x: x.position or 999)
             
-            final_lap_data = [lap for lap in laps_data if lap.get('lap_number') == max_lap and lap.get('position') is not None]
-            
-            drivers_response = await client.get(f"{OPENF1_API_URL}/drivers?session_key={session_key}")
-            drivers_data = {d['driver_number']: d for d in drivers_response.json()}
-
-            standings = []
-            for lap in final_lap_data:
-                driver_number = lap['driver_number']
-                driver_info = drivers_data.get(driver_number, {})
-                
-                standings.append(
-                    DriverTime(
-                        entry_id=driver_number,
-                        driver_name=driver_info.get('full_name', f"Driver {driver_number}"),
-                        logo_path=get_logo_path(driver_info.get('team_name')),
-                        status="Finished",
-                        time=format_timedelta_to_time(lap.get('lap_duration')),
-                        position=lap.get('position')
-                    )
-                )
-            
-            standings.sort(key=lambda x: x.position or 99)
-            
+            logger.info(f"Successfully fetched final standings for session {session_key}.")
             return StageStandings(
                 stage_id=session_key,
                 event_id=meeting_key,

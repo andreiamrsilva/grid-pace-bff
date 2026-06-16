@@ -58,6 +58,7 @@ stage_times_table = Table(
     Column('time', String, nullable=True),
     Column('diff_to_first', String, nullable=True),
     Column('position', Integer, nullable=True),
+    Column('last_split_id', Integer, nullable=True), # Added missing column
 )
 
 logger = logging.getLogger(__name__)
@@ -67,9 +68,7 @@ def init_db():
     metadata.create_all(bind=engine)
     logger.info("Database initialized.")
 
-# ... (rest of the functions will be updated in subsequent steps)
-# For now, just adding the column is the first step.
-# The existing functions need to be preserved.
+# ... (rest of the functions are preserved)
 def get_last_archived_year() -> int:
     db = SessionLocal()
     try:

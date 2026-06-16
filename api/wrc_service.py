@@ -12,7 +12,7 @@ from api.utils import get_logo_path
 logger = logging.getLogger(__name__)
 
 def format_ms_to_time(ms: int) -> str:
-    """Converts milliseconds to a formatted string (MM:SS.m)"""
+    """Converts milliseconds to a formatted string with units (e.g., 1m 23.4s)."""
     if ms is None:
         return None
     
@@ -22,14 +22,21 @@ def format_ms_to_time(ms: int) -> str:
         ms = abs(ms)
         
     total_seconds = ms / 1000.0
-    minutes = int(total_seconds // 60)
+    
+    hours = int(total_seconds // 3600)
+    minutes = int((total_seconds % 3600) // 60)
     seconds = int(total_seconds % 60)
     tenths = int((total_seconds * 10) % 10)
     
-    if minutes > 0:
-        return f"{prefix}{minutes:02d}:{seconds:02d}.{tenths}"
-    else:
-        return f"{prefix}{seconds:02d}.{tenths}"
+    time_str = ""
+    if hours > 0:
+        time_str += f"{hours}h "
+    if minutes > 0 or hours > 0:
+        time_str += f"{minutes:02d}m "
+    
+    time_str += f"{prefix}{seconds:02d}.{tenths}s"
+    
+    return time_str.strip()
 
 async def fetch_wrc_events_for_years(years: List[int]) -> List[CalendarEvent]:
     """Fetches WRC events for a specific list of years, including leader details and status."""
@@ -45,14 +52,12 @@ async def fetch_wrc_events_for_years(years: List[int]) -> List[CalendarEvent]:
                 if not season_detail or not season_detail.season_rounds:
                     continue
                 
-                for round_info in round_info_list(season_detail.season_rounds): # Using helper to avoid nested loops length issues
+                for round_info in season_detail.season_rounds:
                     if not round_info.event:
                         continue
                     
-                    # Determine Status
                     today = date.today()
                     event_status = "Future event"
-                    # WRC API might not have a direct "Canceled" field on the list view, we infer from dates
                     if hasattr(round_info.event, 'status') and round_info.event.status == "Canceled":
                         event_status = "Canceled"
                     elif today > round_info.event.finish_date:
@@ -60,9 +65,7 @@ async def fetch_wrc_events_for_years(years: List[int]) -> List[CalendarEvent]:
                     elif round_info.event.start_date <= today <= round_info.event.finish_date:
                         event_status = "Running"
 
-                    current_leader = None
-                    current_leader_logo_path = None
-                    
+                    current_leader, current_leader_logo_path = None, None
                     if event_status in ["Running", "Completed"]:
                         try:
                             event_metadata = await client.get_event_metadata(round_info.event.event_id)
@@ -79,9 +82,6 @@ async def fetch_wrc_events_for_years(years: List[int]) -> List[CalendarEvent]:
                                             current_leader = leader_entry.driver.full_name
                                             if hasattr(leader_entry, 'manufacturer') and leader_entry.manufacturer:
                                                 current_leader_logo_path = get_logo_path(leader_entry.manufacturer.name)
-                        except httpx.HTTPStatusError as e:
-                            if e.response.status_code != 404:
-                                logger.warning(f"HTTP error fetching WRC leader for event {round_info.event.event_id}: {e}")
                         except Exception as e:
                             logger.warning(f"Could not fetch WRC leader for event {round_info.event.event_id}: {e}")
 
@@ -105,9 +105,6 @@ async def fetch_wrc_events_for_years(years: List[int]) -> List[CalendarEvent]:
     except Exception as e:
         logger.error(f"Error fetching WRC events: {e}")
     return wrc_events
-
-def round_info_list(obj):
-    return obj
 
 async def fetch_wrc_event_stages(event_id: int) -> List[Stage]:
     """Fetches all stages for a given WRC event from the source."""
@@ -156,10 +153,12 @@ async def fetch_wrc_event_stages(event_id: int) -> List[Stage]:
 
 async def fetch_wrc_stage_times(event_id: int, stage_id: int) -> Optional[StageStandings]:
     """Fetches the live or final times for a specific WRC stage from the source."""
+    logger.info(f"Fetching WRC stage times for event {event_id}, stage {stage_id}")
     try:
         async with WrcApiClient() as client:
             event_metadata = await client.get_event_metadata(event_id)
             if not event_metadata or not event_metadata.rallies:
+                logger.warning(f"No metadata or rallies found for event {event_id}")
                 return None
             rally_id = event_metadata.rallies[0].rally_id
 
@@ -172,61 +171,50 @@ async def fetch_wrc_stage_times(event_id: int, stage_id: int) -> Optional[StageS
             finished_entry_ids = set()
             try:
                 stage_results = await client.get_event_stage_results(event_id, stage_id, rally_id)
-                stage_results.sort(key=lambda x: x.position if x.position else 999)
-                
-                for result in stage_results:
-                    if result.entry_id in entries_dict:
-                        entry = entries_dict[result.entry_id]
-                        logo_path = get_logo_path(entry.manufacturer.name) if hasattr(entry, 'manufacturer') and entry.manufacturer else None
-                        
-                        finished_drivers.append(DriverTime(
-                            entry_id=result.entry_id,
-                            driver_name=entry.driver.full_name,
-                            logo_path=logo_path,
-                            status="Finished",
-                            time=format_ms_to_time(result.stage_time_ms),
-                            diff_to_first=format_ms_to_time(result.diff_first_ms) if result.diff_first_ms else None,
-                            position=result.position
-                        ))
-                        finished_entry_ids.add(result.entry_id)
+                if not stage_results:
+                    logger.debug(f"No final results found for stage {stage_id}")
+                else:
+                    stage_results.sort(key=lambda x: x.position if x.position else 999)
+                    for result in stage_results:
+                        if result.entry_id in entries_dict:
+                            entry = entries_dict[result.entry_id]
+                            logo_path = get_logo_path(entry.manufacturer.name) if hasattr(entry, 'manufacturer') and entry.manufacturer else None
+                            finished_drivers.append(DriverTime(entry_id=result.entry_id, driver_name=entry.driver.full_name, logo_path=logo_path, status="Finished", time=format_ms_to_time(result.stage_time_ms), diff_to_first=format_ms_to_time(result.diff_first_ms) if result.diff_first_ms else None, position=result.position))
+                            finished_entry_ids.add(result.entry_id)
             except Exception as e:
                 logger.warning(f"Could not fetch final results for stage {stage_id}: {e}")
 
             on_track_drivers = []
             try:
                 split_results = await client.get_rally_stage_split_time_results(event_id, rally_id, stage_id)
-                
-                entry_splits = {}
-                for split in split_results:
-                    if split.entry_id not in entry_splits:
-                        entry_splits[split.entry_id] = []
-                    entry_splits[split.entry_id].append(split)
-                
-                for e_id, splits in entry_splits.items():
-                    if e_id in finished_entry_ids:
-                        continue
-                        
-                    if e_id in entries_dict:
-                        entry = entries_dict[e_id]
-                        logo_path = get_logo_path(entry.manufacturer.name) if hasattr(entry, 'manufacturer') and entry.manufacturer else None
-                        
-                        splits.sort(key=lambda x: x.elapsed_duration_ms, reverse=True)
-                        latest_split = splits[0]
-                        
-                        on_track_drivers.append(DriverTime(
-                            entry_id=e_id,
-                            driver_name=entry.driver.full_name,
-                            logo_path=logo_path,
-                            status="OnTrack",
-                            time=format_ms_to_time(latest_split.elapsed_duration_ms),
-                            last_split_id=latest_split.split_point_id
-                        ))
+                if not split_results:
+                    logger.debug(f"No split times found for stage {stage_id}")
+                else:
+                    entry_splits = {}
+                    for split in split_results:
+                        if split.entry_id not in entry_splits:
+                            entry_splits[split.entry_id] = []
+                        entry_splits[split.entry_id].append(split)
+                    
+                    for e_id, splits in entry_splits.items():
+                        if e_id in finished_entry_ids:
+                            continue
+                        if e_id in entries_dict:
+                            entry = entries_dict[e_id]
+                            logo_path = get_logo_path(entry.manufacturer.name) if hasattr(entry, 'manufacturer') and entry.manufacturer else None
+                            splits.sort(key=lambda x: x.elapsed_duration_ms, reverse=True)
+                            latest_split = splits[0]
+                            on_track_drivers.append(DriverTime(entry_id=e_id, driver_name=entry.driver.full_name, logo_path=logo_path, status="OnTrack", time=format_ms_to_time(latest_split.elapsed_duration_ms), last_split_id=latest_split.split_point_id))
             except Exception as e:
                 logger.warning(f"Could not fetch split times for stage {stage_id}: {e}")
 
             on_track_drivers.sort(key=lambda x: x.last_split_id if x.last_split_id else 0, reverse=True)
             
             all_standings = finished_drivers + on_track_drivers
+            if not all_standings:
+                logger.warning(f"No standings could be generated for WRC stage {stage_id}")
+                return None
+
             is_live = len(on_track_drivers) > 0
 
             return StageStandings(
@@ -238,5 +226,5 @@ async def fetch_wrc_stage_times(event_id: int, stage_id: int) -> Optional[StageS
             )
 
     except Exception as e:
-        logger.error(f"Error fetching times: {e}")
+        logger.error(f"Error fetching WRC stage times for stage {stage_id}: {e}")
         return None

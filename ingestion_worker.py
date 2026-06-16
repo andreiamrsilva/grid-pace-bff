@@ -33,6 +33,12 @@ async def find_live_stages(category: str):
         
         active_events = [e for e in all_events if e.category.lower() == category and e.start_date <= today <= e.finish_date]
         
+        if not active_events:
+            logger.info(f"No active {category.upper()} events found.")
+            return []
+
+        logger.info(f"Found active {category.upper()} events: {[e.name for e in active_events]}")
+
         live_stages = []
         for event in active_events:
             if category == 'wrc':
@@ -41,6 +47,9 @@ async def find_live_stages(category: str):
             elif category == 'f1':
                 sessions = await get_f1_event_sessions(event.id)
                 live_stages.extend([(event.id, s.id) for s in sessions if s.is_live])
+        
+        if live_stages:
+            logger.info(f"Found live stages for {category.upper()}: {live_stages}")
         
         return live_stages
     except Exception as e:
@@ -57,9 +66,12 @@ async def wrc_ingestion_task():
     for event_id, stage_id in live_stages:
         try:
             stage_standings = await fetch_wrc_stage_times(event_id, stage_id)
-            if stage_standings:
+            if stage_standings and stage_standings.standings:
                 redis_key = f"live:times:wrc:{stage_id}"
                 await set_cached_data(redis_key, stage_standings.model_dump(mode='json'), expiration_seconds=60)
+                logger.info(f"Successfully cached live times for WRC Stage {stage_id}")
+            elif stage_standings:
+                logger.info(f"WRC Stage {stage_id} is live but has no standings data yet.")
         except Exception as e:
             logger.error(f"Error during WRC ingestion for Stage {stage_id}: {e}")
 
@@ -67,7 +79,6 @@ async def get_f1_live_timing(client: httpx.AsyncClient, session_key: int, meetin
     """
     Fetches the live timing for an F1 session.
     """
-    # This logic can be expanded to get more details like gaps from the /intervals endpoint
     position_response = await client.get(f"{OPENF1_API_URL}/position?session_key={session_key}")
     position_response.raise_for_status()
     position_data = position_response.json()
@@ -110,9 +121,12 @@ async def f1_ingestion_task():
         for meeting_key, session_key in live_sessions:
             try:
                 standings = await get_f1_live_timing(client, session_key, meeting_key)
-                if standings:
+                if standings and standings.standings:
                     redis_key = f"live:times:f1:{session_key}"
                     await set_cached_data(redis_key, standings.model_dump(mode='json'), expiration_seconds=60)
+                    logger.info(f"Successfully cached live times for F1 Session {session_key}.")
+                elif standings:
+                    logger.info(f"F1 Session {session_key} is live but has no standings data yet.")
             except Exception as e:
                 logger.error(f"Error during F1 ingestion for Session {session_key}: {e}")
 
