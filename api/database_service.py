@@ -8,6 +8,7 @@ import logging
 from models.calendar import CalendarEvent
 from models.event import Stage
 from models.stage_times import StageStandings, DriverTime
+from models.overall_standings import OverallStandings, OverallDriverStanding
 from api.openf1_client import get_openf1_calendar_events
 
 DATABASE_URL = "sqlite:///./historic_events.db"
@@ -58,7 +59,19 @@ stage_times_table = Table(
     Column('time', String, nullable=True),
     Column('diff_to_first', String, nullable=True),
     Column('position', Integer, nullable=True),
-    Column('last_split_id', Integer, nullable=True), # Added missing column
+    Column('last_split_id', Integer, nullable=True),
+)
+
+overall_standings_table = Table(
+    'overall_standings', metadata,
+    Column('id', Integer, primary_key=True),
+    Column('event_id', Integer, index=True),
+    Column('position', Integer, nullable=True),
+    Column('driver_name', String),
+    Column('logo_path', String, nullable=True),
+    Column('time', String, nullable=True),
+    Column('diff_to_first', String, nullable=True),
+    Column('points', Integer, nullable=True),
 )
 
 logger = logging.getLogger(__name__)
@@ -160,6 +173,28 @@ def get_stage_times_from_db(stage_id: int, event_id: int, category: str) -> Opti
         if result:
             standings = [DriverTime(**row._asdict()) for row in result]
             return StageStandings(stage_id=stage_id, event_id=event_id, category=category, is_live=False, standings=standings)
+        return None
+    finally:
+        db.close()
+
+def save_overall_standings_to_db(event_id: int, standings: OverallStandings):
+    db = SessionLocal()
+    try:
+        db.execute(overall_standings_table.delete().where(overall_standings_table.c.event_id == event_id))
+        for standing in standings.standings:
+            stmt = overall_standings_table.insert().values(event_id=event_id, **standing.model_dump())
+            db.execute(stmt)
+        db.commit()
+    finally:
+        db.close()
+
+def get_overall_standings_from_db(event_id: int, category: str) -> Optional[OverallStandings]:
+    db = SessionLocal()
+    try:
+        result = db.query(overall_standings_table).filter_by(event_id=event_id).order_by(overall_standings_table.c.position).all()
+        if result:
+            standings = [OverallDriverStanding(**row._asdict()) for row in result]
+            return OverallStandings(event_id=event_id, category=category, standings=standings)
         return None
     finally:
         db.close()

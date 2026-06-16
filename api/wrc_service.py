@@ -7,6 +7,7 @@ from openwrc.clients.wrc_api_client import WrcApiClient
 from models.event import Stage
 from models.stage_times import StageStandings, DriverTime
 from models.calendar import CalendarEvent
+from models.overall_standings import OverallStandings, OverallDriverStanding
 from api.utils import get_logo_path
 
 logger = logging.getLogger(__name__)
@@ -227,4 +228,48 @@ async def fetch_wrc_stage_times(event_id: int, stage_id: int) -> Optional[StageS
 
     except Exception as e:
         logger.error(f"Error fetching WRC stage times for stage {stage_id}: {e}")
+        return None
+
+async def fetch_wrc_overall_standings(event_id: int) -> Optional[OverallStandings]:
+    """Fetches the overall standings for a given WRC event."""
+    try:
+        async with WrcApiClient() as client:
+            event_metadata = await client.get_event_metadata(event_id)
+            if not event_metadata or not event_metadata.rallies:
+                return None
+            rally_id = event_metadata.rallies[0].rally_id
+
+            entries_dict = {}
+            entries = await client.get_rally_entries(event_id, rally_id)
+            for entry in entries:
+                entries_dict[entry.entry_id] = entry
+
+            results = await client.get_rally_results(event_id, rally_id)
+            if not results:
+                return None
+
+            results.sort(key=lambda x: x.position if x.position else 999)
+            
+            overall_standings = []
+            for result in results:
+                if result.entry_id in entries_dict:
+                    entry = entries_dict[result.entry_id]
+                    logo_path = get_logo_path(entry.manufacturer.name) if hasattr(entry, 'manufacturer') and entry.manufacturer else None
+                    
+                    overall_standings.append(OverallDriverStanding(
+                        position=result.position,
+                        driver_name=entry.driver.full_name,
+                        logo_path=logo_path,
+                        time=format_ms_to_time(result.total_time_ms) if hasattr(result, 'total_time_ms') else None,
+                        diff_to_first=format_ms_to_time(result.diff_first_ms) if hasattr(result, 'diff_first_ms') else None,
+                        points=None # WRC API might not have this easily available in this endpoint
+                    ))
+
+            return OverallStandings(
+                event_id=event_id,
+                category="WRC",
+                standings=overall_standings
+            )
+    except Exception as e:
+        logger.error(f"Error fetching WRC overall standings for event {event_id}: {e}")
         return None
