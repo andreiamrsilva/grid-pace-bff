@@ -21,7 +21,6 @@ async def _get_driver_standings_for_category(category: str, year: int) -> Option
     
     cached_standings = await get_cached_data(redis_key)
     if cached_standings:
-        logger.debug(f"Cache HIT for driver standings: {redis_key}")
         return ChampionshipStandings(**cached_standings)
 
     logger.debug(f"Cache MISS for driver standings: {redis_key}. Fetching from source.")
@@ -43,7 +42,6 @@ async def _get_team_standings_for_category(category: str, year: int) -> Optional
     
     cached_standings = await get_cached_data(redis_key)
     if cached_standings:
-        logger.debug(f"Cache HIT for team standings: {redis_key}")
         return ChampionshipTeamStandings(**cached_standings)
 
     logger.debug(f"Cache MISS for team standings: {redis_key}. Fetching from source.")
