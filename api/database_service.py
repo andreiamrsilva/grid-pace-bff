@@ -9,6 +9,7 @@ from models.calendar import CalendarEvent
 from models.event import Stage
 from models.stage_times import StageStandings, DriverTime
 from models.overall_standings import OverallStandings, OverallDriverStanding
+from models.championship_standings import ChampionshipStandings, ChampionshipDriverStanding
 from api.openf1_client import get_openf1_calendar_events
 
 DATABASE_URL = "sqlite:///./historic_events.db"
@@ -74,6 +75,19 @@ overall_standings_table = Table(
     Column('diff_to_first', String, nullable=True),
     Column('points', Integer, nullable=True),
     Column('position_change', Integer, nullable=True),
+)
+
+championship_standings_table = Table(
+    'championship_standings', metadata,
+    Column('id', Integer, primary_key=True),
+    Column('year', Integer, index=True),
+    Column('category', String, index=True),
+    Column('position', Integer, nullable=True),
+    Column('driver_name', String),
+    Column('team_name', String, nullable=True),
+    Column('logo_path', String, nullable=True),
+    Column('points', Float, nullable=True),
+    Column('wins', Integer, nullable=True),
 )
 
 logger = logging.getLogger(__name__)
@@ -197,6 +211,35 @@ def get_overall_standings_from_db(event_id: int, category: str) -> Optional[Over
         if result:
             standings = [OverallDriverStanding(**row._asdict()) for row in result]
             return OverallStandings(event_id=event_id, category=category, standings=standings)
+        return None
+    finally:
+        db.close()
+
+def save_championship_standings_to_db(standings: ChampionshipStandings):
+    db = SessionLocal()
+    try:
+        db.execute(championship_standings_table.delete().where(
+            championship_standings_table.c.year == standings.year,
+            championship_standings_table.c.category == standings.category
+        ))
+        for standing in standings.standings:
+            stmt = championship_standings_table.insert().values(
+                year=standings.year,
+                category=standings.category,
+                **standing.model_dump()
+            )
+            db.execute(stmt)
+        db.commit()
+    finally:
+        db.close()
+
+def get_championship_standings_from_db(year: int, category: str) -> Optional[ChampionshipStandings]:
+    db = SessionLocal()
+    try:
+        result = db.query(championship_standings_table).filter_by(year=year, category=category).order_by(championship_standings_table.c.position).all()
+        if result:
+            standings = [ChampionshipDriverStanding(**row._asdict()) for row in result]
+            return ChampionshipStandings(year=year, category=category, standings=standings)
         return None
     finally:
         db.close()

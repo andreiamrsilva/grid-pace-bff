@@ -4,11 +4,14 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a62e5b2f-3708-4f63-8803-b0b454e614aa" name="Changes" comment="Added event overall route">
+    <list default="true" id="a62e5b2f-3708-4f63-8803-b0b454e614aa" name="Changes" comment="Added position_change property.">
+      <change afterPath="$PROJECT_DIR$/api/routers/championship.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/models/championship_standings.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/api/database_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/database_service.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ingestion_worker.py" beforeDir="false" afterPath="$PROJECT_DIR$/ingestion_worker.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/stage_times.py" beforeDir="false" afterPath="$PROJECT_DIR$/models/stage_times.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/openf1_client.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/openf1_client.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/wrc_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/wrc_service.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -81,7 +84,7 @@
       <updated>1780908569186</updated>
       <workItem from="1780908570142" duration="1480000" />
       <workItem from="1781016450033" duration="40867000" />
-      <workItem from="1781447061334" duration="48254000" />
+      <workItem from="1781447061334" duration="54194000" />
     </task>
     <task id="LOCAL-00001" summary="GridPace server to get wrc information">
       <option name="closed" value="true" />
@@ -235,7 +238,15 @@
       <option name="project" value="LOCAL" />
       <updated>1781645882543</updated>
     </task>
-    <option name="localTasksCounter" value="20" />
+    <task id="LOCAL-00020" summary="Added position_change property.">
+      <option name="closed" value="true" />
+      <created>1781647941550</created>
+      <option name="number" value="00020" />
+      <option name="presentableId" value="LOCAL-00020" />
+      <option name="project" value="LOCAL" />
+      <updated>1781647941550</updated>
+    </task>
+    <option name="localTasksCounter" value="21" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -260,6 +271,7 @@
     <MESSAGE value="Fixed stage times requests." />
     <MESSAGE value="Removed the db file" />
     <MESSAGE value="Added event overall route" />
-    <option name="LAST_COMMIT_MESSAGE" value="Added event overall route" />
+    <MESSAGE value="Added position_change property." />
+    <option name="LAST_COMMIT_MESSAGE" value="Added position_change property." />
   </component>
 </project>
