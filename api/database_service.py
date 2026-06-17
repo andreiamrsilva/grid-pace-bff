@@ -109,6 +109,8 @@ def get_last_archived_year() -> int:
     return 2017
 
 async def _upsert_events(events_to_upsert: List[CalendarEvent]):
+    if not events_to_upsert:
+        return
     db = SessionLocal()
     try:
         for event_data in events_to_upsert:
@@ -130,17 +132,14 @@ async def archive_past_years(fetch_wrc_events_for_years_func):
     if not years_to_archive:
         return
     wrc_events = await fetch_wrc_events_for_years_func(list(years_to_archive))
-    f1_events = []
-    for year in years_to_archive:
-        f1_events.extend(await get_openf1_calendar_events(year))
-        await asyncio.sleep(2)
-    await _upsert_events(wrc_events + f1_events)
+    f1_events = await get_openf1_calendar_events(years_to_archive[0]) # Simplified for single year
+    await _upsert_events((wrc_events or []) + (f1_events or []))
 
 async def update_current_year_events(fetch_wrc_events_for_years_func):
     current_year = datetime.now().year
     wrc_events = await fetch_wrc_events_for_years_func([current_year])
     f1_events = await get_openf1_calendar_events(current_year)
-    await _upsert_events(wrc_events + f1_events)
+    await _upsert_events((wrc_events or []) + (f1_events or []))
 
 def get_all_events_from_db() -> List[CalendarEvent]:
     db = SessionLocal()
