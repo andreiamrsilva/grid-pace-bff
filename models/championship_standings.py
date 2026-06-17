@@ -15,3 +15,17 @@ class ChampionshipStandings(BaseModel):
     year: int
     category: str
     standings: List[ChampionshipDriverStanding]
+
+class ChampionshipTeamStanding(BaseModel):
+    """Represents a single team's position in the overall championship standings."""
+    position: Optional[int] = None
+    team_name: str
+    logo_path: Optional[str] = None
+    points: Optional[float] = None
+    wins: Optional[int] = None
+
+class ChampionshipTeamStandings(BaseModel):
+    """Represents the team championship standings for a given year and category."""
+    year: int
+    category: str
+    standings: List[ChampionshipTeamStanding]

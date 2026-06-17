@@ -8,7 +8,7 @@ from models.calendar import CalendarEvent
 from models.event import Stage
 from models.stage_times import StageStandings, DriverTime
 from models.overall_standings import OverallStandings, OverallDriverStanding
-from models.championship_standings import ChampionshipStandings, ChampionshipDriverStanding
+from models.championship_standings import ChampionshipStandings, ChampionshipDriverStanding, ChampionshipTeamStandings, ChampionshipTeamStanding
 from api.utils import get_logo_path, get_country_iso_code
 
 OPENF1_API_URL = "https://api.openf1.org/v1"
@@ -151,7 +151,6 @@ async def get_openf1_calendar_events(year: int) -> List[CalendarEvent]:
                 
                 race_session = next((s for s in meeting_sessions if s['session_name'] == 'Race'), None)
                 
-                # Determine Status
                 today = date.today()
                 event_status = "Future event"
                 if today > finish_date:
@@ -306,7 +305,7 @@ async def fetch_f1_overall_standings(meeting_key: int) -> Optional[OverallStandi
                 logo_path=s.logo_path,
                 time=s.time,
                 diff_to_first=s.diff_to_first,
-                points=None # Points not available
+                points=None
             ) for s in final_standings.standings]
             
             return OverallStandings(event_id=meeting_key, category="F1", standings=overall_standings)
@@ -353,4 +352,43 @@ async def fetch_f1_championship_standings(year: int) -> Optional[ChampionshipSta
             )
     except Exception as e:
         logger.error(f"Error fetching F1 championship standings for year {year}: {e}")
+        return None
+
+async def fetch_f1_team_championship_standings(year: int) -> Optional[ChampionshipTeamStandings]:
+    """
+    Fetches the F1 constructor championship standings for a given year from the Ergast API.
+    """
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(f"{ERGAST_API_URL}/{year}/constructorStandings.json")
+            response.raise_for_status()
+            data = response.json()
+            
+            standings_data = data.get('MRData', {}).get('StandingsTable', {}).get('StandingsLists', [])
+            if not standings_data:
+                return None
+            
+            constructor_standings = standings_data[0].get('ConstructorStandings', [])
+            
+            standings_list = []
+            for item in constructor_standings:
+                constructor = item.get('Constructor', {})
+                
+                standings_list.append(
+                    ChampionshipTeamStanding(
+                        position=int(item.get('position')),
+                        team_name=constructor.get('name'),
+                        logo_path=get_logo_path(constructor.get('name')),
+                        points=float(item.get('points')),
+                        wins=int(item.get('wins'))
+                    )
+                )
+            
+            return ChampionshipTeamStandings(
+                year=year,
+                category="F1",
+                standings=standings_list
+            )
+    except Exception as e:
+        logger.error(f"Error fetching F1 team championship standings for year {year}: {e}")
         return None

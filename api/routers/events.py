@@ -31,13 +31,24 @@ router = APIRouter(
 @router.get("/{category}/{event_id}/stages", response_model=List[Stage])
 async def get_event_details(category: str, event_id: int):
     """
-    Get all stages/sessions for a given event, using a database-first caching strategy.
+    Get all stages/sessions for a given event, using a multi-layer caching strategy.
     """
+    redis_key = f"event:{category.lower()}:{event_id}:stages"
+    
+    # 1. Try Redis first (for active events populated by the worker)
+    cached_stages = await get_cached_data(redis_key)
+    if cached_stages:
+        logger.debug(f"Redis HIT for event stages: {redis_key}")
+        return [Stage(**stage_data) for stage_data in cached_stages]
+
+    # 2. Try DB cache (for completed, historic events)
     db_stages = get_stages_from_db(event_id)
     if db_stages:
+        logger.debug(f"DB HIT for event stages: {event_id}")
         return db_stages
 
-    logger.debug(f"DB MISS for event stages: {event_id}. Fetching from source.")
+    # 3. Cache MISS: Fetch from the source
+    logger.debug(f"Cache/DB MISS for event stages: {event_id}. Fetching from source.")
     
     stages_to_cache = []
     is_past_event = False
@@ -54,6 +65,7 @@ async def get_event_details(category: str, event_id: int):
     else:
         raise HTTPException(status_code=404, detail="Category not supported.")
 
+    # 4. If the event is over, store in the permanent DB cache
     if stages_to_cache and is_past_event:
         save_stages_to_db(event_id, stages_to_cache)
 
@@ -95,20 +107,15 @@ async def get_overall_standings(category: str, event_id: int):
     Get the overall standings for an event.
     Prioritizes Redis for live data, then falls back to DB for completed data.
     """
-    # 1. Check Redis for LIVE overall standings (populated by worker)
     redis_key = f"overall:{category.lower()}:{event_id}"
     cached_live_data = await get_cached_data(redis_key)
     if cached_live_data:
-        logger.debug(f"Cache HIT for LIVE overall standings: {redis_key}")
         return OverallStandings(**cached_live_data)
 
-    # 2. Check DB for COMPLETED data
     db_standings = get_overall_standings_from_db(event_id, category.upper())
     if db_standings:
-        logger.debug(f"DB HIT for final overall standings: {event_id}")
         return db_standings
 
-    # 3. Cache MISS: Fetch from source
     logger.debug(f"Cache/DB MISS for overall standings: {event_id}. Fetching from source.")
     
     standings_to_cache = None

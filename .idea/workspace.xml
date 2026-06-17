@@ -4,14 +4,12 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a62e5b2f-3708-4f63-8803-b0b454e614aa" name="Changes" comment="Added position_change property.">
-      <change afterPath="$PROJECT_DIR$/api/routers/championship.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/models/championship_standings.py" afterDir="false" />
+    <list default="true" id="a62e5b2f-3708-4f63-8803-b0b454e614aa" name="Changes" comment="Fixed crash when no data from f1 or wrc.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/database_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/database_service.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/api/openf1_client.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/openf1_client.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/routers/championship.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/routers/championship.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/api/wrc_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/wrc_service.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/championship_standings.py" beforeDir="false" afterPath="$PROJECT_DIR$/models/championship_standings.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -84,7 +82,7 @@
       <updated>1780908569186</updated>
       <workItem from="1780908570142" duration="1480000" />
       <workItem from="1781016450033" duration="40867000" />
-      <workItem from="1781447061334" duration="54194000" />
+      <workItem from="1781447061334" duration="56716000" />
     </task>
     <task id="LOCAL-00001" summary="GridPace server to get wrc information">
       <option name="closed" value="true" />
@@ -246,7 +244,23 @@
       <option name="project" value="LOCAL" />
       <updated>1781647941550</updated>
     </task>
-    <option name="localTasksCounter" value="21" />
+    <task id="LOCAL-00021" summary="Added championship.">
+      <option name="closed" value="true" />
+      <created>1781710872312</created>
+      <option name="number" value="00021" />
+      <option name="presentableId" value="LOCAL-00021" />
+      <option name="project" value="LOCAL" />
+      <updated>1781710872312</updated>
+    </task>
+    <task id="LOCAL-00022" summary="Fixed crash when no data from f1 or wrc.">
+      <option name="closed" value="true" />
+      <created>1781711264711</created>
+      <option name="number" value="00022" />
+      <option name="presentableId" value="LOCAL-00022" />
+      <option name="project" value="LOCAL" />
+      <updated>1781711264711</updated>
+    </task>
+    <option name="localTasksCounter" value="23" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -272,6 +286,8 @@
     <MESSAGE value="Removed the db file" />
     <MESSAGE value="Added event overall route" />
     <MESSAGE value="Added position_change property." />
-    <option name="LAST_COMMIT_MESSAGE" value="Added position_change property." />
+    <MESSAGE value="Added championship." />
+    <MESSAGE value="Fixed crash when no data from f1 or wrc." />
+    <option name="LAST_COMMIT_MESSAGE" value="Fixed crash when no data from f1 or wrc." />
   </component>
 </project>
