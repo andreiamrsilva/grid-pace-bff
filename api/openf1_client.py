@@ -12,7 +12,7 @@ from models.championship_standings import ChampionshipStandings, ChampionshipDri
 from api.utils import get_logo_path, get_country_iso_code
 
 OPENF1_API_URL = "https://api.openf1.org/v1"
-ERGAST_API_URL = "https://ergast.com/api/f1"
+ERGAST_API_URL = "https://api.jolpi.ca/ergast/f1" # Updated to the new working mirror
 logger = logging.getLogger(__name__)
 
 def format_seconds_to_time(seconds: float) -> str:
@@ -151,6 +151,7 @@ async def get_openf1_calendar_events(year: int) -> List[CalendarEvent]:
                 
                 race_session = next((s for s in meeting_sessions if s['session_name'] == 'Race'), None)
                 
+                # Determine Status
                 today = date.today()
                 event_status = "Future event"
                 if today > finish_date:
@@ -230,53 +231,90 @@ async def get_f1_event_sessions(meeting_key: int) -> List[Stage]:
     except Exception:
         return []
 
+async def fetch_driver_session_results(client: httpx.AsyncClient, session_key: int, driver_info: dict, session_name: str) -> Optional[DriverTime]:
+    """Helper to fetch the results of a single driver for a session."""
+    try:
+        driver_number = driver_info['driver_number']
+        
+        # 1. Get position
+        pos_res = await client.get(f"{OPENF1_API_URL}/position?session_key={session_key}&driver_number={driver_number}")
+        pos_data = pos_res.json()
+        
+        final_pos = None
+        if pos_data:
+            pos_data.sort(key=lambda x: x['date'], reverse=True)
+            final_pos = pos_data[0]['position']
+        
+        # 2. Get time from laps
+        laps_res = await client.get(f"{OPENF1_API_URL}/laps?session_key={session_key}&driver_number={driver_number}")
+        laps_data = laps_res.json()
+        
+        driver_time_str = None
+        if laps_data:
+            valid_laps = [lap for lap in laps_data if lap.get('lap_duration') is not None]
+            if valid_laps:
+                if session_name in ["Race", "Sprint"]:
+                    # For races, sum the lap durations for an approximate total time
+                    total_time_seconds = sum(lap['lap_duration'] for lap in valid_laps)
+                    driver_time_str = format_seconds_to_time(total_time_seconds)
+                else:
+                    # For practice/quali, get the fastest lap
+                    fastest_lap = min(valid_laps, key=lambda x: x['lap_duration'])
+                    driver_time_str = format_seconds_to_time(fastest_lap['lap_duration'])
+        
+        return DriverTime(
+            entry_id=driver_number,
+            driver_name=driver_info.get('full_name', f"Driver {driver_number}"),
+            logo_path=get_logo_path(driver_info.get('team_name')),
+            status="Finished",
+            time=driver_time_str,
+            position=final_pos
+        )
+    except Exception as e:
+        logger.debug(f"Could not fetch final position for driver {driver_info.get('driver_number')} in session {session_key}: {e}")
+        return None
+
 async def fetch_f1_session_times(session_key: int, meeting_key: int, session_name: str = "Unknown") -> Optional[StageStandings]:
     """
     Fetches the final classification for a completed F1 session.
+    Uses concurrent requests for each driver to avoid massive payload timeouts.
     """
+    logger.info(f"Fetching final standings for F1 session {session_key}...")
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
             drivers_response = await client.get(f"{OPENF1_API_URL}/drivers?session_key={session_key}")
             drivers_response.raise_for_status()
-            drivers_data = {d['driver_number']: d for d in drivers_response.json()}
+            drivers_data = drivers_response.json()
             
             if not drivers_data:
+                logger.warning(f"No driver data found for session {session_key}")
                 return None
-
-            standings = []
+                
+            logger.info(f"Found {len(drivers_data)} drivers. Fetching final positions concurrently...")
+            tasks = [fetch_driver_session_results(client, session_key, d, session_name) for d in drivers_data]
+            results = await asyncio.gather(*tasks, return_exceptions=True)
             
-            if session_name in ["Race", "Sprint"]:
-                pos_res = await client.get(f"{OPENF1_API_URL}/position?session_key={session_key}")
-                pos_data = pos_res.json()
-                if pos_data and isinstance(pos_data, list):
-                    latest_positions = {p['driver_number']: p for p in sorted(pos_data, key=lambda x: x['date'])}
-                    for drv_num, driver_info in drivers_data.items():
-                        if drv_num in latest_positions:
-                            final_pos = latest_positions[drv_num]['position']
-                            standings.append(DriverTime(entry_id=drv_num, driver_name=driver_info.get('full_name', f"Driver {drv_num}"), logo_path=get_logo_path(driver_info.get('team_name')), status="Finished", time=None, position=final_pos))
-            else:
-                laps_res = await client.get(f"{OPENF1_API_URL}/laps?session_key={session_key}")
-                laps_data = laps_res.json()
-                if laps_data and isinstance(laps_data, list):
-                    best_laps = {}
-                    for lap in laps_data:
-                        drv_num = lap.get('driver_number')
-                        duration = lap.get('lap_duration')
-                        if drv_num and duration:
-                            if drv_num not in best_laps or duration < best_laps[drv_num]:
-                                best_laps[drv_num] = duration
-                    
-                    sorted_drivers = sorted(best_laps.items(), key=lambda x: x[1])
-                    for pos, (drv_num, duration) in enumerate(sorted_drivers, start=1):
-                        driver_info = drivers_data.get(drv_num, {})
-                        standings.append(DriverTime(entry_id=drv_num, driver_name=driver_info.get('full_name', f"Driver {drv_num}"), logo_path=get_logo_path(driver_info.get('team_name')), status="Finished", time=format_seconds_to_time(duration), position=pos))
+            standings = []
+            for res in results:
+                if isinstance(res, DriverTime):
+                    standings.append(res)
+                elif isinstance(res, Exception):
+                    logger.warning(f"Exception during driver position fetch: {res}")
+
+            if not standings:
+                logger.warning(f"Failed to extract any valid standings for session {session_key}")
+                return None
 
             standings.sort(key=lambda x: x.position or 999)
             
-            if not standings:
-                return None
-
-            return StageStandings(stage_id=session_key, event_id=meeting_key, category="F1", is_live=False, standings=standings)
+            logger.info(f"Successfully fetched final standings for session {session_key}.")
+            return StageStandings(
+                stage_id=session_key,
+                event_id=meeting_key,
+                category="F1",
+                is_live=False,
+                standings=standings
+            )
     except Exception as e:
         logger.error(f"Error fetching final times for F1 session {session_key}: {e}")
         return None
@@ -305,7 +343,7 @@ async def fetch_f1_overall_standings(meeting_key: int) -> Optional[OverallStandi
                 logo_path=s.logo_path,
                 time=s.time,
                 diff_to_first=s.diff_to_first,
-                points=None
+                points=None # Points not available
             ) for s in final_standings.standings]
             
             return OverallStandings(event_id=meeting_key, category="F1", standings=overall_standings)
@@ -318,7 +356,7 @@ async def fetch_f1_championship_standings(year: int) -> Optional[ChampionshipSta
     Fetches the F1 driver championship standings for a given year from the Ergast API.
     """
     try:
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=15.0) as client:
             response = await client.get(f"{ERGAST_API_URL}/{year}/driverStandings.json")
             response.raise_for_status()
             data = response.json()
@@ -359,7 +397,7 @@ async def fetch_f1_team_championship_standings(year: int) -> Optional[Championsh
     Fetches the F1 constructor championship standings for a given year from the Ergast API.
     """
     try:
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=15.0) as client:
             response = await client.get(f"{ERGAST_API_URL}/{year}/constructorStandings.json")
             response.raise_for_status()
             data = response.json()

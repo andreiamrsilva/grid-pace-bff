@@ -312,7 +312,7 @@ async def fetch_wrc_championship_standings(year: int) -> Optional[ChampionshipSt
                         ChampionshipDriverStanding(
                             position=item.get('overallPosition'),
                             driver_name=driver_name,
-                            team_name=team_name,
+                            team_name=team_name.title() if team_name else None,
                             logo_path=get_logo_path(team_name),
                             points=item.get('overallPoints'),
                             wins=None
@@ -358,7 +358,7 @@ async def fetch_wrc_team_championship_standings(year: int) -> Optional[Champions
                     standings_list.append(
                         ChampionshipTeamStanding(
                             position=item.get('overallPosition'),
-                            team_name=team_name,
+                            team_name=team_name.title() if team_name else None,
                             logo_path=get_logo_path(team_name),
                             points=item.get('overallPoints'),
                             wins=None

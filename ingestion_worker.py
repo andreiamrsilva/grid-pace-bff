@@ -37,9 +37,9 @@ async def find_live_stages(category: str):
     try:
         all_events = get_all_events_from_db()
         today = date.today()
-        
+
         active_events = [e for e in all_events if e.category.lower() == category and e.start_date <= today <= e.finish_date]
-        
+
         if not active_events:
             return []
 
@@ -51,7 +51,7 @@ async def find_live_stages(category: str):
             elif category == 'f1':
                 sessions = await get_f1_event_sessions(event.id)
                 live_stages.extend([(event.id, s.id) for s in sessions if s.is_live])
-        
+
         return live_stages
     except Exception as e:
         logger.error(f"Error finding live stages for {category}: {e}")
@@ -60,7 +60,7 @@ async def find_live_stages(category: str):
 async def wrc_ingestion_task():
     """The core task for ingesting WRC live timing data."""
     live_stages = await find_live_stages('wrc')
-    
+
     if not live_stages:
         return
 
@@ -80,7 +80,7 @@ async def get_f1_live_timing(client: httpx.AsyncClient, session_key: int, meetin
 async def f1_ingestion_task():
     """The core task for ingesting F1 live timing data."""
     live_sessions = await find_live_stages('f1')
-    
+
     if not live_sessions:
         return
 
@@ -104,7 +104,7 @@ async def championship_standings_ingestion_task():
         logger.info("Running championship standings cache update...")
         try:
             current_year = datetime.now().year
-            
+
             # --- F1 ---
             f1_drivers = await fetch_f1_championship_standings(current_year)
             if f1_drivers:
@@ -116,7 +116,7 @@ async def championship_standings_ingestion_task():
 
         except Exception as e:
             logger.error(f"Error updating championship standings cache: {e}")
-            
+
         await asyncio.sleep(CHAMPIONSHIP_POLL_INTERVAL_SECONDS)
 
 async def main_loop():
@@ -128,23 +128,29 @@ async def main_loop():
         return
 
     # Start background tasks
-    asyncio.create_task(overall_standings_ingestion_task())
-    asyncio.create_task(championship_standings_ingestion_task())
+    overall_task = asyncio.create_task(overall_standings_ingestion_task())
+    championship_task = asyncio.create_task(championship_standings_ingestion_task())
 
-    while True:
-        try:
-            await asyncio.gather(
-                wrc_ingestion_task(),
-                f1_ingestion_task()
-            )
-        except Exception as e:
-            logger.error(f"An error occurred in the main loop: {e}")
-
-        await asyncio.sleep(POLL_INTERVAL_SECONDS)
+    try:
+        while True:
+            try:
+                await asyncio.gather(
+                    wrc_ingestion_task(),
+                    f1_ingestion_task()
+                )
+            except Exception as e:
+                logger.error(f"An error occurred in the main ingestion loop: {e}")
+                
+            await asyncio.sleep(POLL_INTERVAL_SECONDS)
+    finally:
+        logger.info("--- Ingestion Worker Shutting Down ---")
+        overall_task.cancel()
+        championship_task.cancel()
+        await asyncio.gather(overall_task, championship_task, return_exceptions=True)
+        await close_redis_connection()
 
 if __name__ == "__main__":
     try:
         asyncio.run(main_loop())
     except KeyboardInterrupt:
-        logger.info("--- Ingestion Worker Shutting Down ---")
-        asyncio.run(close_redis_connection())
+        logger.info("Keyboard interrupt received, stopping worker.")
