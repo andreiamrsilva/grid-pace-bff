@@ -4,15 +4,9 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a62e5b2f-3708-4f63-8803-b0b454e614aa" name="Changes" comment="Added missing files.">
+    <list default="true" id="a62e5b2f-3708-4f63-8803-b0b454e614aa" name="Changes" comment="Added last updated information.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/routers/calendar.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/routers/calendar.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/routers/events.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/routers/events.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/config.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/database_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/database_service.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ingestion/service.py" beforeDir="false" afterPath="$PROJECT_DIR$/ingestion/service.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ingestion/openf1_client.py" beforeDir="false" afterPath="$PROJECT_DIR$/ingestion/openf1_client.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -86,7 +80,7 @@
       <workItem from="1780908570142" duration="1480000" />
       <workItem from="1781016450033" duration="40867000" />
       <workItem from="1781447061334" duration="65840000" />
-      <workItem from="1781739250707" duration="14281000" />
+      <workItem from="1781739250707" duration="15227000" />
     </task>
     <task id="LOCAL-00001" summary="GridPace server to get wrc information">
       <option name="closed" value="true" />
@@ -344,15 +338,29 @@
       <option name="project" value="LOCAL" />
       <updated>1781875465200</updated>
     </task>
-    <option name="localTasksCounter" value="33" />
+    <task id="LOCAL-00033" summary="Improved the db to use async.">
+      <option name="closed" value="true" />
+      <created>1781876299838</created>
+      <option name="number" value="00033" />
+      <option name="presentableId" value="LOCAL-00033" />
+      <option name="project" value="LOCAL" />
+      <updated>1781876299838</updated>
+    </task>
+    <task id="LOCAL-00034" summary="Added last updated information.">
+      <option name="closed" value="true" />
+      <created>1781882982617</created>
+      <option name="number" value="00034" />
+      <option name="presentableId" value="LOCAL-00034" />
+      <option name="project" value="LOCAL" />
+      <updated>1781882982617</updated>
+    </task>
+    <option name="localTasksCounter" value="35" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="Update the calendar to only return WRC events." />
-    <MESSAGE value="Updated the logos files." />
     <MESSAGE value="Added missing logos." />
     <MESSAGE value="Updating cache logic." />
     <MESSAGE value="Create database to save the old events." />
@@ -376,6 +384,8 @@
     <MESSAGE value="Separate the BFF vs ingestion." />
     <MESSAGE value="Create abstract strategy class." />
     <MESSAGE value="Added missing files." />
-    <option name="LAST_COMMIT_MESSAGE" value="Added missing files." />
+    <MESSAGE value="Improved the db to use async." />
+    <MESSAGE value="Added last updated information." />
+    <option name="LAST_COMMIT_MESSAGE" value="Added last updated information." />
   </component>
 </project>

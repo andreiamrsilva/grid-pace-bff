@@ -10,6 +10,8 @@ from models.event import Stage
 from models.stage_times import StageStandings, DriverTime
 from models.overall_standings import OverallStandings, OverallDriverStanding
 from models.championship_standings import ChampionshipStandings, ChampionshipDriverStanding, ChampionshipTeamStandings, ChampionshipTeamStanding
+from models.timeline import TimelineEvent, TimelineEventSource, TimelineEventSeverity
+import uuid
 from core.utils import get_logo_path, get_country_iso_code
 from core.config import settings
 
@@ -446,6 +448,65 @@ async def fetch_f1_team_championship_standings(year: int) -> Optional[Championsh
         logger.error(f"Error fetching F1 team championship standings for year {year}: {e}")
         return None
 
+async def fetch_f1_race_control_messages(session_key: int) -> List[TimelineEvent]:
+    """
+    Fetches race control messages for an F1 session and maps them to our TimelineEvent model.
+    """
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            data = await fetch_json_with_retry(client, f"{OPENF1_API_URL}/race_control?session_key={session_key}")
+            
+            if not data:
+                return []
+                
+            events = []
+            for item in data:
+                flag = item.get('flag', '')
+                category = item.get('category', '')
+                msg = item.get('message', '')
+                
+                # Determine severity
+                severity = TimelineEventSeverity.INFO
+                if flag in ['YELLOW', 'DOUBLE YELLOW'] or category == 'SafetyCar':
+                    severity = TimelineEventSeverity.WARNING
+                elif flag == 'RED' or category == 'RedFlag':
+                    severity = TimelineEventSeverity.CRITICAL
+                elif 'STOPPED' in msg.upper() or 'CRASH' in msg.upper():
+                    severity = TimelineEventSeverity.CRITICAL
+
+                d_num = item.get('driver_number')
+                if d_num is not None:
+                    d_num = str(d_num)
+
+                # Ensure date is parsed and timezone aware
+                dt = datetime.fromisoformat(item['date'])
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=timezone.utc)
+
+                events.append(
+                    TimelineEvent(
+                        id=str(uuid.uuid4()),
+                        timestamp=dt,
+                        source=TimelineEventSource.F1_RACE_CONTROL,
+                        severity=severity,
+                        message=msg,
+                        driver_number=d_num,
+                        metadata={
+                            "flag": flag,
+                            "lap_number": item.get('lap_number'),
+                            "scope": item.get('scope'),
+                            "category": category
+                        }
+                    )
+                )
+            
+            # Sort by timestamp
+            events.sort(key=lambda x: x.timestamp)
+            return events
+            
+    except Exception as e:
+        logger.error(f"Error fetching F1 race control messages for session {session_key}: {e}")
+        return []
 
 from ingestion.strategy import SportIngestionStrategy, registry
 

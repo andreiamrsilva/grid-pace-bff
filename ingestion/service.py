@@ -50,7 +50,28 @@ async def run_live_timing_ingestion():
             strategy = registry.get_strategy(category)
             stage_standings = await strategy.fetch_live_timing(event_id, stage_id)
             if stage_standings:
+                from core.redis_service import get_cached_data
                 redis_key = f"live:times:{category.lower()}:{stage_id}"
+                
+                # --- AGENT 03 WRC INFERENCE ---
+                if category.lower() == "wrc":
+                    from ingestion.agent_analyst import WRCAnalystAgent
+                    from models.stage_times import StageStandings as SSModel
+                    
+                    old_data = await get_cached_data(redis_key)
+                    if old_data:
+                        try:
+                            old_standings = SSModel(**old_data)
+                            new_events = WRCAnalystAgent.analyze_wrc_timings(old_standings, stage_standings)
+                            
+                            if new_events:
+                                timeline_key = f"timeline:wrc:{stage_id}"
+                                existing_events_raw = await get_cached_data(timeline_key) or []
+                                existing_events_raw.extend([e.model_dump(mode='json') for e in new_events])
+                                await set_cached_data(timeline_key, existing_events_raw, expiration_seconds=86400) # Keep for 24h
+                        except Exception as e:
+                            logger.error(f"Error in Agent 03 WRC inference for Stage {stage_id}: {e}")
+                
                 await set_cached_data(redis_key, stage_standings.model_dump(mode='json'), expiration_seconds=60)
         except Exception as e:
             logger.error(f"Error during {category} live ingestion for Stage {stage_id}: {e}")
