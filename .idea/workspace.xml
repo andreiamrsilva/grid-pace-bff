@@ -4,11 +4,13 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a62e5b2f-3708-4f63-8803-b0b454e614aa" name="Changes" comment="Fixed wrc championship">
+    <list default="true" id="a62e5b2f-3708-4f63-8803-b0b454e614aa" name="Changes" comment="Fixed wrc championship team name">
+      <change afterPath="$PROJECT_DIR$/api/news_service.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/api/routers/news.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/models/news.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/openf1_client.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/openf1_client.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/wrc_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/wrc_service.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ingestion_worker.py" beforeDir="false" afterPath="$PROJECT_DIR$/ingestion_worker.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -82,7 +84,7 @@
       <workItem from="1780908570142" duration="1480000" />
       <workItem from="1781016450033" duration="40867000" />
       <workItem from="1781447061334" duration="65840000" />
-      <workItem from="1781739250707" duration="3172000" />
+      <workItem from="1781739250707" duration="8634000" />
     </task>
     <task id="LOCAL-00001" summary="GridPace server to get wrc information">
       <option name="closed" value="true" />
@@ -276,7 +278,15 @@
       <option name="project" value="LOCAL" />
       <updated>1781718217380</updated>
     </task>
-    <option name="localTasksCounter" value="25" />
+    <task id="LOCAL-00025" summary="Fixed wrc championship team name">
+      <option name="closed" value="true" />
+      <created>1781779955536</created>
+      <option name="number" value="00025" />
+      <option name="presentableId" value="LOCAL-00025" />
+      <option name="project" value="LOCAL" />
+      <updated>1781779955536</updated>
+    </task>
+    <option name="localTasksCounter" value="26" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -306,6 +316,7 @@
     <MESSAGE value="Fixed crash when no data from f1 or wrc." />
     <MESSAGE value="Added championship for teams." />
     <MESSAGE value="Fixed wrc championship" />
-    <option name="LAST_COMMIT_MESSAGE" value="Fixed wrc championship" />
+    <MESSAGE value="Fixed wrc championship team name" />
+    <option name="LAST_COMMIT_MESSAGE" value="Fixed wrc championship team name" />
   </component>
 </project>

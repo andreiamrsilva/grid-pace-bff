@@ -6,5 +6,6 @@ pydantic-extra-types
 pycountry
 sqlalchemy
 redis
+feedparser
 pytest
 pytest-asyncio

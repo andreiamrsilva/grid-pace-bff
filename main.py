@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 
-from api.routers import calendar, events, championship
+from api.routers import calendar, events, championship, news
 from api.database_service import init_db, archive_past_years, update_current_year_events
 from api.wrc_service import fetch_wrc_events_for_years
 
@@ -83,6 +83,7 @@ else:
 app.include_router(calendar.router)
 app.include_router(events.router)
 app.include_router(championship.router)
+app.include_router(news.router)
 
 @app.get("/")
 async def root():
