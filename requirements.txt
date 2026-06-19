@@ -10,3 +10,4 @@ feedparser
 pytest
 pytest-asyncio
 pydantic-settings
+tenacity
