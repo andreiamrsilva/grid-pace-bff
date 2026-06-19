@@ -383,3 +383,27 @@ async def fetch_wrc_team_championship_standings(year: int) -> Optional[Champions
     except Exception as e:
         logger.error(f"Error fetching WRC team championship standings for year {year} after retries: {e}")
         return None
+
+
+from ingestion.strategy import SportIngestionStrategy, registry
+
+class WrcIngestionStrategy(SportIngestionStrategy):
+    async def fetch_calendar_events(self, years: List[int]) -> List[CalendarEvent]:
+        return await fetch_wrc_events_for_years(years)
+
+    async def fetch_event_stages(self, event_id: int) -> List[Stage]:
+        return await fetch_wrc_event_stages(event_id)
+
+    async def fetch_live_timing(self, event_id: int, stage_id: int) -> Optional[StageStandings]:
+        return await fetch_wrc_stage_times(event_id, stage_id)
+
+    async def fetch_overall_standings(self, event_id: int) -> Optional[OverallStandings]:
+        return await fetch_wrc_overall_standings(event_id)
+
+    async def fetch_driver_championship(self, year: int) -> Optional[ChampionshipStandings]:
+        return await fetch_wrc_championship_standings(year)
+
+    async def fetch_team_championship(self, year: int) -> Optional[ChampionshipTeamStandings]:
+        return await fetch_wrc_team_championship_standings(year)
+
+registry.register("wrc", WrcIngestionStrategy())

@@ -4,8 +4,7 @@ import asyncio
 import logging
 
 from ingestion.service import (
-    run_wrc_live_timing_ingestion,
-    run_f1_live_timing_ingestion,
+    run_live_timing_ingestion,
     run_overall_standings_ingestion,
     run_championship_standings_ingestion,
     run_historic_archive,
@@ -21,14 +20,8 @@ class CronResponse(BaseModel):
 
 @router.post("/ingest-live-timing", response_model=CronResponse)
 async def ingest_live_timing():
-    """Ingests live timing for both WRC and F1."""
-    # Run in background to not block the response if needed, 
-    # but Vercel Cron usually expects the endpoint to finish.
-    # We will await them so the cron job knows it succeeded.
-    await asyncio.gather(
-        run_wrc_live_timing_ingestion(),
-        run_f1_live_timing_ingestion()
-    )
+    """Ingests live timing for all registered sports."""
+    await run_live_timing_ingestion()
     return {"status": "success"}
 
 @router.post("/ingest-overall-standings", response_model=CronResponse)
