@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 
-from api.routers import calendar, events, championship, news
+from api.routers import calendar, events, championship, news, timeline
 from ingestion.router import router as cron_router
 from core.database_service import init_db
 
@@ -46,6 +46,7 @@ app.include_router(calendar.router)
 app.include_router(events.router)
 app.include_router(championship.router)
 app.include_router(news.router)
+app.include_router(timeline.router)
 app.include_router(cron_router)
 
 @app.get("/")

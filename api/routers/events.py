@@ -72,18 +72,41 @@ async def get_event_details(category: str, event_id: int):
     return stages_to_cache
 
 @router.get("/{category}/{event_id}/stages/{stage_id}/times", response_model=StageStandings)
-async def get_stage_times(category: str, event_id: int, stage_id: int):
+async def get_stage_times(
+    category: str, 
+    event_id: int, 
+    stage_id: int, 
+    last_sync_time: Optional[datetime] = None
+):
     """
     Get live or final timings for a specific stage/session.
     Prioritizes Redis for live data, then falls back to DB for completed data.
+    Supports Smart Polling via last_sync_time: returns HTTP 304 if no new data is available.
     """
+    # Helper to check if data is modified
+    def is_not_modified(data_last_updated: Optional[datetime]) -> bool:
+        if not last_sync_time or not data_last_updated:
+            return False
+        # Ensure UTC comparisons
+        sync_time = last_sync_time if last_sync_time.tzinfo else last_sync_time.replace(tzinfo=timezone.utc)
+        updated_time = data_last_updated if data_last_updated.tzinfo else data_last_updated.replace(tzinfo=timezone.utc)
+        return updated_time <= sync_time
+
     redis_key = f"live:times:{category.lower()}:{stage_id}"
     cached_live_data = await get_cached_data(redis_key)
+    
     if cached_live_data:
-        return StageStandings(**cached_live_data)
+        standings = StageStandings(**cached_live_data)
+        if is_not_modified(standings.last_updated):
+            from fastapi.responses import Response
+            return Response(status_code=304)
+        return standings
     
     db_times = await get_stage_times_from_db(stage_id, event_id, category.upper())
     if db_times:
+        if is_not_modified(db_times.last_updated):
+            from fastapi.responses import Response
+            return Response(status_code=304)
         return db_times
 
     logger.debug(f"Cache/DB MISS for stage times: {stage_id}. Fetching from source.")
@@ -97,8 +120,15 @@ async def get_stage_times(category: str, event_id: int, stage_id: int):
             final_standings.is_live = False
     
     if final_standings and not final_standings.is_live and final_standings.standings:
+        # Set last_updated if not set by ingestion
+        if not final_standings.last_updated:
+            final_standings.last_updated = datetime.now(timezone.utc)
         await save_stage_times_to_db(stage_id, final_standings)
     
+    if final_standings and is_not_modified(final_standings.last_updated):
+        from fastapi.responses import Response
+        return Response(status_code=304)
+        
     return final_standings or StageStandings(stage_id=stage_id, event_id=event_id, category=category.upper(), is_live=False, standings=[])
 
 @router.get("/{category}/{event_id}/overall", response_model=Optional[OverallStandings])

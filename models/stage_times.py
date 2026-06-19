@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional, List
+from datetime import datetime
 
 class DriverTime(BaseModel):
     entry_id: int
@@ -19,4 +20,5 @@ class StageStandings(BaseModel):
     event_id: int
     category: str
     is_live: bool
+    last_updated: Optional[datetime] = None
     standings: List[DriverTime]
