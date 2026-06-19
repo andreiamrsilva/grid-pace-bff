@@ -3,7 +3,7 @@ from fastapi import APIRouter, Query
 import logging
 
 from models.calendar import CalendarEvent
-from api.database_service import get_all_events_from_db
+from core.database_service import get_all_events_from_db
 
 logger = logging.getLogger(__name__)
 

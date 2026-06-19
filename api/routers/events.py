@@ -11,10 +11,10 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".
 from models.event import Stage
 from models.stage_times import StageStandings
 from models.overall_standings import OverallStandings
-from api.openf1_client import get_f1_event_sessions, fetch_f1_session_times, fetch_f1_overall_standings
-from api.wrc_service import fetch_wrc_event_stages, fetch_wrc_stage_times, fetch_wrc_overall_standings
-from api.redis_service import get_cached_data
-from api.database_service import (
+from ingestion.openf1_client import get_f1_event_sessions, fetch_f1_session_times, fetch_f1_overall_standings
+from ingestion.wrc_client import fetch_wrc_event_stages, fetch_wrc_stage_times, fetch_wrc_overall_standings
+from core.redis_service import get_cached_data
+from core.database_service import (
     get_stages_from_db, save_stages_to_db, 
     get_stage_times_from_db, save_stage_times_to_db,
     get_overall_standings_from_db, save_overall_standings_to_db

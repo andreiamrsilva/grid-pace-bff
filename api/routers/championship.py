@@ -4,9 +4,9 @@ import logging
 import asyncio
 
 from models.championship_standings import ChampionshipStandings, ChampionshipTeamStandings
-from api.wrc_service import fetch_wrc_championship_standings, fetch_wrc_team_championship_standings
-from api.openf1_client import fetch_f1_championship_standings, fetch_f1_team_championship_standings
-from api.redis_service import get_cached_data, set_cached_data
+from ingestion.wrc_client import fetch_wrc_championship_standings, fetch_wrc_team_championship_standings
+from ingestion.openf1_client import fetch_f1_championship_standings, fetch_f1_team_championship_standings
+from core.redis_service import get_cached_data, set_cached_data
 
 logger = logging.getLogger(__name__)
 

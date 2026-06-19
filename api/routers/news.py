@@ -5,7 +5,7 @@ import asyncio
 
 from models.news import NewsArticle
 from api.news_service import fetch_news_from_feed
-from api.redis_service import get_cached_data, set_cached_data
+from core.redis_service import get_cached_data, set_cached_data
 
 logger = logging.getLogger(__name__)
 

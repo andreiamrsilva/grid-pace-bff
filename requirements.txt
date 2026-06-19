@@ -9,3 +9,4 @@ redis
 feedparser
 pytest
 pytest-asyncio
+pydantic-settings
