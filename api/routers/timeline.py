@@ -16,7 +16,8 @@ async def get_timeline(
     category: str,
     session_id: str,
     event_id: str = Query(..., description="The overarching event ID"),
-    last_event_time: Optional[datetime] = Query(None, description="Fetch only events after this time (Smart Polling)")
+    last_event_time: Optional[datetime] = Query(None, description="Fetch only events after this time (Smart Polling)"),
+    language: str = Query("pt", description="Language for the commentary (e.g., 'en', 'pt'). Defaults to 'pt'.")
 ):
     """
     Get the live timeline of events for a specific session.
@@ -52,6 +53,12 @@ async def get_timeline(
         filtered_events = [event for event in all_events if event.timestamp > last_event_time]
     else:
         filtered_events = all_events
+        
+    # Apply Language Mapping
+    lang_key = f"message_{language.lower()}"
+    for event in filtered_events:
+        if event.metadata and lang_key in event.metadata:
+            event.message = event.metadata[lang_key]
         
     return TimelineResponse(
         event_id=event_id,

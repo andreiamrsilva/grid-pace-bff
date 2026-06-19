@@ -483,6 +483,15 @@ async def fetch_f1_race_control_messages(session_key: int) -> List[TimelineEvent
                 if dt.tzinfo is None:
                     dt = dt.replace(tzinfo=timezone.utc)
 
+                # Basic Portuguese mapping for common F1 flags/categories
+                pt_msg = msg
+                if flag == 'YELLOW' or flag == 'DOUBLE YELLOW':
+                    pt_msg = f"Bandeira Amarela: {msg}"
+                elif flag == 'RED' or category == 'RedFlag':
+                    pt_msg = f"Bandeira Vermelha: {msg}"
+                elif category == 'SafetyCar':
+                    pt_msg = f"Carro de Segurança: {msg}"
+
                 events.append(
                     TimelineEvent(
                         id=str(uuid.uuid4()),
@@ -495,7 +504,9 @@ async def fetch_f1_race_control_messages(session_key: int) -> List[TimelineEvent
                             "flag": flag,
                             "lap_number": item.get('lap_number'),
                             "scope": item.get('scope'),
-                            "category": category
+                            "category": category,
+                            "message_en": msg,
+                            "message_pt": pt_msg
                         }
                     )
                 )

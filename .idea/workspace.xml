@@ -4,8 +4,10 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a62e5b2f-3708-4f63-8803-b0b454e614aa" name="Changes" comment="Added last updated information.">
+    <list default="true" id="a62e5b2f-3708-4f63-8803-b0b454e614aa" name="Changes" comment="Added wrc coments agent analysist.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/routers/timeline.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/routers/timeline.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ingestion/agent_analyst.py" beforeDir="false" afterPath="$PROJECT_DIR$/ingestion/agent_analyst.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ingestion/openf1_client.py" beforeDir="false" afterPath="$PROJECT_DIR$/ingestion/openf1_client.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -80,7 +82,7 @@
       <workItem from="1780908570142" duration="1480000" />
       <workItem from="1781016450033" duration="40867000" />
       <workItem from="1781447061334" duration="65840000" />
-      <workItem from="1781739250707" duration="15227000" />
+      <workItem from="1781739250707" duration="18459000" />
     </task>
     <task id="LOCAL-00001" summary="GridPace server to get wrc information">
       <option name="closed" value="true" />
@@ -354,14 +356,21 @@
       <option name="project" value="LOCAL" />
       <updated>1781882982617</updated>
     </task>
-    <option name="localTasksCounter" value="35" />
+    <task id="LOCAL-00035" summary="Added wrc coments agent analysist.">
+      <option name="closed" value="true" />
+      <created>1781884950587</created>
+      <option name="number" value="00035" />
+      <option name="presentableId" value="LOCAL-00035" />
+      <option name="project" value="LOCAL" />
+      <updated>1781884950588</updated>
+    </task>
+    <option name="localTasksCounter" value="36" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="Added missing logos." />
     <MESSAGE value="Updating cache logic." />
     <MESSAGE value="Create database to save the old events." />
     <MESSAGE value="Added stage times route." />
@@ -386,6 +395,7 @@
     <MESSAGE value="Added missing files." />
     <MESSAGE value="Improved the db to use async." />
     <MESSAGE value="Added last updated information." />
-    <option name="LAST_COMMIT_MESSAGE" value="Added last updated information." />
+    <MESSAGE value="Added wrc coments agent analysist." />
+    <option name="LAST_COMMIT_MESSAGE" value="Added wrc coments agent analysist." />
   </component>
 </project>

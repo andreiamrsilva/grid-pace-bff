@@ -35,7 +35,11 @@ class WRCAnalystAgent:
                     source=TimelineEventSource.WRC_SYSTEM_INFERENCE,
                     severity=TimelineEventSeverity.INFO,
                     message=f"🟢 {name} iniciou a Especial.",
-                    driver_name=name
+                    driver_name=name,
+                    metadata={
+                        "message_pt": f"🟢 {name} iniciou a Especial.",
+                        "message_en": f"🟢 {name} started the Stage."
+                    }
                 ))
             
             # Follow-up rules if driver was already tracked
@@ -48,26 +52,33 @@ class WRCAnalystAgent:
                         source=TimelineEventSource.WRC_SYSTEM_INFERENCE,
                         severity=TimelineEventSeverity.CRITICAL,
                         message=f"❌ {name} abandonou a Especial.",
-                        driver_name=name
+                        driver_name=name,
+                        metadata={
+                            "message_pt": f"❌ {name} abandonou a Especial.",
+                            "message_en": f"❌ {name} retired from the Stage."
+                        }
                     ))
                 
                 # Rule 4: Finished
                 if old_driver.status == "OnTrack" and new_driver.status == "Finished":
-                    time_str = f" com o tempo de {new_driver.time}" if new_driver.time else ""
+                    time_str_pt = f" com o tempo de {new_driver.time}" if new_driver.time else ""
+                    time_str_en = f" with a time of {new_driver.time}" if new_driver.time else ""
                     events.append(TimelineEvent(
                         id=str(uuid.uuid4()),
                         timestamp=now,
                         source=TimelineEventSource.WRC_SYSTEM_INFERENCE,
                         severity=TimelineEventSeverity.INFO,
-                        message=f"🏁 {name} terminou a Especial{time_str}.",
-                        driver_name=name
+                        message=f"🏁 {name} terminou a Especial{time_str_pt}.",
+                        driver_name=name,
+                        metadata={
+                            "message_pt": f"🏁 {name} terminou a Especial{time_str_pt}.",
+                            "message_en": f"🏁 {name} finished the Stage{time_str_en}."
+                        }
                     ))
                 
                 # Rule 3: Significant position drop
-                # We check if position increased by 3 or more (e.g. 2nd to 5th)
                 if old_driver.position and new_driver.position:
                     drop = new_driver.position - old_driver.position
-                    # Only alert if they are actually competing (OnTrack or Finished)
                     if drop >= 3 and new_driver.status in ["OnTrack", "Finished"]:
                         events.append(TimelineEvent(
                             id=str(uuid.uuid4()),
@@ -75,7 +86,11 @@ class WRCAnalystAgent:
                             source=TimelineEventSource.WRC_SYSTEM_INFERENCE,
                             severity=TimelineEventSeverity.WARNING,
                             message=f"⚠️ {name} perdeu tempo significativo, caindo para a {new_driver.position}ª posição.",
-                            driver_name=name
+                            driver_name=name,
+                            metadata={
+                                "message_pt": f"⚠️ {name} perdeu tempo significativo, caindo para a {new_driver.position}ª posição.",
+                                "message_en": f"⚠️ {name} lost significant time, dropping to position {new_driver.position}."
+                            }
                         ))
                         
         return events
