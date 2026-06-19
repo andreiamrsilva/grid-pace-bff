@@ -1,6 +1,6 @@
 import asyncio
-from sqlalchemy import create_engine, Column, Integer, String, Date, MetaData, Table, update, Float, Boolean, DateTime
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+from sqlalchemy import Column, Integer, String, Date, MetaData, Table, update, Float, Boolean, DateTime, select
 from datetime import datetime
 from typing import List, Optional
 import logging
@@ -14,8 +14,8 @@ from ingestion.openf1_client import get_openf1_calendar_events
 
 from core.config import settings
 
-engine = create_engine(settings.DATABASE_URL, connect_args={"check_same_thread": False})
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+engine = create_async_engine(settings.DATABASE_URL, connect_args={"check_same_thread": False})
+AsyncSessionLocal = async_sessionmaker(autocommit=False, autoflush=False, bind=engine, class_=AsyncSession)
 
 metadata = MetaData()
 
@@ -93,137 +93,121 @@ championship_standings_table = Table(
 
 logger = logging.getLogger(__name__)
 
-def init_db():
+async def init_db():
     """Creates all database tables if they don't exist."""
-    metadata.create_all(bind=engine)
+    async with engine.begin() as conn:
+        await conn.run_sync(metadata.create_all)
     logger.info("Database initialized.")
 
-# ... (rest of the functions are preserved)
-def get_last_archived_year() -> int:
-    db = SessionLocal()
-    try:
-        last_year = db.query(events_table.c.start_date).order_by(events_table.c.start_date.desc()).first()
+async def get_last_archived_year() -> int:
+    async with AsyncSessionLocal() as db:
+        stmt = select(events_table.c.start_date).order_by(events_table.c.start_date.desc()).limit(1)
+        result = await db.execute(stmt)
+        last_year = result.scalar()
         if last_year:
-            return last_year[0].year
-    finally:
-        db.close()
+            return last_year.year
     return 2017
 
 async def upsert_events(events_to_upsert: List[CalendarEvent]):
     if not events_to_upsert:
         return
-    db = SessionLocal()
-    try:
+    async with AsyncSessionLocal() as db:
         for event_data in events_to_upsert:
-            existing = db.query(events_table).filter_by(id=event_data.id).first()
+            stmt = select(events_table).where(events_table.c.id == event_data.id)
+            result = await db.execute(stmt)
+            existing = result.first()
+            
             if existing:
-                stmt = update(events_table).where(events_table.c.id == event_data.id).values(**event_data.model_dump())
-                db.execute(stmt)
+                upd_stmt = update(events_table).where(events_table.c.id == event_data.id).values(**event_data.model_dump())
+                await db.execute(upd_stmt)
             else:
-                stmt = events_table.insert().values(**event_data.model_dump())
-                db.execute(stmt)
-        db.commit()
-    finally:
-        db.close()
+                ins_stmt = events_table.insert().values(**event_data.model_dump())
+                await db.execute(ins_stmt)
+        await db.commit()
 
-def get_all_events_from_db() -> List[CalendarEvent]:
-    db = SessionLocal()
-    try:
-        result = db.query(events_table).all()
-        return [CalendarEvent(**row._asdict()) for row in result]
-    finally:
-        db.close()
+async def get_all_events_from_db() -> List[CalendarEvent]:
+    async with AsyncSessionLocal() as db:
+        stmt = select(events_table)
+        result = await db.execute(stmt)
+        return [CalendarEvent(**row._asdict()) for row in result.all()]
 
-def save_stages_to_db(event_id: int, stages: List[Stage]):
-    db = SessionLocal()
-    try:
-        db.execute(stages_table.delete().where(stages_table.c.event_id == event_id))
+async def save_stages_to_db(event_id: int, stages: List[Stage]):
+    async with AsyncSessionLocal() as db:
+        await db.execute(stages_table.delete().where(stages_table.c.event_id == event_id))
         for stage_data in stages:
-            stmt = stages_table.insert().values(event_id=event_id, **stage_data.model_dump())
-            db.execute(stmt)
-        db.commit()
-    finally:
-        db.close()
+            ins_stmt = stages_table.insert().values(event_id=event_id, **stage_data.model_dump())
+            await db.execute(ins_stmt)
+        await db.commit()
 
-def get_stages_from_db(event_id: int) -> Optional[List[Stage]]:
-    db = SessionLocal()
-    try:
-        result = db.query(stages_table).filter_by(event_id=event_id).order_by(stages_table.c.number).all()
-        if result:
-            return [Stage(**row._asdict()) for row in result]
+async def get_stages_from_db(event_id: int) -> Optional[List[Stage]]:
+    async with AsyncSessionLocal() as db:
+        stmt = select(stages_table).where(stages_table.c.event_id == event_id).order_by(stages_table.c.number)
+        result = await db.execute(stmt)
+        rows = result.all()
+        if rows:
+            return [Stage(**row._asdict()) for row in rows]
         return None
-    finally:
-        db.close()
 
-def save_stage_times_to_db(stage_id: int, standings: StageStandings):
-    db = SessionLocal()
-    try:
-        db.execute(stage_times_table.delete().where(stage_times_table.c.stage_id == stage_id))
+async def save_stage_times_to_db(stage_id: int, standings: StageStandings):
+    async with AsyncSessionLocal() as db:
+        await db.execute(stage_times_table.delete().where(stage_times_table.c.stage_id == stage_id))
         for driver_time in standings.standings:
-            stmt = stage_times_table.insert().values(stage_id=stage_id, **driver_time.model_dump())
-            db.execute(stmt)
-        db.commit()
-    finally:
-        db.close()
+            ins_stmt = stage_times_table.insert().values(stage_id=stage_id, **driver_time.model_dump())
+            await db.execute(ins_stmt)
+        await db.commit()
 
-def get_stage_times_from_db(stage_id: int, event_id: int, category: str) -> Optional[StageStandings]:
-    db = SessionLocal()
-    try:
-        result = db.query(stage_times_table).filter_by(stage_id=stage_id).order_by(stage_times_table.c.position).all()
-        if result:
-            standings = [DriverTime(**row._asdict()) for row in result]
+async def get_stage_times_from_db(stage_id: int, event_id: int, category: str) -> Optional[StageStandings]:
+    async with AsyncSessionLocal() as db:
+        stmt = select(stage_times_table).where(stage_times_table.c.stage_id == stage_id).order_by(stage_times_table.c.position)
+        result = await db.execute(stmt)
+        rows = result.all()
+        if rows:
+            standings = [DriverTime(**row._asdict()) for row in rows]
             return StageStandings(stage_id=stage_id, event_id=event_id, category=category, is_live=False, standings=standings)
         return None
-    finally:
-        db.close()
 
-def save_overall_standings_to_db(event_id: int, standings: OverallStandings):
-    db = SessionLocal()
-    try:
-        db.execute(overall_standings_table.delete().where(overall_standings_table.c.event_id == event_id))
+async def save_overall_standings_to_db(event_id: int, standings: OverallStandings):
+    async with AsyncSessionLocal() as db:
+        await db.execute(overall_standings_table.delete().where(overall_standings_table.c.event_id == event_id))
         for standing in standings.standings:
-            stmt = overall_standings_table.insert().values(event_id=event_id, **standing.model_dump())
-            db.execute(stmt)
-        db.commit()
-    finally:
-        db.close()
+            ins_stmt = overall_standings_table.insert().values(event_id=event_id, **standing.model_dump())
+            await db.execute(ins_stmt)
+        await db.commit()
 
-def get_overall_standings_from_db(event_id: int, category: str) -> Optional[OverallStandings]:
-    db = SessionLocal()
-    try:
-        result = db.query(overall_standings_table).filter_by(event_id=event_id).order_by(overall_standings_table.c.position).all()
-        if result:
-            standings = [OverallDriverStanding(**row._asdict()) for row in result]
+async def get_overall_standings_from_db(event_id: int, category: str) -> Optional[OverallStandings]:
+    async with AsyncSessionLocal() as db:
+        stmt = select(overall_standings_table).where(overall_standings_table.c.event_id == event_id).order_by(overall_standings_table.c.position)
+        result = await db.execute(stmt)
+        rows = result.all()
+        if rows:
+            standings = [OverallDriverStanding(**row._asdict()) for row in rows]
             return OverallStandings(event_id=event_id, category=category, standings=standings)
         return None
-    finally:
-        db.close()
 
-def save_championship_standings_to_db(standings: ChampionshipStandings):
-    db = SessionLocal()
-    try:
-        db.execute(championship_standings_table.delete().where(
+async def save_championship_standings_to_db(standings: ChampionshipStandings):
+    async with AsyncSessionLocal() as db:
+        await db.execute(championship_standings_table.delete().where(
             championship_standings_table.c.year == standings.year,
             championship_standings_table.c.category == standings.category
         ))
         for standing in standings.standings:
-            stmt = championship_standings_table.insert().values(
+            ins_stmt = championship_standings_table.insert().values(
                 year=standings.year,
                 category=standings.category,
                 **standing.model_dump()
             )
-            db.execute(stmt)
-        db.commit()
-    finally:
-        db.close()
+            await db.execute(ins_stmt)
+        await db.commit()
 
-def get_championship_standings_from_db(year: int, category: str) -> Optional[ChampionshipStandings]:
-    db = SessionLocal()
-    try:
-        result = db.query(championship_standings_table).filter_by(year=year, category=category).order_by(championship_standings_table.c.position).all()
-        if result:
-            standings = [ChampionshipDriverStanding(**row._asdict()) for row in result]
+async def get_championship_standings_from_db(year: int, category: str) -> Optional[ChampionshipStandings]:
+    async with AsyncSessionLocal() as db:
+        stmt = select(championship_standings_table).where(
+            championship_standings_table.c.year == year,
+            championship_standings_table.c.category == category
+        ).order_by(championship_standings_table.c.position)
+        result = await db.execute(stmt)
+        rows = result.all()
+        if rows:
+            standings = [ChampionshipDriverStanding(**row._asdict()) for row in rows]
             return ChampionshipStandings(year=year, category=category, standings=standings)
         return None
-    finally:
-        db.close()

@@ -18,7 +18,7 @@ async def find_live_stages():
     Then, fetches their stages using the appropriate Strategy to find which are 'Running'.
     """
     try:
-        all_events = get_all_events_from_db()
+        all_events = await get_all_events_from_db()
         today = date.today()
 
         live_stages = []
@@ -58,7 +58,7 @@ async def run_live_timing_ingestion():
 async def run_overall_standings_ingestion():
     """Ingests overall standings once for running or recently completed events."""
     try:
-        all_events = get_all_events_from_db()
+        all_events = await get_all_events_from_db()
         today = date.today()
 
         for event in all_events:
@@ -97,7 +97,7 @@ async def run_historic_archive():
     """Archives past years for all registered sports."""
     logger.info("Running historic database archive for all sports...")
     try:
-        last_archived_year = get_last_archived_year()
+        last_archived_year = await get_last_archived_year()
         current_year = datetime.now().year
         years_to_archive = list(range(last_archived_year + 1, current_year))
         

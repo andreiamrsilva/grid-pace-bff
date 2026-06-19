@@ -3,7 +3,7 @@ from typing import Optional
 
 class Settings(BaseSettings):
     # Database
-    DATABASE_URL: str = "sqlite:///./historic_events.db"
+    DATABASE_URL: str = "sqlite+aiosqlite:///./historic_events.db"
     
     # Redis Cache
     REDIS_URL: str = "redis://localhost:6379/0"

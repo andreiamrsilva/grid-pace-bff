@@ -25,7 +25,7 @@ async def lifespan(app: FastAPI):
     logger.info("Server starting up...")
     
     # 1. Initialize the database
-    init_db()
+    await init_db()
     
     yield
     

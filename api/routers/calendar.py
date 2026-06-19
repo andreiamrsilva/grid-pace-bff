@@ -22,7 +22,7 @@ async def get_calendar(
     All data is read directly from the historic database, which is updated daily and on startup.
     """
     try:
-        all_events = get_all_events_from_db()
+        all_events = await get_all_events_from_db()
     except Exception as e:
         logger.error(f"Failed to fetch events from DB: {e}")
         all_events = []

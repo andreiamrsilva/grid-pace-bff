@@ -42,7 +42,7 @@ async def get_event_details(category: str, event_id: int):
         return [Stage(**stage_data) for stage_data in cached_stages]
 
     # 2. Try DB cache (for completed, historic events)
-    db_stages = get_stages_from_db(event_id)
+    db_stages = await get_stages_from_db(event_id)
     if db_stages:
         logger.debug(f"DB HIT for event stages: {event_id}")
         return db_stages
@@ -67,7 +67,7 @@ async def get_event_details(category: str, event_id: int):
 
     # 4. If the event is over, store in the permanent DB cache
     if stages_to_cache and is_past_event:
-        save_stages_to_db(event_id, stages_to_cache)
+        await save_stages_to_db(event_id, stages_to_cache)
 
     return stages_to_cache
 
@@ -82,7 +82,7 @@ async def get_stage_times(category: str, event_id: int, stage_id: int):
     if cached_live_data:
         return StageStandings(**cached_live_data)
     
-    db_times = get_stage_times_from_db(stage_id, event_id, category.upper())
+    db_times = await get_stage_times_from_db(stage_id, event_id, category.upper())
     if db_times:
         return db_times
 
@@ -97,7 +97,7 @@ async def get_stage_times(category: str, event_id: int, stage_id: int):
             final_standings.is_live = False
     
     if final_standings and not final_standings.is_live and final_standings.standings:
-        save_stage_times_to_db(stage_id, final_standings)
+        await save_stage_times_to_db(stage_id, final_standings)
     
     return final_standings or StageStandings(stage_id=stage_id, event_id=event_id, category=category.upper(), is_live=False, standings=[])
 
@@ -112,7 +112,7 @@ async def get_overall_standings(category: str, event_id: int):
     if cached_live_data:
         return OverallStandings(**cached_live_data)
 
-    db_standings = get_overall_standings_from_db(event_id, category.upper())
+    db_standings = await get_overall_standings_from_db(event_id, category.upper())
     if db_standings:
         return db_standings
 
@@ -125,6 +125,6 @@ async def get_overall_standings(category: str, event_id: int):
         standings_to_cache = await fetch_f1_overall_standings(event_id)
     
     if standings_to_cache and standings_to_cache.standings:
-        save_overall_standings_to_db(event_id, standings_to_cache)
+        await save_overall_standings_to_db(event_id, standings_to_cache)
         
     return standings_to_cache

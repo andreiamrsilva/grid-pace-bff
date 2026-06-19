@@ -4,7 +4,16 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a62e5b2f-3708-4f63-8803-b0b454e614aa" name="Changes" comment="Added missing files." />
+    <list default="true" id="a62e5b2f-3708-4f63-8803-b0b454e614aa" name="Changes" comment="Added missing files.">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/routers/calendar.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/routers/calendar.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/routers/events.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/routers/events.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/config.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/database_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/database_service.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ingestion/service.py" beforeDir="false" afterPath="$PROJECT_DIR$/ingestion/service.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -77,7 +86,7 @@
       <workItem from="1780908570142" duration="1480000" />
       <workItem from="1781016450033" duration="40867000" />
       <workItem from="1781447061334" duration="65840000" />
-      <workItem from="1781739250707" duration="13811000" />
+      <workItem from="1781739250707" duration="14281000" />
     </task>
     <task id="LOCAL-00001" summary="GridPace server to get wrc information">
       <option name="closed" value="true" />
@@ -319,14 +328,29 @@
       <option name="project" value="LOCAL" />
       <updated>1781875058101</updated>
     </task>
-    <option name="localTasksCounter" value="31" />
+    <task id="LOCAL-00031" summary="Create abstract strategy class.">
+      <option name="closed" value="true" />
+      <created>1781875425850</created>
+      <option name="number" value="00031" />
+      <option name="presentableId" value="LOCAL-00031" />
+      <option name="project" value="LOCAL" />
+      <updated>1781875425851</updated>
+    </task>
+    <task id="LOCAL-00032" summary="Added missing files.">
+      <option name="closed" value="true" />
+      <created>1781875465200</created>
+      <option name="number" value="00032" />
+      <option name="presentableId" value="LOCAL-00032" />
+      <option name="project" value="LOCAL" />
+      <updated>1781875465200</updated>
+    </task>
+    <option name="localTasksCounter" value="33" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="Update events to return the team logo." />
     <MESSAGE value="Update the calendar to only return WRC events." />
     <MESSAGE value="Updated the logos files." />
     <MESSAGE value="Added missing logos." />
@@ -350,6 +374,7 @@
     <MESSAGE value="Improved getting f1 data." />
     <MESSAGE value="Created the cron logic." />
     <MESSAGE value="Separate the BFF vs ingestion." />
+    <MESSAGE value="Create abstract strategy class." />
     <MESSAGE value="Added missing files." />
     <option name="LAST_COMMIT_MESSAGE" value="Added missing files." />
   </component>
