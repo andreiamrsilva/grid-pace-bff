@@ -27,7 +27,7 @@ async def find_live_stages():
                 try:
                     strategy = registry.get_strategy(event.category)
                     stages = await strategy.fetch_event_stages(event.id)
-                    live_stages.extend([(event.id, s.id, event.category) for s in stages if s.is_live])
+                    live_stages.extend([(event.id, s.id, event.category, event.name, s.name) for s in stages if s.is_live])
                 except ValueError as e:
                     logger.warning(f"Strategy error for event {event.id}: {e}")
                 except Exception as e:
@@ -45,14 +45,23 @@ async def run_live_timing_ingestion():
     if not live_stages:
         return
 
-    for event_id, stage_id, category in live_stages:
+    for event_id, stage_id, category, event_name, stage_name in live_stages:
         try:
             strategy = registry.get_strategy(category)
             stage_standings = await strategy.fetch_live_timing(event_id, stage_id)
             if stage_standings:
-                from core.redis_service import get_cached_data
+                from core.redis_service import get_cached_data, set_cached_data
                 redis_key = f"live:times:{category.lower()}:{stage_id}"
                 
+                # --- NOTIFICATION ENGINE ---
+                if stage_standings.is_live:
+                    notif_key = f"notification:sent:{category.lower()}:{stage_id}"
+                    if not await get_cached_data(notif_key):
+                        from core.notification_service import send_live_stage_notification
+                        success = send_live_stage_notification(category, stage_id, stage_name, event_name)
+                        if success:
+                            await set_cached_data(notif_key, {"sent": True}, expiration_seconds=86400)
+
                 # --- AGENT 03 WRC INFERENCE ---
                 if category.lower() == "wrc":
                     from ingestion.agent_analyst import WRCAnalystAgent
@@ -69,9 +78,40 @@ async def run_live_timing_ingestion():
                                 existing_events_raw = await get_cached_data(timeline_key) or []
                                 existing_events_raw.extend([e.model_dump(mode='json') for e in new_events])
                                 await set_cached_data(timeline_key, existing_events_raw, expiration_seconds=86400) # Keep for 24h
+                                
+                                # Send notifications for new timeline events
+                                from core.notification_service import send_comment_notification
+                                for e in new_events:
+                                    preview = e.message[:50] + ("..." if len(e.message) > 50 else "")
+                                    logger.info(f"Triggering {category.upper()} timeline push notification for stage {stage_id}: {preview}")
+                                    send_comment_notification(category, stage_id, preview)
                         except Exception as e:
                             logger.error(f"Error in Agent 03 WRC inference for Stage {stage_id}: {e}")
                 
+                # --- F1 TIMELINE NOTIFICATIONS ---
+                if category.lower() == "f1":
+                    from ingestion.openf1_client import fetch_f1_race_control_messages
+                    from core.notification_service import send_comment_notification
+                    
+                    timeline_key = f"timeline:f1:{stage_id}"
+                    try:
+                        current_events = await fetch_f1_race_control_messages(stage_id)
+                        if current_events:
+                            cached_events_raw = await get_cached_data(timeline_key) or []
+                            cached_ids = {str(e['id']) for e in cached_events_raw}
+                            
+                            new_events = [e for e in current_events if str(e.id) not in cached_ids]
+                            
+                            if new_events:
+                                for e in new_events:
+                                    preview = e.message[:50] + ("..." if len(e.message) > 50 else "")
+                                    logger.info(f"Triggering {category.upper()} timeline push notification for session {stage_id}: {preview}")
+                                    send_comment_notification(category, stage_id, preview)
+                                
+                                await set_cached_data(timeline_key, [e.model_dump(mode='json') for e in current_events], expiration_seconds=86400)
+                    except Exception as e:
+                        logger.error(f"Error processing F1 timeline notifications for Stage {stage_id}: {e}")
+                        
                 await set_cached_data(redis_key, stage_standings.model_dump(mode='json'), expiration_seconds=60)
         except Exception as e:
             logger.error(f"Error during {category} live ingestion for Stage {stage_id}: {e}")

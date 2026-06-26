@@ -3,7 +3,7 @@ from typing import List, Optional, Tuple, Any
 import httpx
 from datetime import datetime, date, timezone
 import logging
-from tenacity import retry, stop_after_attempt, wait_exponential
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception
 
 from models.calendar import CalendarEvent
 from models.event import Stage
@@ -42,13 +42,40 @@ def format_seconds_to_time(seconds: float) -> str:
     
     return time_str.strip()
 
-@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10), reraise=True)
+def is_retryable_exception(exception: BaseException) -> bool:
+    import httpx
+    if isinstance(exception, httpx.HTTPStatusError):
+        if exception.response.status_code in (401, 403):
+            return False
+    return True
+
+def handle_openf1_exception(e: Exception, logger, context_msg: str):
+    import httpx
+    if isinstance(e, httpx.HTTPStatusError) and e.response.status_code in (401, 403):
+        logger.warning(f"OpenF1 API access restricted ({e.response.status_code}) during live session. {context_msg}")
+    else:
+        logger.error(f"{context_msg}: {e}")
+
+@retry(
+    stop=stop_after_attempt(3), 
+    wait=wait_exponential(multiplier=1, min=2, max=10), 
+    reraise=True,
+    retry=retry_if_exception(is_retryable_exception)
+)
 async def fetch_json_with_retry(client: httpx.AsyncClient, url: str) -> Any:
     """
     Helper to fetch JSON from an API with exponential backoff.
-    Will retry up to 3 times on any exception (including HTTPStatusError).
+    Will retry up to 3 times on any exception (including HTTPStatusError) except 401/403.
     """
     logger.debug(f"Fetching URL (with retry): {url}")
+    
+    # Inject API key if configured and we are calling OpenF1
+    if settings.OPENF1_API_KEY and url.startswith(settings.OPENF1_API_URL):
+        if "?" in url:
+            url += f"&api_key={settings.OPENF1_API_KEY}"
+        else:
+            url += f"?api_key={settings.OPENF1_API_KEY}"
+
     response = await client.get(url)
     response.raise_for_status()
     return response.json()
@@ -191,7 +218,7 @@ async def get_openf1_calendar_events(year: int) -> List[CalendarEvent]:
                 )
         return f1_events
     except Exception as e:
-        logger.error(f"Error fetching F1 calendar events for year {year}: {e}")
+        handle_openf1_exception(e, logger, f"Error fetching F1 calendar events for year {year}")
         return []
 
 async def get_f1_event_sessions(meeting_key: int) -> List[Stage]:
@@ -241,7 +268,7 @@ async def get_f1_event_sessions(meeting_key: int) -> List[Stage]:
                 )
             return stages
     except Exception as e:
-        logger.error(f"Error fetching F1 sessions for meeting {meeting_key}: {e}")
+        handle_openf1_exception(e, logger, f"Error fetching F1 sessions for meeting {meeting_key}")
         return []
 
 async def fetch_f1_session_times(session_key: int, meeting_key: int, session_name: str = "Unknown") -> Optional[StageStandings]:
@@ -357,7 +384,7 @@ async def fetch_f1_session_times(session_key: int, meeting_key: int, session_nam
                 standings=standings
             )
     except Exception as e:
-        logger.error(f"Error fetching final times for F1 session {session_key}: {e}")
+        handle_openf1_exception(e, logger, f"Error fetching final times for F1 session {session_key}")
         return None
 
 async def fetch_f1_overall_standings(meeting_key: int) -> Optional[OverallStandings]:
@@ -389,7 +416,7 @@ async def fetch_f1_overall_standings(meeting_key: int) -> Optional[OverallStandi
             
             return OverallStandings(event_id=meeting_key, category="F1", standings=overall_standings)
     except Exception as e:
-        logger.error(f"Error fetching F1 overall standings for meeting {meeting_key}: {e}")
+        handle_openf1_exception(e, logger, f"Error fetching F1 overall standings for meeting {meeting_key}")
         return None
 
 async def fetch_f1_championship_standings(year: int) -> Optional[ChampionshipStandings]:
@@ -428,7 +455,7 @@ async def fetch_f1_championship_standings(year: int) -> Optional[ChampionshipSta
                 standings=standings_list
             )
     except Exception as e:
-        logger.error(f"Error fetching F1 championship standings for year {year}: {e}")
+        handle_openf1_exception(e, logger, f"Error fetching F1 championship standings for year {year}")
         return None
 
 async def fetch_f1_team_championship_standings(year: int) -> Optional[ChampionshipTeamStandings]:
@@ -465,7 +492,7 @@ async def fetch_f1_team_championship_standings(year: int) -> Optional[Championsh
                 standings=standings_list
             )
     except Exception as e:
-        logger.error(f"Error fetching F1 team championship standings for year {year}: {e}")
+        handle_openf1_exception(e, logger, f"Error fetching F1 team championship standings for year {year}")
         return None
 
 async def fetch_f1_race_control_messages(session_key: int) -> List[TimelineEvent]:
@@ -536,7 +563,7 @@ async def fetch_f1_race_control_messages(session_key: int) -> List[TimelineEvent
             return events
             
     except Exception as e:
-        logger.error(f"Error fetching F1 race control messages for session {session_key}: {e}")
+        handle_openf1_exception(e, logger, f"Error fetching F1 race control messages for session {session_key}")
         return []
 
 from ingestion.strategy import SportIngestionStrategy, registry

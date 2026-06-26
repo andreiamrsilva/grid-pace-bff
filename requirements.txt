@@ -12,3 +12,4 @@ pytest-asyncio
 pydantic-settings
 tenacity
 aiosqlite
+firebase-admin

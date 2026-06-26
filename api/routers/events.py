@@ -154,6 +154,12 @@ async def get_overall_standings(category: str, event_id: int):
     elif category.lower() == "f1":
         standings_to_cache = await fetch_f1_overall_standings(event_id)
     
+    if standings_to_cache is None:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Data source unavailable for {category.upper()} overall standings. The session might be live and restricted, or the upstream API failed."
+        )
+
     if standings_to_cache and standings_to_cache.standings:
         await save_overall_standings_to_db(event_id, standings_to_cache)
         

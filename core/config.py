@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     
     # APIs
     OPENF1_API_URL: str = "https://api.openf1.org/v1"
+    OPENF1_API_KEY: Optional[str] = None
     ERGAST_API_URL: str = "https://api.jolpi.ca/ergast/f1"
     
     # Security

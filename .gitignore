@@ -1,2 +1,3 @@
 /historic_events.db
 /local_cron_runner.py
+secrets/
