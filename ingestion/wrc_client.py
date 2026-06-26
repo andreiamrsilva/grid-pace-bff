@@ -1,7 +1,7 @@
 from typing import List, Optional, Any
 import httpx
 import logging
-from datetime import datetime, date
+from datetime import datetime, date, timezone, timedelta
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from openwrc.clients.wrc_api_client import WrcApiClient
@@ -75,6 +75,13 @@ async def _fetch_wrc_events_for_years(years: List[int]) -> List[CalendarEvent]:
                     event_status = "Completed"
                 elif round_info.event.start_date <= today <= round_info.event.finish_date:
                     event_status = "Running"
+                    try:
+                        # Ensure we only show "Running" if there is an active stage right now
+                        event_stages = await _fetch_wrc_event_stages(round_info.event.event_id)
+                        if event_stages and not any(s.is_live for s in event_stages):
+                            event_status = "Future event"
+                    except Exception as e:
+                        logger.warning(f"Failed to fetch stages to determine WRC live status for event {round_info.event.event_id}: {e}")
 
                 current_leader, current_leader_logo_path = None, None
                 if event_status in ["Running", "Completed"]:
@@ -144,8 +151,15 @@ async def _fetch_wrc_event_stages(event_id: int) -> List[Stage]:
                 for stage_details in section.stages:
                     start_time = next((c.first_car_due_date_time for c in section.controls if c.type == "StageStart" and c.stage_id == stage_details.stage_id), None)
                     
+                    # Fix API bug where old stages are returned as 'Running'
+                    actual_status = stage_details.status
+                    if actual_status == "Running" and start_time:
+                        now = datetime.now(timezone.utc)
+                        if (now - start_time) > timedelta(hours=4):
+                            actual_status = "Completed"
+                            
                     winner_name, winner_logo_path, winner_time = None, None, None
-                    if stage_details.status == "Completed":
+                    if actual_status == "Completed":
                         try:
                             stage_results = await client.get_event_stage_results(event_id, stage_details.stage_id, main_rally.rally_id)
                             if stage_results:
@@ -159,7 +173,7 @@ async def _fetch_wrc_event_stages(event_id: int) -> List[Stage]:
                         except Exception:
                             pass
                             
-                    stages.append(Stage(id=stage_details.stage_id, name=stage_details.name, number=stage_details.number, distance=stage_details.distance, start_time=start_time, status=stage_details.status, is_live=stage_details.status == "Running", winner_name=winner_name, winner_logo_path=winner_logo_path, winner_time=winner_time))
+                    stages.append(Stage(id=stage_details.stage_id, name=stage_details.name, number=stage_details.number, distance=stage_details.distance, start_time=start_time, status=actual_status, is_live=actual_status == "Running", winner_name=winner_name, winner_logo_path=winner_logo_path, winner_time=winner_time))
         
         stages.sort(key=lambda s: s.number)
         return stages
@@ -267,6 +281,21 @@ async def _fetch_wrc_overall_standings(event_id: int) -> Optional[OverallStandin
             entries_dict[entry.entry_id] = entry
 
         results = await client.get_rally_results(event_id, rally_id)
+        if not results:
+            # Fallback to the overall standings of the latest completed stage for ongoing rallies
+            itinerary_id = event_metadata.rallies[0].itinerary_id
+            itinerary = await client.get_event_itineraries(event_id, itinerary_id)
+            if itinerary and itinerary.itinerary_legs:
+                latest_stage_id = None
+                for leg in itinerary.itinerary_legs:
+                    for section in leg.itinerary_sections:
+                        for stage in section.stages:
+                            if stage.status == "Completed":
+                                latest_stage_id = stage.stage_id
+                
+                if latest_stage_id:
+                    results = await client.get_event_stage_results(event_id, latest_stage_id, rally_id)
+
         if not results:
             return None
 
