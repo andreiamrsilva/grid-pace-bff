@@ -1,6 +1,6 @@
 import asyncio
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from sqlalchemy import Column, Integer, String, Date, MetaData, Table, update, Float, Boolean, DateTime, select
+from sqlalchemy import Column, Integer, String, Date, MetaData, Table, update, Float, Boolean, DateTime, select, JSON
 from datetime import datetime
 from typing import List, Optional
 import logging
@@ -11,6 +11,7 @@ from models.stage_times import StageStandings, DriverTime
 from models.overall_standings import OverallStandings, OverallDriverStanding
 from models.championship_standings import ChampionshipStandings, ChampionshipDriverStanding
 from ingestion.openf1_client import get_openf1_calendar_events
+from models.timeline import TimelineEvent
 
 from core.config import settings
 
@@ -91,6 +92,19 @@ championship_standings_table = Table(
     Column('wins', Integer, nullable=True),
 )
 
+timeline_events_table = Table(
+    'timeline_events', metadata,
+    Column('id', String, primary_key=True),
+    Column('session_id', String, index=True),
+    Column('timestamp', DateTime),
+    Column('source', String),
+    Column('severity', String),
+    Column('message', String),
+    Column('driver_number', String, nullable=True),
+    Column('driver_name', String, nullable=True),
+    Column('metadata', JSON, nullable=True),
+)
+
 logger = logging.getLogger(__name__)
 
 async def init_db():
@@ -135,7 +149,7 @@ async def save_stages_to_db(event_id: int, stages: List[Stage]):
     async with AsyncSessionLocal() as db:
         await db.execute(stages_table.delete().where(stages_table.c.event_id == event_id))
         for stage_data in stages:
-            ins_stmt = stages_table.insert().values(event_id=event_id, **stage_data.model_dump())
+            ins_stmt = stages_table.insert().values(event_id=event_id, **stage_data.model_dump(exclude={"event_id"}))
             await db.execute(ins_stmt)
         await db.commit()
 
@@ -146,6 +160,15 @@ async def get_stages_from_db(event_id: int) -> Optional[List[Stage]]:
         rows = result.all()
         if rows:
             return [Stage(**row._asdict()) for row in rows]
+        return None
+
+async def get_stage_by_id_from_db(stage_id: int) -> Optional[Stage]:
+    async with AsyncSessionLocal() as db:
+        stmt = select(stages_table).where(stages_table.c.id == stage_id)
+        result = await db.execute(stmt)
+        row = result.first()
+        if row:
+            return Stage(**row._asdict())
         return None
 
 async def save_stage_times_to_db(stage_id: int, standings: StageStandings):
@@ -211,3 +234,41 @@ async def get_championship_standings_from_db(year: int, category: str) -> Option
             standings = [ChampionshipDriverStanding(**row._asdict()) for row in rows]
             return ChampionshipStandings(year=year, category=category, standings=standings)
         return None
+
+async def save_timeline_events_to_db(session_id: str, events: List[TimelineEvent]):
+    if not events:
+        return
+    async with AsyncSessionLocal() as db:
+        # For simplicity, we can do an insert or ignore / replace logic
+        # Or delete existing for the session and insert all. Since events might update,
+        # replace or insert might be better. Let's delete for session and insert.
+        await db.execute(timeline_events_table.delete().where(timeline_events_table.c.session_id == str(session_id)))
+        
+        for event in events:
+            # We dump to dict, but ensure enum types are strings, so mode='json'
+            event_data = event.model_dump(mode='json')
+            # Add session_id explicitly
+            event_data['session_id'] = str(session_id)
+            
+            # Since model_dump(mode='json') converts timestamp to string, we need to convert it back to datetime for SQLAlchemy
+            # if we defined the column as DateTime. The easiest is to use the original object values for DateTime.
+            event_data_typed = event.model_dump()
+            event_data_typed['session_id'] = str(session_id)
+            
+            ins_stmt = timeline_events_table.insert().values(**event_data_typed)
+            await db.execute(ins_stmt)
+            
+        await db.commit()
+
+async def get_timeline_events_from_db(session_id: str) -> List[TimelineEvent]:
+    async with AsyncSessionLocal() as db:
+        stmt = select(timeline_events_table).where(timeline_events_table.c.session_id == str(session_id)).order_by(timeline_events_table.c.timestamp)
+        result = await db.execute(stmt)
+        rows = result.all()
+        events = []
+        for row in rows:
+            row_dict = row._asdict()
+            # session_id is not in the model, pop it
+            row_dict.pop('session_id', None)
+            events.append(TimelineEvent(**row_dict))
+        return events

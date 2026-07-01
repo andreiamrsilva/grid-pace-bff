@@ -1,5 +1,5 @@
 from typing import List, Optional
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Depends, Request
 import logging
 
 from models.calendar import CalendarEvent
@@ -7,13 +7,19 @@ from core.database_service import get_all_events_from_db
 
 logger = logging.getLogger(__name__)
 
+from core.security import verify_client_token, verify_app_check_token
+from core.rate_limit import limiter
+
 router = APIRouter(
     prefix="/calendar",
     tags=["calendar"],
+    dependencies=[Depends(verify_client_token), Depends(verify_app_check_token)],
 )
 
 @router.get("", response_model=List[CalendarEvent])
+@limiter.limit("60/minute")
 async def get_calendar(
+    request: Request,
     year: Optional[int] = Query(None, description="Filter events by year"),
     categories: Optional[List[str]] = Query(None, description="Filter by a list of categories (e.g., WRC, F1). If not provided, all are returned.")
 ):

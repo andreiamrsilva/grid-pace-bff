@@ -13,3 +13,4 @@ pydantic-settings
 tenacity
 aiosqlite
 firebase-admin
+slowapi

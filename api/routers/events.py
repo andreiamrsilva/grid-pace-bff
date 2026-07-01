@@ -1,5 +1,5 @@
 from typing import List, Optional
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends, Request
 from datetime import datetime, timezone
 
 import sys
@@ -23,13 +23,18 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+from core.security import verify_client_token, verify_app_check_token
+from core.rate_limit import limiter
+
 router = APIRouter(
     prefix="/events",
     tags=["events"],
+    dependencies=[Depends(verify_client_token), Depends(verify_app_check_token)],
 )
 
 @router.get("/{category}/{event_id}/stages", response_model=List[Stage])
-async def get_event_details(category: str, event_id: int):
+@limiter.limit("60/minute")
+async def get_event_details(request: Request, category: str, event_id: int):
     """
     Get all stages/sessions for a given event, using a multi-layer caching strategy.
     """
@@ -65,14 +70,16 @@ async def get_event_details(category: str, event_id: int):
     else:
         raise HTTPException(status_code=404, detail="Category not supported.")
 
-    # 4. If the event is over, store in the permanent DB cache
-    if stages_to_cache and is_past_event:
+    # 4. Store in the permanent DB cache (always update stages so we have them)
+    if stages_to_cache:
         await save_stages_to_db(event_id, stages_to_cache)
 
     return stages_to_cache
 
 @router.get("/{category}/{event_id}/stages/{stage_id}/times", response_model=StageStandings)
+@limiter.limit("60/minute")
 async def get_stage_times(
+    request: Request,
     category: str, 
     event_id: int, 
     stage_id: int, 
@@ -132,7 +139,8 @@ async def get_stage_times(
     return final_standings or StageStandings(stage_id=stage_id, event_id=event_id, category=category.upper(), is_live=False, standings=[])
 
 @router.get("/{category}/{event_id}/overall", response_model=Optional[OverallStandings])
-async def get_overall_standings(category: str, event_id: int):
+@limiter.limit("60/minute")
+async def get_overall_standings(request: Request, category: str, event_id: int):
     """
     Get the overall standings for an event.
     Prioritizes Redis for live data, then falls back to DB for completed data.

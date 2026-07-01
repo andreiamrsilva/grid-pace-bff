@@ -1,5 +1,5 @@
 from typing import List, Optional
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Depends, Request
 import logging
 import asyncio
 
@@ -10,9 +10,13 @@ from core.redis_service import get_cached_data, set_cached_data
 
 logger = logging.getLogger(__name__)
 
+from core.security import verify_client_token, verify_app_check_token
+from core.rate_limit import limiter
+
 router = APIRouter(
     prefix="/championship",
     tags=["championship"],
+    dependencies=[Depends(verify_client_token), Depends(verify_app_check_token)],
 )
 
 async def _get_driver_standings_for_category(category: str, year: int) -> Optional[ChampionshipStandings]:
@@ -58,7 +62,9 @@ async def _get_team_standings_for_category(category: str, year: int) -> Optional
     return standings_to_cache
 
 @router.get("/drivers/{year}", response_model=List[ChampionshipStandings])
+@limiter.limit("60/minute")
 async def get_driver_championship_standings(
+    request: Request,
     year: int,
     categories: List[str] = Query(..., description="A list of categories (e.g., WRC, F1) to fetch standings for."),
 ):
@@ -73,7 +79,9 @@ async def get_driver_championship_standings(
     return final_standings
 
 @router.get("/teams/{year}", response_model=List[ChampionshipTeamStandings])
+@limiter.limit("60/minute")
 async def get_team_championship_standings(
+    request: Request,
     year: int,
     categories: List[str] = Query(..., description="A list of categories (e.g., WRC, F1) to fetch standings for."),
 ):

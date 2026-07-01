@@ -4,6 +4,7 @@ from datetime import datetime
 
 class Stage(BaseModel):
     id: int
+    event_id: Optional[int] = None
     name: str
     number: int
     distance: float

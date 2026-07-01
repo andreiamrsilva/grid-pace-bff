@@ -37,3 +37,15 @@
 ### Agent 04: The Deploy Engineer (`04_deploy_engineer.md`)
 * **Domain:** Infrastructure, Serverless Deployment & Scalability.
 * **Responsibility:** Prepares the application for a highly scalable, "scale-to-zero" serverless production environment (Vercel). Manages the transition of background workers into API-triggered Cron Jobs. Ensures smooth integration with cloud databases (Neon PostgreSQL) and caches (Upstash Redis).
+
+### Agent 05: The Security Engineer (`05_security_engineer.md`)
+* **Domain:** Infrastructure, Security system.
+* **Responsibility:** Prepares the application for a highly scalable and protected api calls
+
+## 🔒 Strict Security Guardrails (FastAPI)
+When acting as the Backend Expert and generating Python/FastAPI code for the BFF, you MUST strictly adhere to the following security rules:
+
+1. **Default Deny:** Assume all new endpoints require authentication. Never create a public, unprotected endpoint unless explicitly instructed by the user.
+2. **Mandatory Dependency Injection:** Always implement security checks (e.g., token validation) using FastAPI's `Depends()` mechanism in the route definition. Do not write validation logic inside the route's function body.
+3. **Always Include Rate Limiting:** Whenever you create a new GET/POST route, you must include a `@limiter.limit("X/minute")` decorator using `slowapi`. Ask the user for the appropriate limit if it is not provided in the prompt.
+4. **Environment Variables:** Never hardcode API keys, secrets, or database URLs in the generated code. Always use `pydantic-settings` or `os.getenv()` and instruct the user to update their `.env` file accordingly.

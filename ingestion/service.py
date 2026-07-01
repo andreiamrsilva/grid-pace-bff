@@ -79,6 +79,10 @@ async def run_live_timing_ingestion():
                                 existing_events_raw.extend([e.model_dump(mode='json') for e in new_events])
                                 await set_cached_data(timeline_key, existing_events_raw, expiration_seconds=86400) # Keep for 24h
                                 
+                                from core.database_service import save_timeline_events_to_db
+                                from models.timeline import TimelineEvent
+                                await save_timeline_events_to_db(str(stage_id), [TimelineEvent(**e) for e in existing_events_raw])
+                                
                                 # Send notifications for new timeline events
                                 from core.notification_service import send_comment_notification
                                 for e in new_events:
@@ -109,6 +113,9 @@ async def run_live_timing_ingestion():
                                     send_comment_notification(category, stage_id, preview)
                                 
                                 await set_cached_data(timeline_key, [e.model_dump(mode='json') for e in current_events], expiration_seconds=86400)
+                                
+                                from core.database_service import save_timeline_events_to_db
+                                await save_timeline_events_to_db(str(stage_id), current_events)
                     except Exception as e:
                         logger.error(f"Error processing F1 timeline notifications for Stage {stage_id}: {e}")
                         
@@ -196,3 +203,70 @@ async def run_current_year_update():
         await upsert_events(all_events)
     except Exception as e:
         logger.error(f"Error in current year update orchestration: {e}")
+
+async def populate_historic_timeline(stage_id: int) -> list:
+    """Populates historical timeline for a WRC stage combining basic system inference and Twitter scraping."""
+    from core.database_service import get_stage_by_id_from_db, save_timeline_events_to_db, get_stage_times_from_db
+    from ingestion.twitter_client import fetch_tweets_for_session
+    from models.timeline import TimelineEvent, TimelineEventSource, TimelineEventSeverity
+    import uuid
+    from datetime import timezone, timedelta
+    
+    stage = await get_stage_by_id_from_db(stage_id)
+    if not stage or not stage.start_time:
+        return []
+        
+    start_time = stage.start_time
+    if start_time.tzinfo is None:
+        start_time = start_time.replace(tzinfo=timezone.utc)
+    end_time = start_time + timedelta(hours=3) # Approx stage duration
+    
+    events = []
+    # 1. Base events
+    events.append(TimelineEvent(
+        id=str(uuid.uuid4()),
+        timestamp=start_time,
+        source=TimelineEventSource.WRC_SYSTEM_INFERENCE,
+        severity=TimelineEventSeverity.INFO,
+        message=f"🟢 A Especial {stage.name} começou.",
+        metadata={"message_pt": f"🟢 A Especial {stage.name} começou.", "message_en": f"🟢 Stage {stage.name} started."}
+    ))
+    
+    events.append(TimelineEvent(
+        id=str(uuid.uuid4()),
+        timestamp=end_time,
+        source=TimelineEventSource.WRC_SYSTEM_INFERENCE,
+        severity=TimelineEventSeverity.INFO,
+        message=f"🏁 A Especial {stage.name} foi concluída.",
+        metadata={"message_pt": f"🏁 A Especial {stage.name} foi concluída.", "message_en": f"🏁 Stage {stage.name} was completed."}
+    ))
+    
+    # 2. Driver results summary
+    standings = await get_stage_times_from_db(stage_id, stage.event_id, "WRC")
+    if standings and standings.standings:
+        for i, st in enumerate(standings.standings[:15]): # top 15
+            if st.status == "Finished":
+                events.append(TimelineEvent(
+                    id=str(uuid.uuid4()),
+                    timestamp=start_time + timedelta(minutes=15 + i*2),
+                    source=TimelineEventSource.WRC_SYSTEM_INFERENCE,
+                    severity=TimelineEventSeverity.INFO,
+                    message=f"🏁 {st.driver_name} terminou com o tempo de {st.time}.",
+                    metadata={
+                        "message_pt": f"🏁 {st.driver_name} terminou com o tempo de {st.time}.",
+                        "message_en": f"🏁 {st.driver_name} finished with a time of {st.time}."
+                    }
+                ))
+
+    # 3. Twitter Scraping
+    try:
+        tweets = await fetch_tweets_for_session(start_time, end_time, "from:OfficialWRC", TimelineEventSource.WRC_SOCIAL_MEDIA, "@OfficialWRC")
+        if tweets:
+            events.extend(tweets)
+    except Exception as e:
+        logger.error(f"Error fetching historical tweets for stage {stage_id}: {e}")
+        
+    events.sort(key=lambda x: x.timestamp)
+    
+    await save_timeline_events_to_db(str(stage_id), events)
+    return events

@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel
 import asyncio
 import logging
@@ -13,37 +13,49 @@ from ingestion.service import (
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/cron", tags=["Cron Jobs"])
+from core.security import verify_cron_secret
+from core.rate_limit import limiter
+
+router = APIRouter(
+    prefix="/cron", 
+    tags=["Cron Jobs"],
+    dependencies=[Depends(verify_cron_secret)]
+)
 
 class CronResponse(BaseModel):
     status: str
 
 @router.post("/ingest-live-timing", response_model=CronResponse)
-async def ingest_live_timing():
+@limiter.limit("60/minute")
+async def ingest_live_timing(request: Request):
     """Ingests live timing for all registered sports."""
     await run_live_timing_ingestion()
     return {"status": "success"}
 
 @router.post("/ingest-overall-standings", response_model=CronResponse)
-async def ingest_overall_standings():
+@limiter.limit("60/minute")
+async def ingest_overall_standings(request: Request):
     """Ingests overall standings."""
     await run_overall_standings_ingestion()
     return {"status": "success"}
 
 @router.post("/ingest-championship", response_model=CronResponse)
-async def ingest_championship():
+@limiter.limit("60/minute")
+async def ingest_championship(request: Request):
     """Ingests championship standings."""
     await run_championship_standings_ingestion()
     return {"status": "success"}
 
 @router.post("/archive-historic", response_model=CronResponse)
-async def archive_historic():
+@limiter.limit("60/minute")
+async def archive_historic(request: Request):
     """Archives historic events."""
     await run_historic_archive()
     return {"status": "success"}
 
 @router.post("/update-current-year", response_model=CronResponse)
-async def update_current_year():
+@limiter.limit("60/minute")
+async def update_current_year(request: Request):
     """Updates events for the current year."""
     await run_current_year_update()
     return {"status": "success"}

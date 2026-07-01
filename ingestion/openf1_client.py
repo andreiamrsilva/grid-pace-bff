@@ -510,7 +510,7 @@ async def fetch_f1_race_control_messages(session_key: int) -> List[TimelineEvent
             for item in data:
                 flag = item.get('flag', '')
                 category = item.get('category', '')
-                msg = item.get('message', '')
+                msg = item.get('message', '').title()
                 
                 # Determine severity
                 severity = TimelineEventSeverity.INFO
@@ -560,6 +560,22 @@ async def fetch_f1_race_control_messages(session_key: int) -> List[TimelineEvent
             
             # Sort by timestamp
             events.sort(key=lambda x: x.timestamp)
+            
+            # Fetch Twitter data for the duration of these events
+            if events:
+                try:
+                    from ingestion.twitter_client import fetch_tweets_for_session
+                    start_time = events[0].timestamp
+                    end_time = events[-1].timestamp
+                    tweets = await fetch_tweets_for_session(
+                        start_time, end_time, "from:F1", TimelineEventSource.F1_SOCIAL_MEDIA, "@F1"
+                    )
+                    if tweets:
+                        events.extend(tweets)
+                        events.sort(key=lambda x: x.timestamp)
+                except Exception as ex:
+                    logger.warning(f"Could not fetch F1 tweets for session {session_key}: {ex}")
+                    
             return events
             
     except Exception as e:

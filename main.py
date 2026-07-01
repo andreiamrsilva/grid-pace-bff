@@ -1,3 +1,7 @@
+import os
+import certifi
+os.environ["SSL_CERT_FILE"] = certifi.where()
+
 import logging
 import asyncio
 import os
@@ -5,9 +9,14 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+
 from api.routers import calendar, events, championship, news, timeline
 from ingestion.router import router as cron_router
 from core.database_service import init_db
+from core.rate_limit import limiter
 
 # --- Logging Configuration ---
 logging.basicConfig(
@@ -35,6 +44,11 @@ async def lifespan(app: FastAPI):
 # --- FastAPI App ---
 
 app = FastAPI(title="Grid Pace BFF API", lifespan=lifespan)
+
+# Rate Limiting setup
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
 
 # Mount the logos directory
 if os.path.exists("logos"):
