@@ -4,8 +4,10 @@ from typing import List
 from datetime import datetime, timezone, timedelta
 import uuid
 import os
+import time
+import calendar
+import feedparser
 
-from ntscraper import Nitter
 from models.timeline import TimelineEvent, TimelineEventSource, TimelineEventSeverity
 
 # Setup specific logger for Twitter Scraper
@@ -18,17 +20,10 @@ formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(messag
 handler.setFormatter(formatter)
 twitter_logger.addHandler(handler)
 
-def parse_twitter_date(date_str: str) -> datetime:
-    """
-    Parses dates from ntscraper, typically in format: 'Apr 11, 2024 · 2:03 PM UTC'
-    """
-    try:
-        clean_date = date_str.replace(" ·", "")
-        dt = datetime.strptime(clean_date, "%b %d, %Y %I:%M %p %Z")
-        return dt.replace(tzinfo=timezone.utc)
-    except Exception as e:
-        twitter_logger.error(f"Failed to parse date string '{date_str}': {e}")
-        return datetime.now(timezone.utc)
+RSS_MAPPING = {
+    "from:OfficialWRC": "https://dirtfish.com/rally/wrc/feed/",
+    "from:F1": "https://www.motorsport.com/rss/f1/news/"
+}
 
 async def fetch_tweets_for_session(
     start_time: datetime, 
@@ -38,41 +33,48 @@ async def fetch_tweets_for_session(
     author_display: str = "@OfficialWRC"
 ) -> List[TimelineEvent]:
     """
-    Uses ntscraper to search for tweets in a given time window.
+    Uses RSS Feeds to search for news in a given time window, maintaining the old method signature for compatibility.
     """
     events = []
     try:
-        scraper = Nitter()
-        since_date = start_time.strftime("%Y-%m-%d")
-        until_date = (end_time + timedelta(days=1)).strftime("%Y-%m-%d")
-        
-        query = f"{search_term} since:{since_date} until:{until_date}"
-        
+        rss_url = RSS_MAPPING.get(search_term)
+        if not rss_url:
+            twitter_logger.error(f"No RSS feed mapping found for search_term: {search_term}")
+            return events
+
         loop = asyncio.get_running_loop()
-        def get_tweets_sync():
-            return scraper.get_tweets(query, mode='term', number=50)
+        def get_rss_sync():
+            return feedparser.parse(rss_url)
             
-        result = await loop.run_in_executor(None, get_tweets_sync)
+        result = await loop.run_in_executor(None, get_rss_sync)
         
-        if result and 'tweets' in result:
-            for t in result['tweets']:
-                tweet_time = parse_twitter_date(t.get('date', ''))
+        if result and hasattr(result, 'entries'):
+            for entry in result.entries:
+                # parsed date is time.struct_time
+                if hasattr(entry, 'published_parsed') and entry.published_parsed:
+                    ts = calendar.timegm(entry.published_parsed)
+                    dt = datetime.fromtimestamp(ts, timezone.utc)
+                else:
+                    dt = datetime.now(timezone.utc)
+                    
                 # Precise time filtering
-                if start_time <= tweet_time <= end_time:
-                    text = t.get('text', '')
+                if start_time <= dt <= end_time:
+                    title = getattr(entry, 'title', '')
+                    link = getattr(entry, 'link', '')
+                    deterministic_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, f"{link}_{title}"))
                     events.append(TimelineEvent(
-                        id=str(uuid.uuid4()),
-                        timestamp=tweet_time,
+                        id=deterministic_id,
+                        timestamp=dt,
                         source=source,
                         severity=TimelineEventSeverity.INFO,
-                        message=f"🐦 {author_display}: {text}",
+                        message=f"📰 {title}",
                         metadata={
-                            "tweet_url": t.get('link', ''),
-                            "message_pt": f"🐦 {author_display}: {text}",
-                            "message_en": f"🐦 {author_display}: {text}"
+                            "url": link,
+                            "message_pt": f"📰 {title}",
+                            "message_en": f"📰 {title}"
                         }
                     ))
     except Exception as e:
-        twitter_logger.error(f"Failed to fetch tweets using ntscraper. Query: {search_term}. Error: {e}")
+        twitter_logger.error(f"Failed to fetch RSS feeds. Query/Term: {search_term}. Error: {e}")
         
     return events

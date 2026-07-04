@@ -539,6 +539,85 @@ async def fetch_f1_team_championship_standings(year: int) -> Optional[Championsh
         handle_openf1_exception(e, logger, f"Error fetching F1 team championship standings for year {year}")
         return None
 
+import re
+
+def translate_f1_message_to_pt(msg: str, flag: str, category: str) -> str:
+    """Translates common F1 race control messages to Portuguese."""
+    if not msg:
+        return ""
+        
+    original = msg.upper()
+    translated = original
+    
+    # Common F1 phrases dictionary (ordered roughly by length to prevent partial matches)
+    replacements = {
+        r"NOTED - LEAVING THE TRACK AND GAINING AN ADVANTAGE": "ANOTADO - SAÍDA DE PISTA COM GANHO DE VANTAGEM",
+        r"GREEN LIGHT - PIT EXIT OPEN": "LUZ VERDE - SAÍDA DAS BOXES ABERTA",
+        r"WILL BE INVESTIGATED AFTER THE SPRINT": "SERÁ INVESTIGADO APÓS A SPRINT",
+        r"WILL BE INVESTIGATED AFTER THE RACE": "SERÁ INVESTIGADO APÓS A CORRIDA",
+        r"WILL BE INVESTIGATED AFTER THE SESSION": "SERÁ INVESTIGADO APÓS A SESSÃO",
+        r"LAPPED CARS MAY NOW OVERTAKE": "CARROS RETARDATÁRIOS PODEM ULTRAPASSAR",
+        r"DOUBLE YELLOW IN TRACK SECTOR": "DUPLA AMARELA NO SETOR",
+        r"YELLOW IN TRACK SECTOR": "AMARELA NO SETOR",
+        r"DEBRIS IN TRACK SECTOR": "DETRITOS NO SETOR DA PISTA",
+        r"CLEAR IN TRACK SECTOR": "PISTA LIMPA NO SETOR",
+        r"VIRTUAL SAFETY CAR ENDING": "FIM DO SAFETY CAR VIRTUAL",
+        r"SAFETY CAR IN THIS LAP": "SAFETY CAR RECOLHE NESTA VOLTA",
+        r"DELETED - TRACK LIMITS": "TEMPO APAGADO - LIMITES DE PISTA",
+        r"NO FURTHER INVESTIGATION": "NENHUMA INVESTIGAÇÃO ADICIONAL",
+        r"WAVED BLUE FLAG FOR": "BANDEIRA AZUL AGITADA PARA",
+        r"MOVING UNDER BRAKING": "MUDANÇA DE DIREÇÃO NA TRAVAGEM",
+        r"INCIDENT INVOLVING": "INCIDENTE ENVOLVENDO",
+        r"TRACK SURFACE SLIPPERY": "PISTA ESCORREGADIA",
+        r"CAUSING A COLLISION": "CAUSAR UMA COLISÃO",
+        r"SAFETY CAR DEPLOYED": "SAFETY CAR ACIONADO",
+        r"VIRTUAL SAFETY CAR": "SAFETY CAR VIRTUAL",
+        r"BLACK AND WHITE FLAG": "BANDEIRA PRETA E BRANCA",
+        r"WILL BE REINSTATED": "SERÁ RESTABELECIDO",
+        r"TIME PENALTY FOR": "PENALIZAÇÃO DE TEMPO PARA",
+        r"STOPPED ON TRACK": "PARADO NA PISTA",
+        r"CHEQUERED FLAG": "BANDEIRA QUADRICULADA",
+        r"OVERTAKE ENABLED": "OVERTAKE ATIVADO",
+        r"OVERTAKE DISABLED": "OVERTAKE DESATIVADO",
+        r"RISK OF RAIN FOR": "RISCO DE CHUVA PARA",
+        r"PIT EXIT CLOSED": "SAÍDA DAS BOXES FECHADA",
+        r"SESSION STARTED": "SESSÃO INICIADA",
+        r"DEBRIS ON TRACK": "DETRITOS NA PISTA",
+        r"PIT LANE CLOSED": "PIT LANE FECHADO",
+        r"PIT LANE OPEN": "PIT LANE ABERTO",
+        r"CLEAR IN TURN": "PISTA LIMPA NA CURVA",
+        r"UNDER INVESTIGATION": "SOB INVESTIGAÇÃO",
+        r"WILL BE INVESTIGATED": "SERÁ INVESTIGADO",
+        r"DOUBLE YELLOW": "DUPLA AMARELA",
+        r"DOUBLE YELLOG": "DUPLA AMARELA",
+        r"DRS DISABLED": "DRS DESATIVADO",
+        r"TRACK SECTOR": "SETOR",
+        r"DRS ENABLED": "DRS ATIVADO",
+        r"TIME PENALTY": "PENALIZAÇÃO DE TEMPO",
+        r"AT CURVE": "NA CURVA",
+        r"AT TURN": "NA CURVA",
+        r"NOTED": "ANOTADO",
+        r"TURN": "CURVA",
+        r"CARS": "CARROS",
+        r"LAP": "VOLTA",
+        r"CAR": "CARRO"
+    }
+    
+    for en, pt in replacements.items():
+        translated = re.sub(rf"\b{en}\b", pt, translated)
+        
+    # Formatting specific flag/category prefixes if applicable
+    prefix = ""
+    if flag in ['YELLOW', 'DOUBLE YELLOW']:
+        prefix = "Bandeira Amarela: "
+    elif flag == 'RED' or category == 'RedFlag':
+        prefix = "Bandeira Vermelha: "
+    elif category == 'SafetyCar' and "SAFETY CAR" not in translated:
+        prefix = "Carro de Segurança: "
+        
+    final_msg = f"{prefix}{translated}".strip()
+    return final_msg.title()
+
 async def fetch_f1_race_control_messages(session_key: int) -> List[TimelineEvent]:
     """
     Fetches race control messages for an F1 session and maps them to our TimelineEvent model.
@@ -574,18 +653,15 @@ async def fetch_f1_race_control_messages(session_key: int) -> List[TimelineEvent
                 if dt.tzinfo is None:
                     dt = dt.replace(tzinfo=timezone.utc)
 
-                # Basic Portuguese mapping for common F1 flags/categories
-                pt_msg = msg
-                if flag == 'YELLOW' or flag == 'DOUBLE YELLOW':
-                    pt_msg = f"Bandeira Amarela: {msg}"
-                elif flag == 'RED' or category == 'RedFlag':
-                    pt_msg = f"Bandeira Vermelha: {msg}"
-                elif category == 'SafetyCar':
-                    pt_msg = f"Carro de Segurança: {msg}"
+                # Comprehensive Portuguese mapping for common F1 terminology
+                pt_msg = translate_f1_message_to_pt(item.get('message', ''), flag, category)
+
+                # Create deterministic ID to avoid duplicate notifications on polling
+                deterministic_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, f"f1_{session_key}_{item['date']}_{msg}"))
 
                 events.append(
                     TimelineEvent(
-                        id=str(uuid.uuid4()),
+                        id=deterministic_id,
                         timestamp=dt,
                         source=TimelineEventSource.F1_RACE_CONTROL,
                         severity=severity,
