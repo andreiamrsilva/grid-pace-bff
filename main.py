@@ -5,9 +5,10 @@ os.environ["SSL_CERT_FILE"] = certifi.where()
 import logging
 import asyncio
 import os
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
+from fastapi.middleware.cors import CORSMiddleware
 
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -45,6 +46,15 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Grid Pace BFF API", lifespan=lifespan)
 
+# CORS configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Adjust this in production to specific domains if needed
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Rate Limiting setup
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
@@ -64,5 +74,6 @@ app.include_router(timeline.router)
 app.include_router(cron_router)
 
 @app.get("/")
-async def root():
+@limiter.limit("5/minute")
+async def root(request: Request):
     return {"message": "Welcome to Grid Pace BFF API"}

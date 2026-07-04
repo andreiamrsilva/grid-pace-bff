@@ -58,8 +58,9 @@ async def run_live_timing_ingestion():
                     notif_key = f"notification:sent:{category.lower()}:{stage_id}"
                     if not await get_cached_data(notif_key):
                         from core.notification_service import send_live_stage_notification
-                        success = send_live_stage_notification(category, stage_id, stage_name, event_name)
-                        if success:
+                        success_en = send_live_stage_notification(category, stage_id, stage_name, event_name, "en")
+                        success_pt = send_live_stage_notification(category, stage_id, stage_name, event_name, "pt")
+                        if success_en or success_pt:
                             await set_cached_data(notif_key, {"sent": True}, expiration_seconds=86400)
 
                 # --- AGENT 03 WRC INFERENCE ---
@@ -86,9 +87,12 @@ async def run_live_timing_ingestion():
                                 # Send notifications for new timeline events
                                 from core.notification_service import send_comment_notification
                                 for e in new_events:
-                                    preview = e.message[:50] + ("..." if len(e.message) > 50 else "")
-                                    logger.info(f"Triggering {category.upper()} timeline push notification for stage {stage_id}: {preview}")
-                                    send_comment_notification(category, stage_id, preview)
+                                    for lang in ["en", "pt"]:
+                                        lang_key = f"message_{lang}"
+                                        msg_text = e.metadata.get(lang_key, e.message) if e.metadata else e.message
+                                        preview = msg_text[:50] + ("..." if len(msg_text) > 50 else "")
+                                        logger.info(f"Triggering {category.upper()} timeline push notification ({lang}) for stage {stage_id}: {preview}")
+                                        send_comment_notification(category, stage_id, preview, language=lang)
                         except Exception as e:
                             logger.error(f"Error in Agent 03 WRC inference for Stage {stage_id}: {e}")
                 
@@ -108,9 +112,12 @@ async def run_live_timing_ingestion():
                             
                             if new_events:
                                 for e in new_events:
-                                    preview = e.message[:50] + ("..." if len(e.message) > 50 else "")
-                                    logger.info(f"Triggering {category.upper()} timeline push notification for session {stage_id}: {preview}")
-                                    send_comment_notification(category, stage_id, preview)
+                                    for lang in ["en", "pt"]:
+                                        lang_key = f"message_{lang}"
+                                        msg_text = e.metadata.get(lang_key, e.message) if e.metadata else e.message
+                                        preview = msg_text[:50] + ("..." if len(msg_text) > 50 else "")
+                                        logger.info(f"Triggering {category.upper()} timeline push notification ({lang}) for session {stage_id}: {preview}")
+                                        send_comment_notification(category, stage_id, preview, language=lang)
                                 
                                 await set_cached_data(timeline_key, [e.model_dump(mode='json') for e in current_events], expiration_seconds=86400)
                                 

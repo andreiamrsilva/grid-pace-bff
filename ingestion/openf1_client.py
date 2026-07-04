@@ -216,31 +216,20 @@ async def get_openf1_calendar_events(year: int) -> List[CalendarEvent]:
                 
                 race_session = next((s for s in meeting_sessions if s['session_name'] == 'Race'), None)
                 
-                # Determine Status
+                meeting_sessions.sort(key=lambda s: s['date_start'])
+                first_session_start = datetime.fromisoformat(meeting_sessions[0]['date_start'])
+                last_session_end = datetime.fromisoformat(meeting_sessions[-1]['date_end'])
+                
+                if first_session_start.tzinfo is None:
+                    first_session_start = first_session_start.replace(tzinfo=timezone.utc)
+                if last_session_end.tzinfo is None:
+                    last_session_end = last_session_end.replace(tzinfo=timezone.utc)
+                
                 now = datetime.now(timezone.utc)
-                event_status = "Future event"
-                is_completed = True
-                is_running = False
-
-                for session in meeting_sessions:
-                    s_start = datetime.fromisoformat(session['date_start'])
-                    if s_start.tzinfo is None:
-                        s_start = s_start.replace(tzinfo=timezone.utc)
-                    s_end = datetime.fromisoformat(session['date_end'])
-                    if s_end.tzinfo is None:
-                        s_end = s_end.replace(tzinfo=timezone.utc)
-                        
-                    if s_start <= now <= s_end:
-                        is_running = True
-                        is_completed = False
-                        break
-                    if now < s_start:
-                        is_completed = False
-
-                if is_running:
-                    event_status = "Running"
-                elif is_completed:
+                if now > last_session_end:
                     event_status = "Completed"
+                elif now >= first_session_start:
+                    event_status = "Running"
                 else:
                     event_status = "Future event"
 

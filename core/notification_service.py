@@ -72,11 +72,17 @@ def unsubscribe_from_topic(tokens: List[str], topic: str) -> bool:
 
 # Domain specific notification helpers
 
-def send_live_stage_notification(category: str, stage_id: int, stage_name: str, event_name: str) -> bool:
+def send_live_stage_notification(category: str, stage_id: int, stage_name: str, event_name: str, language: str = "en") -> bool:
     """Sends a notification when a stage/session for any category goes live."""
-    topic = f"{category.lower()}_live_stages"
-    title = f"{category.upper()} Live: {stage_name}"
-    body = f"The {stage_name} at {event_name} is now live! Follow the live times."
+    topic = f"{category.lower()}_live_stages_{language.lower()}"
+    
+    if language.lower() == "pt":
+        title = f"{category.upper()} em Direto: {stage_name}"
+        body = f"A {stage_name} no {event_name} está a decorrer! Acompanha os tempos ao vivo."
+    else:
+        title = f"{category.upper()} Live: {stage_name}"
+        body = f"The {stage_name} at {event_name} is now live! Follow the live times."
+        
     data = {
         "type": f"{category.lower()}_live",
         "stage_id": str(stage_id),
@@ -86,10 +92,10 @@ def send_live_stage_notification(category: str, stage_id: int, stage_name: str, 
     logger.info(f"[PUSH OUT] Sending LIVE Notification -> Topic: {topic} | Title: {title} | Data: {data}")
     return send_topic_notification(topic, title, body, data)
 
-def send_comment_notification(category: str, event_id: int, message_preview: str) -> bool:
+def send_comment_notification(category: str, event_id: int, message_preview: str, language: str = "en") -> bool:
     """Prepared for sending notifications about new comments."""
-    topic = f"{category.lower()}_comments"
-    title = f"New update on {category.upper()}"
+    topic = f"{category.lower()}_comments_{language.lower()}"
+    title = f"Nova atualização na {category.upper()}" if language.lower() == "pt" else f"New update on {category.upper()}"
     body = message_preview
     data = {
         "type": f"{category.lower()}_comment",
