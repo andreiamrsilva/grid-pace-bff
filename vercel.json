@@ -11,5 +11,19 @@
       "src": "/(.*)",
       "dest": "main.py"
     }
+  ],
+  "crons": [
+    {
+      "path": "/cron/update-current-year",
+      "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/cron/ingest-championship",
+      "schedule": "0 1 * * *"
+    },
+    {
+       "path": "/cron/archive-historic",
+       "schedule": "0 2 1 1 *"
+    }
   ]
 }
