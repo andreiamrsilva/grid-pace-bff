@@ -1,4 +1,5 @@
 import os
+import json
 import logging
 from typing import Optional, List
 import firebase_admin
@@ -10,15 +11,24 @@ logger = logging.getLogger(__name__)
 def initialize_firebase():
     if not firebase_admin._apps:
         try:
-            # We look for the file in secrets/
+            # First try to load from Environment Variable (Vercel)
+            firebase_env = os.environ.get("FIREBASE_SERVICE_ACCOUNT")
+            if firebase_env:
+                cred_dict = json.loads(firebase_env)
+                cred = credentials.Certificate(cred_dict)
+                firebase_admin.initialize_app(cred)
+                logger.info("Firebase Admin SDK initialized successfully from ENV.")
+                return
+
+            # Fallback to local secrets/ folder (Development)
             base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
             cred_path = os.path.join(base_dir, "secrets", "firebase-adminsdk.json")
             if os.path.exists(cred_path):
                 cred = credentials.Certificate(cred_path)
                 firebase_admin.initialize_app(cred)
-                logger.info("Firebase Admin SDK initialized successfully.")
+                logger.info("Firebase Admin SDK initialized successfully from local file.")
             else:
-                logger.warning(f"Firebase credentials not found at {cred_path}. Push notifications will not work.")
+                logger.warning(f"Firebase credentials not found at {cred_path} or ENV. Push notifications will not work.")
         except Exception as e:
             logger.error(f"Error initializing Firebase Admin SDK: {e}")
 

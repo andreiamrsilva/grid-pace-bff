@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a62e5b2f-3708-4f63-8803-b0b454e614aa" name="Changes" comment="Add certifi to requirements to fix Vercel crash">
+    <list default="true" id="a62e5b2f-3708-4f63-8803-b0b454e614aa" name="Changes" comment="Updated the open-wrc dependency.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -27,12 +27,12 @@
     &quot;assignee&quot;: &quot;andreiamrsilva&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings">{
-  &quot;selectedUrlAndAccountId&quot;: {
-    &quot;url&quot;: &quot;https://github.com/andreiamrsilva/OpenWRC.git&quot;,
-    &quot;accountId&quot;: &quot;1b06377f-7b72-401b-aab4-b33b6333ac09&quot;
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/andreiamrsilva/grid-pace-bff.git",
+    "accountId": "a16c02ac-e249-44ab-9999-757012a15fed"
   }
-}</component>
+}]]></component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 6,
   &quot;fromUser&quot;: false
@@ -80,7 +80,7 @@
       <workItem from="1781016450033" duration="40867000" />
       <workItem from="1781447061334" duration="65840000" />
       <workItem from="1781739250707" duration="19069000" />
-      <workItem from="1782462484512" duration="24462000" />
+      <workItem from="1782462484512" duration="25245000" />
     </task>
     <task id="LOCAL-00001" summary="GridPace server to get wrc information">
       <option name="closed" value="true" />
@@ -442,14 +442,32 @@
       <option name="project" value="LOCAL" />
       <updated>1783180254208</updated>
     </task>
-    <option name="localTasksCounter" value="46" />
+    <task id="LOCAL-00046" summary="Updated the open-wrc dependency.">
+      <option name="closed" value="true" />
+      <created>1783190239032</created>
+      <option name="number" value="00046" />
+      <option name="presentableId" value="LOCAL-00046" />
+      <option name="project" value="LOCAL" />
+      <updated>1783190239032</updated>
+    </task>
+    <option name="localTasksCounter" value="47" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
   </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="Added position_change property." />
     <MESSAGE value="Added championship." />
     <MESSAGE value="Fixed crash when no data from f1 or wrc." />
     <MESSAGE value="Added championship for teams." />
@@ -474,6 +492,7 @@
     <MESSAGE value="Start necessary files to de server deploy." />
     <MESSAGE value="Fix database connection for postgres and prepare vercel" />
     <MESSAGE value="Add certifi to requirements to fix Vercel crash" />
-    <option name="LAST_COMMIT_MESSAGE" value="Add certifi to requirements to fix Vercel crash" />
+    <MESSAGE value="Updated the open-wrc dependency." />
+    <option name="LAST_COMMIT_MESSAGE" value="Updated the open-wrc dependency." />
   </component>
 </project>
