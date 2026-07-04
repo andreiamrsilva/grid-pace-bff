@@ -16,3 +16,4 @@ firebase-admin
 slowapi
 asyncpg
 certifi
+./openwrc

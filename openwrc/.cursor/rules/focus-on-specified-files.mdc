@@ -1,0 +1,64 @@
+---
+description: Only modify files explicitly specified by the user
+globs: **/test_*.py
+alwaysApply: false
+---
+
+# Focus on Specified Files Only
+
+When the user specifies a particular file to fix or modify, **only touch that file**. Do not modify other files unless explicitly requested.
+
+## Rule
+
+If the user says:
+- "fix the tests"
+- "update @filename"
+- "only fix the tests"
+- "just fix [specific file]"
+
+Then **ONLY** modify the specified file(s). Do not:
+- Fix syntax errors in other files
+- Update mappers or utilities
+- Refactor related code
+- "Improve" adjacent files
+
+## Examples
+
+### ❌ BAD
+```
+User: "fix the tests"
+Assistant: *fixes tests, then also updates mappers, crud_utils, and model files*
+```
+
+### ✅ GOOD
+```
+User: "fix the tests"
+Assistant: *only modifies test files, marks broken tests as skipped if dependencies are incomplete*
+```
+
+### ❌ BAD
+```
+User: "only fix @tests/test_model_upsert.py"
+Assistant: *fixes test, then notices crud_utils.py has incomplete code and fixes that too*
+```
+
+### ✅ GOOD
+```
+User: "only fix @tests/test_model_upsert.py"
+Assistant: *only modifies test_model_upsert.py, works around incomplete dependencies*
+```
+
+## When Dependencies Are Broken
+
+If the specified file depends on broken code elsewhere:
+- Mark tests as skipped with clear reason
+- Add comments explaining what's missing
+- Inform the user what needs fixing elsewhere
+- **NEVER** automatically fix the dependencies
+
+## Syntax Errors in Other Files
+
+If you discover syntax errors or issues in other files while working:
+- **DO NOT FIX THEM**
+- Mention them to the user
+- Always leave it to the user to fix

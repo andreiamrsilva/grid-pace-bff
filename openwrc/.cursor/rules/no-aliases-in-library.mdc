@@ -1,0 +1,90 @@
+---
+description: Avoid import aliases in library code - prioritize explicitness
+globs: src/openwrc/**/*.py
+alwaysApply: false
+---
+
+# No Aliases in Library Code
+
+Avoid import aliases (`as`) in library/package code. Prioritize explicitness and readability over convenience.
+
+## Policy
+
+- ❌ **Never alias** in library code (`src/openwrc/`)
+- ✅ **Rare exceptions** allowed in top-level consumer scripts (`main.py`, `scripts/`)
+- **Rationale**: Library code should be self-documenting and explicit
+
+## Examples
+
+### ❌ BAD - Creating aliases for convenience
+
+```python
+# In src/openwrc/models/external_api/__init__.py
+from .event_models import ApiCountryMetadata
+
+# ❌ DON'T DO THIS
+ApiCountry = ApiCountryMetadata  # Creates an alias
+```
+
+**Fix**: Update consumers to use `ApiCountryMetadata` directly.
+
+### ❌ BAD - Aliasing in __init__.py exports
+
+```python
+# In src/openwrc/models/external_api/__init__.py
+from .event_models import (
+    EventMetadata as ApiEventMetadata,  # ❌ Wrong
+    RallyMetadata as ApiRallyMetadata,   # ❌ Wrong
+)
+```
+
+**Fix**: Rename the classes themselves to have `Api` prefix:
+```python
+# In event_models.py
+class ApiEventMetadata(WrcExternalApiBaseModel):  # ✅ Explicit
+    ...
+
+# In __init__.py
+from .event_models import ApiEventMetadata  # ✅ No alias
+```
+
+### ❌ BAD - Aliasing imported functions
+
+```python
+from openwrc.storage.mappers import (
+    map_api_event_to_db_model as map_event,  # ❌ Don't alias our functions
+)
+```
+
+### ✅ GOOD - Standard library common aliases (acceptable)
+
+```python
+import datetime as dt  # ✅ Common convention
+import numpy as np     # ✅ Standard alias
+import pandas as pd    # ✅ Standard alias
+```
+
+### ✅ GOOD - Top-level consumer scripts (rare cases only)
+
+```python
+# In main.py or scripts/analyze.py (consumer scripts)
+from openwrc.models.external_api import (
+    ApiVeryLongDescriptiveClassName as Short  # ✅ OK in consumer scripts
+)
+```
+
+## Why This Matters
+
+1. **Discoverability**: No mental mapping required
+2. **IDE Navigation**: Jump-to-definition works without confusion
+3. **Grep-ability**: Searching for `ApiCountryMetadata` finds all usage
+4. **Refactoring**: Renames propagate cleanly without hidden aliases
+
+## When You're Tempted to Alias
+
+**Instead of creating an alias, consider:**
+1. Is the name too long? → Rename the class itself
+2. Naming conflict? → Fix the module structure
+3. Too verbose? → Rethink your naming convention
+
+**The fix is always to update the source, not create aliases.**
