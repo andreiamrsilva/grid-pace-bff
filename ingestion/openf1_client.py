@@ -56,6 +56,53 @@ def handle_openf1_exception(e: Exception, logger, context_msg: str):
     else:
         logger.error(f"{context_msg}: {e}")
 
+import time
+
+class OpenF1AuthManager:
+    def __init__(self):
+        self._token: Optional[str] = None
+        self._expires_at: float = 0
+        self._lock = asyncio.Lock()
+
+    async def get_token(self) -> Optional[str]:
+        if not settings.OPENF1_USERNAME or not settings.OPENF1_PASSWORD:
+            return None
+
+        # Check if token is valid and not expiring within the next 60 seconds
+        if self._token and time.time() < (self._expires_at - 60):
+            return self._token
+
+        async with self._lock:
+            # Double check inside lock
+            if self._token and time.time() < (self._expires_at - 60):
+                return self._token
+
+            try:
+                token_url = "https://api.openf1.org/token"
+                payload = {
+                    "username": settings.OPENF1_USERNAME,
+                    "password": settings.OPENF1_PASSWORD
+                }
+                headers = {
+                    "Content-Type": "application/x-www-form-urlencoded"
+                }
+                async with httpx.AsyncClient() as client:
+                    response = await client.post(token_url, data=payload, headers=headers, timeout=10.0)
+                    response.raise_for_status()
+                    token_data = response.json()
+                    
+                    self._token = token_data.get("access_token")
+                    expires_in = int(token_data.get("expires_in", 3600))
+                    self._expires_at = time.time() + expires_in
+                    
+                    logger.info("Successfully fetched new OpenF1 OAuth2 token.")
+                    return self._token
+            except Exception as e:
+                logger.error(f"Failed to obtain OpenF1 token: {e}")
+                return None
+
+auth_manager = OpenF1AuthManager()
+
 @retry(
     stop=stop_after_attempt(3), 
     wait=wait_exponential(multiplier=1, min=2, max=10), 
@@ -68,15 +115,14 @@ async def fetch_json_with_retry(client: httpx.AsyncClient, url: str) -> Any:
     Will retry up to 3 times on any exception (including HTTPStatusError) except 401/403.
     """
     logger.debug(f"Fetching URL (with retry): {url}")
-    
-    # Inject API key if configured and we are calling OpenF1
-    if settings.OPENF1_API_KEY and url.startswith(settings.OPENF1_API_URL):
-        if "?" in url:
-            url += f"&api_key={settings.OPENF1_API_KEY}"
-        else:
-            url += f"?api_key={settings.OPENF1_API_KEY}"
+    headers = {}
+    if url.startswith(settings.OPENF1_API_URL):
+        token = await auth_manager.get_token()
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+            headers["accept"] = "application/json"
 
-    response = await client.get(url)
+    response = await client.get(url, headers=headers)
     response.raise_for_status()
     return response.json()
 
@@ -394,16 +440,21 @@ async def fetch_f1_overall_standings(meeting_key: int) -> Optional[OverallStandi
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
             sessions_data = await fetch_json_with_retry(client, f"{OPENF1_API_URL}/sessions?meeting_key={meeting_key}")
-            race_session = next((s for s in sessions_data if s['session_name'] == 'Race'), None)
-            if not race_session:
-                return None
             
-            session_key = race_session['session_key']
+            fallback_order = ["Race", "Sprint", "Sprint Qualifying", "Qualifying", "Practice 3", "Practice 2", "Practice 1"]
+            final_standings = None
             
-            final_standings = await fetch_f1_session_times(session_key, meeting_key, "Race")
+            for session_name in fallback_order:
+                session = next((s for s in sessions_data if s['session_name'] == session_name), None)
+                if session:
+                    session_key = session['session_key']
+                    standings = await fetch_f1_session_times(session_key, meeting_key, session_name)
+                    if standings and standings.standings:
+                        final_standings = standings
+                        break
             
             if not final_standings:
-                return None
+                return OverallStandings(event_id=meeting_key, category="F1", standings=[])
 
             overall_standings = [OverallDriverStanding(
                 position=s.position,

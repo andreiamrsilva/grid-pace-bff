@@ -49,8 +49,11 @@ async def get_event_details(request: Request, category: str, event_id: int):
     # 2. Try DB cache (for completed, historic events)
     db_stages = await get_stages_from_db(event_id)
     if db_stages:
-        logger.debug(f"DB HIT for event stages: {event_id}")
-        return db_stages
+        if len(db_stages) > 0 and db_stages[-1].status == "Completed":
+            logger.debug(f"DB HIT for event stages (Completed): {event_id}")
+            return db_stages
+        else:
+            logger.debug(f"DB stages found but event not completed. Will re-fetch: {event_id}")
 
     # 3. Cache MISS: Fetch from the source
     logger.debug(f"Cache/DB MISS for event stages: {event_id}. Fetching from source.")
@@ -72,6 +75,9 @@ async def get_event_details(request: Request, category: str, event_id: int):
 
     # 4. Store in the permanent DB cache (always update stages so we have them)
     if stages_to_cache:
+        if not is_past_event:
+            from core.redis_service import set_cached_data
+            await set_cached_data(redis_key, [s.model_dump(mode='json') for s in stages_to_cache], expiration_seconds=120)
         await save_stages_to_db(event_id, stages_to_cache)
 
     return stages_to_cache

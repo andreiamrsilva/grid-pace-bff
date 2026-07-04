@@ -31,6 +31,8 @@ def get_logo_path(name: str) -> Optional[str]:
         "alpine": "alpine.png",
         "williams": "williams.png",
         "rb": "rb.png",
+        "racing bulls": "rb.png",
+        "visa cash app": "rb.png",
         "sauber": "sauber.png",
         "haas": "haas.png",
         "alfa romeo": "alfa_romeo.png",

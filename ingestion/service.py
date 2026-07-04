@@ -135,8 +135,10 @@ async def run_overall_standings_ingestion():
                     strategy = registry.get_strategy(event.category)
                     overall = await strategy.fetch_overall_standings(event.id)
                     if overall:
-                        redis_key = f"overall:standings:{event.category.lower()}:{event.id}"
+                        redis_key = f"overall:{event.category.lower()}:{event.id}"
                         await set_cached_data(redis_key, overall.model_dump(mode='json'), expiration_seconds=300)
+                        from core.database_service import save_overall_standings_to_db
+                        await save_overall_standings_to_db(event.id, overall)
                 except Exception as e:
                     logger.error(f"Error fetching {event.category} overall standings for event {event.id}: {e}")
     except Exception as e:
