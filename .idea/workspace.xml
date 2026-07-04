@@ -4,13 +4,8 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a62e5b2f-3708-4f63-8803-b0b454e614aa" name="Changes" comment="Get comments of the stages from a rss feed.">
+    <list default="true" id="a62e5b2f-3708-4f63-8803-b0b454e614aa" name="Changes" comment="Add certifi to requirements to fix Vercel crash">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/notification_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/notification_service.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ingestion/openf1_client.py" beforeDir="false" afterPath="$PROJECT_DIR$/ingestion/openf1_client.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ingestion/service.py" beforeDir="false" afterPath="$PROJECT_DIR$/ingestion/service.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -85,7 +80,7 @@
       <workItem from="1781016450033" duration="40867000" />
       <workItem from="1781447061334" duration="65840000" />
       <workItem from="1781739250707" duration="19069000" />
-      <workItem from="1782462484512" duration="21998000" />
+      <workItem from="1782462484512" duration="24462000" />
     </task>
     <task id="LOCAL-00001" summary="GridPace server to get wrc information">
       <option name="closed" value="true" />
@@ -423,16 +418,37 @@
       <option name="project" value="LOCAL" />
       <updated>1783173202946</updated>
     </task>
-    <option name="localTasksCounter" value="43" />
+    <task id="LOCAL-00043" summary="Start necessary files to de server deploy.">
+      <option name="closed" value="true" />
+      <created>1783179530708</created>
+      <option name="number" value="00043" />
+      <option name="presentableId" value="LOCAL-00043" />
+      <option name="project" value="LOCAL" />
+      <updated>1783179530708</updated>
+    </task>
+    <task id="LOCAL-00044" summary="Fix database connection for postgres and prepare vercel">
+      <option name="closed" value="true" />
+      <created>1783180121063</created>
+      <option name="number" value="00044" />
+      <option name="presentableId" value="LOCAL-00044" />
+      <option name="project" value="LOCAL" />
+      <updated>1783180121063</updated>
+    </task>
+    <task id="LOCAL-00045" summary="Add certifi to requirements to fix Vercel crash">
+      <option name="closed" value="true" />
+      <created>1783180254208</created>
+      <option name="number" value="00045" />
+      <option name="presentableId" value="LOCAL-00045" />
+      <option name="project" value="LOCAL" />
+      <updated>1783180254208</updated>
+    </task>
+    <option name="localTasksCounter" value="46" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="Fixed stage times requests." />
-    <MESSAGE value="Removed the db file" />
-    <MESSAGE value="Added event overall route" />
     <MESSAGE value="Added position_change property." />
     <MESSAGE value="Added championship." />
     <MESSAGE value="Fixed crash when no data from f1 or wrc." />
@@ -455,6 +471,9 @@
     <MESSAGE value="Added openf1 subscription" />
     <MESSAGE value="if receive a 404 error don't force a retry call." />
     <MESSAGE value="Get comments of the stages from a rss feed." />
-    <option name="LAST_COMMIT_MESSAGE" value="Get comments of the stages from a rss feed." />
+    <MESSAGE value="Start necessary files to de server deploy." />
+    <MESSAGE value="Fix database connection for postgres and prepare vercel" />
+    <MESSAGE value="Add certifi to requirements to fix Vercel crash" />
+    <option name="LAST_COMMIT_MESSAGE" value="Add certifi to requirements to fix Vercel crash" />
   </component>
 </project>
