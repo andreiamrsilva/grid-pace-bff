@@ -45,7 +45,7 @@ def format_seconds_to_time(seconds: float) -> str:
 def is_retryable_exception(exception: BaseException) -> bool:
     import httpx
     if isinstance(exception, httpx.HTTPStatusError):
-        if exception.response.status_code in (401, 403):
+        if exception.response.status_code in (401, 403, 404):
             return False
     return True
 
@@ -326,21 +326,14 @@ async def fetch_f1_session_times(session_key: int, meeting_key: int, session_nam
 
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
-            # 1. Fetch drivers, positions, and laps concurrently with tenacity
-            drivers_task = fetch_json_with_retry(client, f"{OPENF1_API_URL}/drivers?session_key={session_key}")
-            positions_task = fetch_json_with_retry(client, f"{OPENF1_API_URL}/position?session_key={session_key}")
-            laps_task = fetch_json_with_retry(client, f"{OPENF1_API_URL}/laps?session_key={session_key}")
-            
-            # Using asyncio.gather with return_exceptions=True is safer so one failure doesn't crash everything
-            # but since we want to fail gracefully if any important part fails, we just gather.
-            results = await asyncio.gather(drivers_task, positions_task, laps_task, return_exceptions=True)
-            
-            for res in results:
-                if isinstance(res, Exception):
-                    logger.warning(f"Error in fetching session {session_key} data bulk tasks: {res}")
-                    return None
-                    
-            drivers_data, positions_data, laps_data = results
+            # 1. Fetch drivers, positions, and laps sequentially to avoid hitting API rate limits (429)
+            try:
+                drivers_data = await fetch_json_with_retry(client, f"{OPENF1_API_URL}/drivers?session_key={session_key}")
+                positions_data = await fetch_json_with_retry(client, f"{OPENF1_API_URL}/position?session_key={session_key}")
+                laps_data = await fetch_json_with_retry(client, f"{OPENF1_API_URL}/laps?session_key={session_key}")
+            except Exception as res:
+                logger.warning(f"Error in fetching session {session_key} data bulk tasks: {res}")
+                return None
             
             if not drivers_data:
                 logger.warning(f"No driver data found for session {session_key}")
