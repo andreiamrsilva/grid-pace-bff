@@ -136,6 +136,14 @@ async def run_live_timing_ingestion():
                                 
                                 unique_tweets = [t for t in new_tweets if str(t.id) not in cached_ids]
                                 if unique_tweets:
+                                    for t in unique_tweets:
+                                        for lang in ["en", "pt"]:
+                                            lang_key = f"message_{lang}"
+                                            msg_text = t.metadata.get(lang_key, t.message) if t.metadata else t.message
+                                            preview = msg_text[:50] + ("..." if len(msg_text) > 50 else "")
+                                            logger.info(f"Triggering {category.upper()} timeline push notification ({lang}) for Twitter media: {preview}")
+                                            send_comment_notification(category, stage_id, preview, language=lang)
+                                            
                                     current_events.extend(unique_tweets)
                                     current_events.sort(key=lambda x: x.timestamp)
                                     await set_cached_data(timeline_key, [e.model_dump(mode='json') for e in current_events], expiration_seconds=86400)
