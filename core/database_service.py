@@ -1,19 +1,16 @@
-import asyncio
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from sqlalchemy import Column, Integer, String, Date, MetaData, Table, update, Float, Boolean, DateTime, select, JSON
-from datetime import datetime
-from typing import List, Optional
 import logging
+from typing import List, Optional
 
-from models.calendar import CalendarEvent
-from models.event import Stage
-from models.stage_times import StageStandings, DriverTime
-from models.overall_standings import OverallStandings, OverallDriverStanding
-from models.championship_standings import ChampionshipStandings, ChampionshipDriverStanding
-from ingestion.openf1_client import get_openf1_calendar_events
-from models.timeline import TimelineEvent
+from sqlalchemy import Column, Integer, String, Date, MetaData, Table, update, Float, Boolean, DateTime, select, JSON
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 
 from core.config import settings
+from models.calendar import CalendarEvent
+from models.championship_standings import ChampionshipStandings, ChampionshipDriverStanding
+from models.event import Stage
+from models.overall_standings import OverallStandings, OverallDriverStanding
+from models.stage_times import StageStandings, DriverTime
+from models.timeline import TimelineEvent
 
 if settings.DATABASE_URL.startswith("sqlite"):
     engine = create_async_engine(settings.DATABASE_URL, connect_args={"check_same_thread": False})
@@ -258,6 +255,10 @@ async def save_timeline_events_to_db(session_id: str, events: List[TimelineEvent
             # if we defined the column as DateTime. The easiest is to use the original object values for DateTime.
             event_data_typed = event.model_dump()
             event_data_typed['session_id'] = str(session_id)
+            
+            # Remove tzinfo to avoid asyncpg offset-naive vs offset-aware error with TIMESTAMP WITHOUT TIME ZONE
+            if event_data_typed.get('timestamp') and event_data_typed['timestamp'].tzinfo:
+                event_data_typed['timestamp'] = event_data_typed['timestamp'].replace(tzinfo=None)
             
             ins_stmt = timeline_events_table.insert().values(**event_data_typed)
             await db.execute(ins_stmt)

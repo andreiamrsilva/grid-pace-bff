@@ -124,6 +124,7 @@ async def run_live_timing_ingestion():
                             # --- TWITTER LIVE INGESTION (F1) ---
                             # Fetch last 15 minutes of tweets
                             from datetime import timezone, timedelta
+                            from models.timeline import TimelineEventSource
                             now = datetime.now(timezone.utc)
                             from ingestion.twitter_client import fetch_tweets_with_media
                             # We use the provided ID (assuming it is the F1 ID since user just said 'twitter api User ID')
