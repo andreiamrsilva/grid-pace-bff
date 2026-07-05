@@ -11,14 +11,13 @@ import feedparser
 from models.timeline import TimelineEvent, TimelineEventSource, TimelineEventSeverity
 
 # Setup specific logger for Twitter Scraper
-log_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "logs"))
-os.makedirs(log_dir, exist_ok=True)
 twitter_logger = logging.getLogger("twitter_scraper")
 twitter_logger.setLevel(logging.ERROR)
-handler = logging.FileHandler(os.path.join(log_dir, "twitter_scraper_errors.log"))
+handler = logging.StreamHandler()
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 handler.setFormatter(formatter)
-twitter_logger.addHandler(handler)
+if not twitter_logger.handlers:
+    twitter_logger.addHandler(handler)
 
 RSS_MAPPING = {
     "from:OfficialWRC": "https://dirtfish.com/rally/wrc/feed/",
