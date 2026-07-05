@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from datetime import datetime, date
 
@@ -9,8 +8,6 @@ from core.database_service import get_all_events_from_db, get_last_archived_year
 from ingestion.strategy import registry
 
 # Ensure strategies are registered by importing clients
-import ingestion.wrc_client
-import ingestion.openf1_client
 
 async def find_live_stages():
     """
@@ -123,6 +120,25 @@ async def run_live_timing_ingestion():
                                 
                                 from core.database_service import save_timeline_events_to_db
                                 await save_timeline_events_to_db(str(stage_id), current_events)
+                            
+                            # --- TWITTER LIVE INGESTION (F1) ---
+                            # Fetch last 15 minutes of tweets
+                            from datetime import timezone, timedelta
+                            now = datetime.now(timezone.utc)
+                            from ingestion.twitter_client import fetch_tweets_with_media
+                            # We use the provided ID (assuming it is the F1 ID since user just said 'twitter api User ID')
+                            new_tweets = await fetch_tweets_with_media("464447006488162304", now - timedelta(minutes=15), now, TimelineEventSource.F1_SOCIAL_MEDIA, "@F1")
+                            
+                            if new_tweets:
+                                cached_events_raw = await get_cached_data(timeline_key) or []
+                                cached_ids = {str(e['id']) for e in cached_events_raw}
+                                
+                                unique_tweets = [t for t in new_tweets if str(t.id) not in cached_ids]
+                                if unique_tweets:
+                                    current_events.extend(unique_tweets)
+                                    current_events.sort(key=lambda x: x.timestamp)
+                                    await set_cached_data(timeline_key, [e.model_dump(mode='json') for e in current_events], expiration_seconds=86400)
+                                    await save_timeline_events_to_db(str(stage_id), current_events)
                     except Exception as e:
                         logger.error(f"Error processing F1 timeline notifications for Stage {stage_id}: {e}")
                         
@@ -216,7 +232,6 @@ async def run_current_year_update():
 async def populate_historic_timeline(stage_id: int) -> list:
     """Populates historical timeline for a WRC stage combining basic system inference and Twitter scraping."""
     from core.database_service import get_stage_by_id_from_db, save_timeline_events_to_db, get_stage_times_from_db
-    from ingestion.twitter_client import fetch_tweets_for_session
     from models.timeline import TimelineEvent, TimelineEventSource, TimelineEventSeverity
     import uuid
     from datetime import timezone, timedelta
@@ -269,11 +284,23 @@ async def populate_historic_timeline(stage_id: int) -> list:
 
     # 3. Twitter Scraping
     try:
-        tweets = await fetch_tweets_for_session(start_time, end_time, "from:OfficialWRC", TimelineEventSource.WRC_SOCIAL_MEDIA, "@OfficialWRC")
+        from ingestion.twitter_client import fetch_tweets_with_media
+        # Usando o User ID fornecido para @F1 / WRC
+        tweets = await fetch_tweets_with_media("464447006488162304", start_time, end_time, TimelineEventSource.WRC_SOCIAL_MEDIA, "@OfficialWRC")
         if tweets:
             events.extend(tweets)
     except Exception as e:
         logger.error(f"Error fetching historical tweets for stage {stage_id}: {e}")
+        
+    # 4. YouTube Highlights
+    try:
+        from ingestion.youtube_client import search_youtube_highlights
+        query = f"WRC {stage.name} Highlights"
+        yt_events = await search_youtube_highlights(query, published_after=start_time)
+        if yt_events:
+            events.extend(yt_events)
+    except Exception as e:
+        logger.error(f"Error fetching YouTube highlights for stage {stage_id}: {e}")
         
     events.sort(key=lambda x: x.timestamp)
     

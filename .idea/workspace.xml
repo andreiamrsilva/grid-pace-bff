@@ -4,9 +4,9 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a62e5b2f-3708-4f63-8803-b0b454e614aa" name="Changes" comment="Updated the open-wrc dependency.">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ingestion/openf1_client.py" beforeDir="false" afterPath="$PROJECT_DIR$/ingestion/openf1_client.py" afterDir="false" />
+    <list default="true" id="a62e5b2f-3708-4f63-8803-b0b454e614aa" name="Changes" comment="Fix position change in F1 stages.">
+      <change beforePath="$PROJECT_DIR$/.env.example" beforeDir="false" afterPath="$PROJECT_DIR$/.env.example" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/timeline.py" beforeDir="false" afterPath="$PROJECT_DIR$/models/timeline.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -81,7 +81,7 @@
       <workItem from="1781016450033" duration="40867000" />
       <workItem from="1781447061334" duration="65840000" />
       <workItem from="1781739250707" duration="19069000" />
-      <workItem from="1782462484512" duration="26047000" />
+      <workItem from="1782462484512" duration="26435000" />
     </task>
     <task id="LOCAL-00001" summary="GridPace server to get wrc information">
       <option name="closed" value="true" />
@@ -451,7 +451,15 @@
       <option name="project" value="LOCAL" />
       <updated>1783190239032</updated>
     </task>
-    <option name="localTasksCounter" value="47" />
+    <task id="LOCAL-00047" summary="Fix position change in F1 stages.">
+      <option name="closed" value="true" />
+      <created>1783261620188</created>
+      <option name="number" value="00047" />
+      <option name="presentableId" value="LOCAL-00047" />
+      <option name="project" value="LOCAL" />
+      <updated>1783261620188</updated>
+    </task>
+    <option name="localTasksCounter" value="48" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -469,7 +477,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="Added championship." />
     <MESSAGE value="Fixed crash when no data from f1 or wrc." />
     <MESSAGE value="Added championship for teams." />
     <MESSAGE value="Fixed wrc championship" />
@@ -494,6 +501,8 @@
     <MESSAGE value="Fix database connection for postgres and prepare vercel" />
     <MESSAGE value="Add certifi to requirements to fix Vercel crash" />
     <MESSAGE value="Updated the open-wrc dependency." />
-    <option name="LAST_COMMIT_MESSAGE" value="Updated the open-wrc dependency." />
+    <MESSAGE value="Fix position change in F1 stages." />
+    <option name="LAST_COMMIT_MESSAGE" value="Fix position change in F1 stages." />
+    <option name="OPTIMIZE_IMPORTS_BEFORE_PROJECT_COMMIT" value="true" />
   </component>
 </project>
