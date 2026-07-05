@@ -6,6 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="a62e5b2f-3708-4f63-8803-b0b454e614aa" name="Changes" comment="Updated the open-wrc dependency.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ingestion/openf1_client.py" beforeDir="false" afterPath="$PROJECT_DIR$/ingestion/openf1_client.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -80,7 +81,7 @@
       <workItem from="1781016450033" duration="40867000" />
       <workItem from="1781447061334" duration="65840000" />
       <workItem from="1781739250707" duration="19069000" />
-      <workItem from="1782462484512" duration="25245000" />
+      <workItem from="1782462484512" duration="26047000" />
     </task>
     <task id="LOCAL-00001" summary="GridPace server to get wrc information">
       <option name="closed" value="true" />

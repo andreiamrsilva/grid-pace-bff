@@ -1,16 +1,18 @@
-from typing import List, Optional, Any
-import httpx
 import logging
 from datetime import datetime, date, timezone, timedelta
+from typing import List, Optional, Any
+
+import httpx
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-from openwrc.clients.wrc_api_client import WrcApiClient
-from models.event import Stage
-from models.stage_times import StageStandings, DriverTime
-from models.calendar import CalendarEvent
-from models.overall_standings import OverallStandings, OverallDriverStanding
-from models.championship_standings import ChampionshipStandings, ChampionshipDriverStanding, ChampionshipTeamStandings, ChampionshipTeamStanding
 from core.utils import get_logo_path
+from models.calendar import CalendarEvent
+from models.championship_standings import ChampionshipStandings, ChampionshipDriverStanding, ChampionshipTeamStandings, \
+    ChampionshipTeamStanding
+from models.event import Stage
+from models.overall_standings import OverallStandings, OverallDriverStanding
+from models.stage_times import StageStandings, DriverTime
+from openwrc.clients.wrc_api_client import WrcApiClient
 
 logger = logging.getLogger(__name__)
 
@@ -257,6 +259,7 @@ async def _fetch_wrc_stage_times(event_id: int, stage_id: int) -> Optional[Stage
             event_id=event_id,
             category="WRC",
             is_live=is_live,
+            last_updated=datetime.now(timezone.utc),
             standings=all_standings
         )
 

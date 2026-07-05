@@ -1,19 +1,21 @@
 import asyncio
-from typing import List, Optional, Tuple, Any
-import httpx
-from datetime import datetime, date, timezone
 import logging
+import uuid
+from datetime import datetime, timezone
+from typing import List, Optional, Tuple, Any
+
+import httpx
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception
 
-from models.calendar import CalendarEvent
-from models.event import Stage
-from models.stage_times import StageStandings, DriverTime
-from models.overall_standings import OverallStandings, OverallDriverStanding
-from models.championship_standings import ChampionshipStandings, ChampionshipDriverStanding, ChampionshipTeamStandings, ChampionshipTeamStanding
-from models.timeline import TimelineEvent, TimelineEventSource, TimelineEventSeverity
-import uuid
-from core.utils import get_logo_path, get_country_iso_code
 from core.config import settings
+from core.utils import get_logo_path, get_country_iso_code
+from models.calendar import CalendarEvent
+from models.championship_standings import ChampionshipStandings, ChampionshipDriverStanding, ChampionshipTeamStandings, \
+    ChampionshipTeamStanding
+from models.event import Stage
+from models.overall_standings import OverallStandings, OverallDriverStanding
+from models.stage_times import StageStandings, DriverTime
+from models.timeline import TimelineEvent, TimelineEventSource, TimelineEventSeverity
 
 OPENF1_API_URL = settings.OPENF1_API_URL
 ERGAST_API_URL = settings.ERGAST_API_URL
@@ -306,9 +308,9 @@ async def get_f1_event_sessions(meeting_key: int) -> List[Stage]:
         handle_openf1_exception(e, logger, f"Error fetching F1 sessions for meeting {meeting_key}")
         return []
 
-async def fetch_f1_session_times(session_key: int, meeting_key: int, session_name: str = "Unknown") -> Optional[StageStandings]:
+async def fetch_f1_session_times(session_key: int, meeting_key: int, session_name: str = "Unknown", is_live: bool = False) -> Optional[StageStandings]:
     """
-    Fetches the final classification for a completed F1 session.
+    Fetches the classification for an F1 session.
     Fetches all drivers, positions, and laps in bulk to avoid rate limiting.
     """
     logger.info(f"Fetching final standings for F1 session {session_key} in bulk...")
@@ -329,9 +331,13 @@ async def fetch_f1_session_times(session_key: int, meeting_key: int, session_nam
                 return None
                 
             # 2. Group positions by driver_number
+            first_positions = {}
             latest_positions = {}
             for p in sorted(positions_data, key=lambda x: x['date'], reverse=False):
-                latest_positions[p['driver_number']] = p['position']
+                d_num = p['driver_number']
+                if d_num not in first_positions:
+                    first_positions[d_num] = p['position']
+                latest_positions[d_num] = p['position']
                 
             # 3. Group laps by driver_number
             laps_by_driver = {}
@@ -345,6 +351,11 @@ async def fetch_f1_session_times(session_key: int, meeting_key: int, session_nam
             for driver_info in drivers_data:
                 driver_number = driver_info['driver_number']
                 final_pos = latest_positions.get(driver_number)
+                initial_pos = first_positions.get(driver_number)
+                
+                pos_change = None
+                if initial_pos is not None and final_pos is not None:
+                    pos_change = initial_pos - final_pos
                 
                 driver_laps = laps_by_driver.get(driver_number, [])
                 driver_time_seconds = None
@@ -367,7 +378,8 @@ async def fetch_f1_session_times(session_key: int, meeting_key: int, session_nam
                         'status': "Finished",
                         'time_seconds': driver_time_seconds,
                         'time_str': driver_time_str,
-                        'position': final_pos
+                        'position': final_pos,
+                        'position_change': pos_change
                     })
 
             if not temp_standings:
@@ -399,7 +411,8 @@ async def fetch_f1_session_times(session_key: int, meeting_key: int, session_nam
                         status=s['status'],
                         time=s['time_str'],
                         diff_to_first=diff_to_first_str,
-                        position=s['position']
+                        position=s['position'],
+                        position_change=s['position_change']
                     )
                 )
             
@@ -408,7 +421,8 @@ async def fetch_f1_session_times(session_key: int, meeting_key: int, session_nam
                 stage_id=session_key,
                 event_id=meeting_key,
                 category="F1",
-                is_live=False,
+                is_live=is_live,
+                last_updated=datetime.now(timezone.utc),
                 standings=standings
             )
     except Exception as e:
@@ -704,7 +718,7 @@ class F1IngestionStrategy(SportIngestionStrategy):
         return await get_f1_event_sessions(event_id)
 
     async def fetch_live_timing(self, event_id: int, stage_id: int) -> Optional[StageStandings]:
-        return await fetch_f1_session_times(stage_id, event_id, "Unknown")
+        return await fetch_f1_session_times(stage_id, event_id, "Unknown", is_live=True)
 
     async def fetch_overall_standings(self, event_id: int) -> Optional[OverallStandings]:
         return await fetch_f1_overall_standings(event_id)
