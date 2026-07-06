@@ -50,9 +50,10 @@ async def search_youtube_highlights(query: str, published_after: datetime = None
                         
                         video_url = f"https://www.youtube.com/watch?v={video_id}"
                         
+                        from datetime import timezone
                         event = TimelineEvent(
                             id=str(uuid.uuid4()),
-                            timestamp=datetime.utcnow(),
+                            timestamp=datetime.now(timezone.utc),
                             source=TimelineEventSource.YOUTUBE,
                             severity=TimelineEventSeverity.INFO,
                             message=f"🎥 Destaques Oficiais Disponíveis: {title}",
