@@ -1,11 +1,12 @@
-from fastapi import APIRouter, HTTPException, Query, Path, Depends, Request
-from datetime import datetime, timezone, timedelta
-from typing import Optional
 import logging
+from datetime import datetime, timezone
+from typing import Optional
 
-from models.timeline import TimelineResponse, TimelineEvent, TimelineEventSource, TimelineEventSeverity
-from ingestion.openf1_client import fetch_f1_race_control_messages
+from fastapi import APIRouter, HTTPException, Query, Depends, Request
+
 from core.redis_service import get_cached_data
+from ingestion.openf1_client import fetch_f1_race_control_messages
+from models.timeline import TimelineResponse, TimelineEvent
 
 logger = logging.getLogger(__name__)
 
@@ -60,17 +61,42 @@ async def get_timeline(
             all_events = [TimelineEvent(**e) for e in raw_events]
         else:
             from core.database_service import get_timeline_events_from_db
-            all_events = await get_timeline_events_from_db(session_id)
-            if not all_events:
-                # DB is empty, this means it's a historic stage that was never cached/saved
-                try:
-                    from ingestion.service import populate_historic_timeline
-                    # session_id should be cast to int for WRC stages
-                    all_events = await populate_historic_timeline(int(session_id))
-                except ValueError:
-                    raise HTTPException(status_code=400, detail="WRC session_id must be an integer (stage_id).")
+            db_events = await get_timeline_events_from_db(session_id)
+            if not db_events:
+                # Use a Redis lock to prevent race condition of multiple concurrent requests writing duplicate events
+                from core.redis_service import redis_client
+                import asyncio
+                lock_key = f"lock:populate_historic:{session_id}"
+                acquired = await redis_client.set(lock_key, "1", nx=True, ex=30)
                 
-            if all_events:
+                if acquired:
+                    try:
+                        from ingestion.service import populate_historic_timeline
+                        # session_id should be cast to int for WRC stages
+                        db_events = await populate_historic_timeline(int(session_id))
+                    except ValueError:
+                        await redis_client.delete(lock_key)
+                        raise HTTPException(status_code=400, detail="WRC session_id must be an integer (stage_id).")
+                    finally:
+                        await redis_client.delete(lock_key)
+                else:
+                    # If we couldn't acquire the lock, another request is currently extracting the data.
+                    # We perform dynamic polling (up to 15 seconds) waiting for the other request to finish.
+                    for _ in range(15):
+                        await asyncio.sleep(1)
+                        db_events = await get_timeline_events_from_db(session_id)
+                        if db_events:
+                            break
+                
+            if db_events:
+                # Deduplicate by message to prevent race condition duplicates
+                seen_messages = set()
+                all_events = []
+                for e in db_events:
+                    if e.message not in seen_messages:
+                        seen_messages.add(e.message)
+                        all_events.append(e)
+                
                 # Re-warm cache
                 from core.redis_service import set_cached_data
                 await set_cached_data(timeline_key, [e.model_dump(mode='json') for e in all_events], expiration_seconds=86400)
