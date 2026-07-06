@@ -150,7 +150,11 @@ async def save_stages_to_db(event_id: int, stages: List[Stage]):
     async with AsyncSessionLocal() as db:
         await db.execute(stages_table.delete().where(stages_table.c.event_id == event_id))
         for stage_data in stages:
-            ins_stmt = stages_table.insert().values(event_id=event_id, **stage_data.model_dump(exclude={"event_id"}))
+            dump_data = stage_data.model_dump(exclude={"event_id"})
+            # Remove tzinfo to avoid asyncpg offset-naive vs offset-aware error
+            if dump_data.get('start_time') and dump_data['start_time'].tzinfo:
+                dump_data['start_time'] = dump_data['start_time'].replace(tzinfo=None)
+            ins_stmt = stages_table.insert().values(event_id=event_id, **dump_data)
             await db.execute(ins_stmt)
         await db.commit()
 
