@@ -13,14 +13,12 @@ logger = logging.getLogger(__name__)
 # Dictionary of RSS feeds for each category and language
 FEEDS = {
     "wrc": {
-        "source": "Motorsport.com",
-        "en": "https://www.motorsport.com/rss/wrc/news/",
-        "pt": "https://br.motorsport.com/rss/wrc/news/" # Using the Brazilian Portuguese edition as there is no specific PT-PT subdomain
+        "en": {"url": "https://dirtfish.com/feed/", "source": "DirtFish"},
+        "pt": {"url": "https://www.autosport.pt/ralis/wrc/feed/", "source": "AutoSport"}
     },
     "f1": {
-        "source": "Motorsport.com",
-        "en": "https://www.motorsport.com/rss/f1/news/",
-        "pt": "https://br.motorsport.com/rss/f1/news/"
+        "en": {"url": "https://www.motorsport.com/rss/f1/news/", "source": "Motorsport.com"},
+        "pt": {"url": "https://www.autosport.pt/formula-1/feed/", "source": "AutoSport"}
     }
 }
 
@@ -46,8 +44,8 @@ async def fetch_news_from_feed(category: str, language: str = "en") -> List[News
         logger.warning(f"No feed found for category '{category}' and language '{language}'")
         return []
 
-    feed_info = FEEDS[category]
-    url = feed_info[language]
+    feed_info = FEEDS[category][language]
+    url = feed_info["url"]
     source = feed_info["source"]
     
     articles = []
