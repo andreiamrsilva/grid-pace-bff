@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 from time import mktime
 import traceback
 import re
+import asyncio
 
 from models.news import NewsArticle
 
@@ -47,6 +48,18 @@ def _get_image_from_entry(entry):
         return img_match.group(1)
         
     return None
+
+async def _fetch_og_image(client: httpx.AsyncClient, article: NewsArticle):
+    """Fallback to scrape og:image from the article's actual webpage if RSS doesn't provide one."""
+    if article.image_url is not None:
+        return
+    try:
+        r = await client.get(article.link, timeout=5.0)
+        match = re.search(r'<meta property="og:image" content="([^"]+)"', r.text)
+        if match:
+            article.image_url = match.group(1)
+    except Exception as e:
+        logger.debug(f"Failed to fetch og:image for {article.link}: {e}")
 
 async def fetch_news_from_feed(category: str, language: str = "en") -> List[NewsArticle]:
     """
@@ -101,6 +114,11 @@ async def fetch_news_from_feed(category: str, language: str = "en") -> List[News
                     logger.error(f"Failed to parse entry for {category}: {entry.get('title')}")
                     logger.error(f"Parse Error: {e}\n{traceback.format_exc()}")
                     continue
+            
+            # Fetch missing images (e.g. for DirtFish) concurrently
+            tasks = [_fetch_og_image(client, article) for article in articles if article.image_url is None]
+            if tasks:
+                await asyncio.gather(*tasks)
         
         articles.sort(key=lambda x: x.published_date, reverse=True)
         logger.info(f"Returning {len(articles)} articles for {category} ({language}) after filtering.")
