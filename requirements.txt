@@ -18,3 +18,5 @@ asyncpg
 certifi
 ./openwrc
 aiohttp
+email-validator
+alembic
