@@ -14,11 +14,11 @@ logger = logging.getLogger(__name__)
 FEEDS = {
     "wrc": {
         "en": {"url": "https://dirtfish.com/feed/", "source": "DirtFish"},
-        "pt": {"url": "https://www.autosport.pt/ralis/wrc/feed/", "source": "AutoSport"}
+        "pt": {"url": "https://www.autosport.pt/tag/wrc/feed/", "source": "AutoSport"}
     },
     "f1": {
         "en": {"url": "https://www.motorsport.com/rss/f1/news/", "source": "Motorsport.com"},
-        "pt": {"url": "https://www.autosport.pt/formula-1/feed/", "source": "AutoSport"}
+        "pt": {"url": "https://www.autosport.pt/tag/f1/feed/", "source": "AutoSport"}
     }
 }
 
