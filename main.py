@@ -14,7 +14,7 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
-from api.routers import calendar, events, championship, news, timeline
+from api.routers import calendar, events, championship, news, timeline, users
 from ingestion.router import router as cron_router
 from core.database_service import init_db
 from core.rate_limit import limiter
@@ -72,6 +72,7 @@ app.include_router(championship.router)
 app.include_router(news.router)
 app.include_router(timeline.router)
 app.include_router(cron_router)
+app.include_router(users.router, prefix="/api/v1/users", tags=["Users"])
 
 @app.get("/")
 @limiter.limit("5/minute")

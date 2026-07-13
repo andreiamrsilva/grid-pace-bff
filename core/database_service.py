@@ -11,11 +11,29 @@ from models.event import Stage
 from models.overall_standings import OverallStandings, OverallDriverStanding
 from models.stage_times import StageStandings, DriverTime
 from models.timeline import TimelineEvent
+from models.user import UserResponse, UserSettingsBase, UserSettingsUpdate, SubscriptionUpdate
 
-if settings.DATABASE_URL.startswith("sqlite"):
-    engine = create_async_engine(settings.DATABASE_URL, connect_args={"check_same_thread": False})
+db_url = settings.DATABASE_URL
+if db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql+asyncpg://", 1)
+elif db_url.startswith("postgresql://") and not db_url.startswith("postgresql+asyncpg://"):
+    db_url = db_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+
+db_url = db_url.replace("&channel_binding=require", "")
+db_url = db_url.replace("?channel_binding=require", "?")
+db_url = db_url.replace("?&", "?")
+if db_url.endswith("?"):
+    db_url = db_url[:-1]
+
+if "?sslmode=" in db_url:
+    db_url = db_url.replace("?sslmode=", "?ssl=")
+elif "&sslmode=" in db_url:
+    db_url = db_url.replace("&sslmode=", "&ssl=")
+
+if db_url.startswith("sqlite"):
+    engine = create_async_engine(db_url, connect_args={"check_same_thread": False})
 else:
-    engine = create_async_engine(settings.DATABASE_URL)
+    engine = create_async_engine(db_url)
 
 AsyncSessionLocal = async_sessionmaker(autocommit=False, autoflush=False, bind=engine, class_=AsyncSession)
 
@@ -106,13 +124,28 @@ timeline_events_table = Table(
     Column('metadata', JSON, nullable=True),
 )
 
+users_table = Table(
+    'users', metadata,
+    Column('id', String, primary_key=True),  # Firebase UID
+    Column('email', String, nullable=True),
+    Column('is_eternal_pro', Boolean, default=False),
+    Column('subscription_active', Boolean, default=False),
+    Column('subscription_expires_at', DateTime, nullable=True),
+)
+
+user_settings_table = Table(
+    'user_settings', metadata,
+    Column('user_id', String, primary_key=True),
+    Column('categories', JSON, nullable=True),
+    Column('notif_stage_live', Boolean, default=True),
+    Column('notif_stage_comments', Boolean, default=True),
+)
+
 logger = logging.getLogger(__name__)
 
 async def init_db():
-    """Creates all database tables if they don't exist."""
-    async with engine.begin() as conn:
-        await conn.run_sync(metadata.create_all)
-    logger.info("Database initialized.")
+    """Database initialization is now handled by Alembic migrations."""
+    logger.info("Database schema is now managed by Alembic. Run 'alembic upgrade head' to apply migrations.")
 
 async def get_last_archived_year() -> int:
     async with AsyncSessionLocal() as db:
@@ -281,3 +314,85 @@ async def get_timeline_events_from_db(session_id: str) -> List[TimelineEvent]:
             row_dict.pop('session_id', None)
             events.append(TimelineEvent(**row_dict))
         return events
+
+async def get_or_create_user(uid: str, email: Optional[str] = None) -> UserResponse:
+    async with AsyncSessionLocal() as db:
+        # Check if user exists
+        stmt = select(users_table).where(users_table.c.id == uid)
+        result = await db.execute(stmt)
+        user_row = result.first()
+        
+        if not user_row:
+            # Create user
+            ins_user = users_table.insert().values(id=uid, email=email)
+            await db.execute(ins_user)
+            
+            # Create default settings
+            ins_settings = user_settings_table.insert().values(
+                user_id=uid,
+                categories=[], # Default empty or default categories
+                notif_stage_live=True,
+                notif_stage_comments=True
+            )
+            await db.execute(ins_settings)
+            await db.commit()
+            
+            # Fetch again to have the fully typed row
+            result = await db.execute(stmt)
+            user_row = result.first()
+            
+        # Get settings
+        stmt_settings = select(user_settings_table).where(user_settings_table.c.user_id == uid)
+        result_settings = await db.execute(stmt_settings)
+        settings_row = result_settings.first()
+        
+        user_dict = user_row._asdict()
+        # Rename id to uid for pydantic
+        user_dict['uid'] = user_dict.pop('id')
+        
+        settings_dict = settings_row._asdict() if settings_row else {}
+        settings_dict.pop('user_id', None)
+        if settings_dict.get('categories') is None:
+            settings_dict['categories'] = []
+            
+        user_response = UserResponse(**user_dict, settings=UserSettingsBase(**settings_dict))
+        return user_response
+
+async def update_user_settings_in_db(uid: str, settings_update: UserSettingsUpdate) -> UserSettingsBase:
+    async with AsyncSessionLocal() as db:
+        update_data = settings_update.model_dump(exclude_unset=True, mode='json')
+        if not update_data:
+            # Nothing to update, just return current settings
+            stmt = select(user_settings_table).where(user_settings_table.c.user_id == uid)
+            result = await db.execute(stmt)
+            settings_row = result.first()
+            settings_dict = settings_row._asdict() if settings_row else {}
+            if settings_dict.get('categories') is None:
+                settings_dict['categories'] = []
+            return UserSettingsBase(**settings_dict)
+
+        upd_stmt = update(user_settings_table).where(user_settings_table.c.user_id == uid).values(**update_data)
+        await db.execute(upd_stmt)
+        await db.commit()
+        
+        # Fetch updated settings
+        stmt = select(user_settings_table).where(user_settings_table.c.user_id == uid)
+        result = await db.execute(stmt)
+        settings_row = result.first()
+        settings_dict = settings_row._asdict() if settings_row else {}
+        if settings_dict.get('categories') is None:
+            settings_dict['categories'] = []
+        return UserSettingsBase(**settings_dict)
+
+async def update_user_subscription_in_db(uid: str, sub_update: SubscriptionUpdate) -> bool:
+    async with AsyncSessionLocal() as db:
+        # Avoid timezone offset issues
+        expires_at = sub_update.expires_at.replace(tzinfo=None) if sub_update.expires_at else None
+        
+        upd_stmt = update(users_table).where(users_table.c.id == uid).values(
+            subscription_active=sub_update.is_active,
+            subscription_expires_at=expires_at
+        )
+        result = await db.execute(upd_stmt)
+        await db.commit()
+        return result.rowcount > 0
