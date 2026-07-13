@@ -5,6 +5,7 @@ from typing import List
 from datetime import datetime, timedelta, timezone
 from time import mktime
 import traceback
+import re
 
 from models.news import NewsArticle
 
@@ -30,6 +31,21 @@ def _get_image_from_entry(entry):
         for link in entry.links:
             if link.get('type', '').startswith('image/'):
                 return link.href
+    if 'enclosures' in entry:
+        for enc in entry.enclosures:
+            if enc.get('type', '').startswith('image/'):
+                return enc.href
+                
+    html_content = ""
+    if 'content' in entry and entry.content:
+        html_content += entry.content[0].value
+    if 'summary' in entry:
+        html_content += entry.summary
+        
+    img_match = re.search(r'<img[^>]+src=["\']([^"\']+)["\']', html_content)
+    if img_match:
+        return img_match.group(1)
+        
     return None
 
 async def fetch_news_from_feed(category: str, language: str = "en") -> List[NewsArticle]:
