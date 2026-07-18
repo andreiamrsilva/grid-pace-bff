@@ -240,7 +240,7 @@ async def run_current_year_update():
 
 async def populate_historic_timeline(stage_id: int) -> list:
     """Populates historical timeline for a WRC stage combining basic system inference and Twitter scraping."""
-    from core.database_service import get_stage_by_id_from_db, save_timeline_events_to_db, get_stage_times_from_db
+    from core.database_service import get_stage_by_id_from_db, save_timeline_events_to_db, get_stage_times_from_db, get_event_by_id_from_db
     from models.timeline import TimelineEvent, TimelineEventSource, TimelineEventSeverity
     import uuid
     from datetime import timezone, timedelta
@@ -304,7 +304,15 @@ async def populate_historic_timeline(stage_id: int) -> list:
     # 4. YouTube Highlights
     try:
         from ingestion.youtube_client import search_youtube_highlights
-        query = f"WRC {stage.name} Highlights"
+        event_obj = await get_event_by_id_from_db(stage.event_id)
+        
+        if event_obj:
+            # Make the query more restrictive to avoid videos from other sports like WEC
+            year = start_time.year if start_time else datetime.now().year
+            query = f'"{event_obj.category}" {event_obj.name} {year} {stage.name} Highlights'
+        else:
+            query = f'"WRC" {stage.name} Highlights'
+            
         yt_events = await search_youtube_highlights(query, published_after=start_time)
         if yt_events:
             events.extend(yt_events)

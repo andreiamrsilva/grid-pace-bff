@@ -179,6 +179,15 @@ async def get_all_events_from_db() -> List[CalendarEvent]:
         result = await db.execute(stmt)
         return [CalendarEvent(**row._asdict()) for row in result.all()]
 
+async def get_event_by_id_from_db(event_id: int) -> Optional[CalendarEvent]:
+    async with AsyncSessionLocal() as db:
+        stmt = select(events_table).where(events_table.c.id == event_id)
+        result = await db.execute(stmt)
+        row = result.first()
+        if row:
+            return CalendarEvent(**row._asdict())
+        return None
+
 async def save_stages_to_db(event_id: int, stages: List[Stage]):
     async with AsyncSessionLocal() as db:
         await db.execute(stages_table.delete().where(stages_table.c.event_id == event_id))
