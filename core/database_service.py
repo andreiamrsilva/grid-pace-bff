@@ -189,16 +189,27 @@ async def get_event_by_id_from_db(event_id: int) -> Optional[CalendarEvent]:
         return None
 
 async def save_stages_to_db(event_id: int, stages: List[Stage]):
+    from sqlalchemy.exc import IntegrityError
+    # Remove any duplicates in the incoming list first (based on stage ID)
+    unique_stages = {s.id: s for s in stages}.values()
+    
     async with AsyncSessionLocal() as db:
-        await db.execute(stages_table.delete().where(stages_table.c.event_id == event_id))
-        for stage_data in stages:
-            dump_data = stage_data.model_dump(exclude={"event_id"})
-            # Remove tzinfo to avoid asyncpg offset-naive vs offset-aware error
-            if dump_data.get('start_time') and dump_data['start_time'].tzinfo:
-                dump_data['start_time'] = dump_data['start_time'].replace(tzinfo=None)
-            ins_stmt = stages_table.insert().values(event_id=event_id, **dump_data)
-            await db.execute(ins_stmt)
-        await db.commit()
+        try:
+            await db.execute(stages_table.delete().where(stages_table.c.event_id == event_id))
+            for stage_data in unique_stages:
+                dump_data = stage_data.model_dump(exclude={"event_id"})
+                # Remove tzinfo to avoid asyncpg offset-naive vs offset-aware error
+                if dump_data.get('start_time') and dump_data['start_time'].tzinfo:
+                    dump_data['start_time'] = dump_data['start_time'].replace(tzinfo=None)
+                ins_stmt = stages_table.insert().values(event_id=event_id, **dump_data)
+                await db.execute(ins_stmt)
+            await db.commit()
+        except IntegrityError as e:
+            await db.rollback()
+            logger.warning(f"IntegrityError while saving stages for event {event_id}. Likely a concurrent insert. Error: {e}")
+        except Exception as e:
+            await db.rollback()
+            logger.error(f"Error saving stages for event {event_id}: {e}")
 
 async def get_stages_from_db(event_id: int) -> Optional[List[Stage]]:
     async with AsyncSessionLocal() as db:

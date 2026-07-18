@@ -12,10 +12,10 @@ logger = logging.getLogger(__name__)
 YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
 YOUTUBE_SEARCH_URL = "https://www.googleapis.com/youtube/v3/search"
 
-async def search_youtube_highlights(query: str, published_after: datetime = None) -> list[TimelineEvent]:
+async def search_youtube_highlights(query: str, published_after: datetime = None, channel_id: str = None) -> list[TimelineEvent]:
     """
-    Pesquisa na YouTube Data API por vídeos de destaques usando a query fornecida.
-    Retorna uma lista (normalmente com 1 item) de TimelineEvent pronto a ser injetado.
+    Searches the YouTube Data API for highlight videos using the provided query.
+    Returns a list (usually with 1 item) of TimelineEvent ready to be injected.
     """
     if not YOUTUBE_API_KEY:
         logger.error("YOUTUBE_API_KEY is not set.")
@@ -32,8 +32,11 @@ async def search_youtube_highlights(query: str, published_after: datetime = None
     }
     
     if published_after:
-        # YouTube API requer formato ISO 8601 (ex: 1970-01-01T00:00:00Z)
+        # YouTube API requires ISO 8601 format (e.g. 1970-01-01T00:00:00Z)
         params["publishedAfter"] = published_after.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    if channel_id:
+        params["channelId"] = channel_id
 
     try:
         async with aiohttp.ClientSession() as session:

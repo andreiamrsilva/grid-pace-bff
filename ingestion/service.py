@@ -294,8 +294,8 @@ async def populate_historic_timeline(stage_id: int) -> list:
     # 3. Twitter Scraping
     try:
         from ingestion.twitter_client import fetch_tweets_with_media
-        # Usando o User ID fornecido para @F1 / WRC
-        tweets = await fetch_tweets_with_media("464447006488162304", start_time, end_time, TimelineEventSource.WRC_SOCIAL_MEDIA, "@OfficialWRC")
+        # Using the correct User ID for @OfficialWRC
+        tweets = await fetch_tweets_with_media("17781576", start_time, end_time, TimelineEventSource.WRC_SOCIAL_MEDIA, "@OfficialWRC")
         if tweets:
             events.extend(tweets)
     except Exception as e:
@@ -313,7 +313,7 @@ async def populate_historic_timeline(stage_id: int) -> list:
         else:
             query = f'"WRC" {stage.name} Highlights'
             
-        yt_events = await search_youtube_highlights(query, published_after=start_time)
+        yt_events = await search_youtube_highlights(query, published_after=start_time, channel_id="UC5-51l67x6y2uT-1sPzWkYA")
         if yt_events:
             events.extend(yt_events)
     except Exception as e:
