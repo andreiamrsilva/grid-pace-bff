@@ -1,15 +1,7 @@
-import urllib.request
-import json
-import os
-from dotenv import load_dotenv
+from datetime import datetime, date, timedelta, timezone
 
-load_dotenv()
-key = os.getenv("TWITTER_API_IO_KEY")
+def test():
+    now = datetime.now(timezone.utc)
+    print(now)
 
-url = "https://api.twitterapi.io/twitter/user/info?userName=OfficialWRC"
-req = urllib.request.Request(url, headers={"X-API-Key": key})
-try:
-    with urllib.request.urlopen(req) as response:
-        print(response.read().decode())
-except Exception as e:
-    print("Error:", e)
+test()

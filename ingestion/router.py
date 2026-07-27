@@ -9,6 +9,7 @@ from ingestion.service import (
     run_championship_standings_ingestion,
     run_historic_archive,
     run_current_year_update,
+    run_timeline_validation_cron,
 )
 
 logger = logging.getLogger(__name__)
@@ -58,4 +59,11 @@ async def archive_historic(request: Request):
 async def update_current_year(request: Request):
     """Updates events for the current year."""
     await run_current_year_update()
+    return {"status": "success"}
+
+@router.get("/validate-timeline-tweets", response_model=CronResponse)
+@limiter.limit("60/minute")
+async def validate_timeline_tweets(request: Request):
+    """Validates missing tweets for recent stages and populates them."""
+    await run_timeline_validation_cron()
     return {"status": "success"}

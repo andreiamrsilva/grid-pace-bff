@@ -127,8 +127,8 @@ async def run_live_timing_ingestion():
                             from models.timeline import TimelineEventSource
                             now = datetime.now(timezone.utc)
                             from ingestion.twitter_client import fetch_tweets_with_media
-                            # We use the provided ID (assuming it is the F1 ID since user just said 'twitter api User ID')
-                            new_tweets = await fetch_tweets_with_media("464447006488162304", now - timedelta(minutes=15), now, TimelineEventSource.F1_SOCIAL_MEDIA, "@F1")
+                            # Using the correct ID for @F1
+                            new_tweets = await fetch_tweets_with_media("69008563", now - timedelta(minutes=15), now, TimelineEventSource.F1_SOCIAL_MEDIA, "@F1")
                             
                             if new_tweets:
                                 cached_events_raw = await get_cached_data(timeline_key) or []
@@ -323,3 +323,77 @@ async def populate_historic_timeline(stage_id: int) -> list:
     
     await save_timeline_events_to_db(str(stage_id), events)
     return events
+
+async def run_timeline_validation_cron():
+    """Validates if recent stages have social media tweets in their timeline. If not, populates them."""
+    logger.info("Running timeline validation cron job for missing tweets...")
+    try:
+        from core.database_service import get_all_events_from_db, get_stages_from_db, get_timeline_events_from_db, save_timeline_events_to_db
+        from models.timeline import TimelineEventSource
+        from datetime import datetime, date, timedelta, timezone
+        from core.redis_service import set_cached_data
+        
+        all_events = await get_all_events_from_db()
+        today = date.today()
+        now = datetime.now(timezone.utc)
+        
+        # Consider events running now, or finished in the last 3 days
+        recent_events = [e for e in all_events if e.start_date <= today <= e.finish_date or (e.finish_date < today and (today - e.finish_date).days <= 3)]
+        
+        for event in recent_events:
+            stages = await get_stages_from_db(event.id)
+            if not stages:
+                continue
+                
+            for stage in stages:
+                # We only check stages that have started and have a start_time
+                if not stage.start_time:
+                    continue
+                    
+                st_time = stage.start_time
+                if st_time.tzinfo is None:
+                    st_time = st_time.replace(tzinfo=timezone.utc)
+                    
+                if st_time > now:
+                    continue # Stage hasn't started yet
+                    
+                # Get existing timeline
+                stage_id_str = str(stage.id)
+                db_events = await get_timeline_events_from_db(stage_id_str)
+                
+                # Check if it has any SOCIAL_MEDIA tweets
+                has_tweets = any("SOCIAL_MEDIA" in getattr(e.source, "value", str(e.source)) for e in db_events)
+                
+                if not has_tweets:
+                    logger.info(f"Stage {stage.id} ({stage.name}) of event {event.name} missing tweets. Fetching...")
+                    new_tweets = []
+                    end_time = st_time + timedelta(hours=3)
+                    
+                    if event.category.lower() == "wrc":
+                        from ingestion.twitter_client import fetch_tweets_with_media
+                        try:
+                            # Using the correct WRC ID
+                            new_tweets = await fetch_tweets_with_media("17781576", st_time, end_time, TimelineEventSource.WRC_SOCIAL_MEDIA, "@OfficialWRC")
+                        except Exception as ex:
+                            logger.error(f"Error fetching WRC tweets for stage {stage.id}: {ex}")
+                    elif event.category.lower() == "f1":
+                        from ingestion.twitter_client import fetch_tweets_with_media
+                        try:
+                            # Using the correct F1 ID
+                            new_tweets = await fetch_tweets_with_media("69008563", st_time, end_time, TimelineEventSource.F1_SOCIAL_MEDIA, "@F1")
+                        except Exception as ex:
+                            logger.error(f"Error fetching F1 tweets for stage {stage.id}: {ex}")
+                            
+                    if new_tweets:
+                        # Append and save
+                        db_events.extend(new_tweets)
+                        db_events.sort(key=lambda x: x.timestamp)
+                        await save_timeline_events_to_db(stage_id_str, db_events)
+                        
+                        # Also update Redis if it exists so users see it immediately
+                        timeline_key = f"timeline:{event.category.lower()}:{stage_id_str}"
+                        await set_cached_data(timeline_key, [e.model_dump(mode='json') for e in db_events], expiration_seconds=86400)
+                        logger.info(f"Added {len(new_tweets)} tweets to stage {stage.id}.")
+
+    except Exception as e:
+        logger.error(f"Error in timeline validation cron job: {e}")

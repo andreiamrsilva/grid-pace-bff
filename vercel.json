@@ -24,6 +24,10 @@
     {
        "path": "/cron/archive-historic",
        "schedule": "0 2 1 1 *"
+    },
+    {
+      "path": "/cron/validate-timeline-tweets",
+      "schedule": "0 23 * * *"
     }
   ]
 }
