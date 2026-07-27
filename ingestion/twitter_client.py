@@ -117,12 +117,15 @@ async def fetch_tweets_with_media(
                         if not created_str:
                             continue
                             
-                        # Quick parse, replacing Z if present
+                        # Parse tweet created_at which can be ISO or 'Mon Jul 27 15:31:00 +0000 2026'
                         try:
                             tweet_dt = datetime.fromisoformat(created_str.replace("Z", "+00:00"))
                         except ValueError:
-                            # Fallback parse or skip
-                            continue
+                            try:
+                                tweet_dt = datetime.strptime(created_str, '%a %b %d %H:%M:%S %z %Y')
+                            except ValueError:
+                                # Fallback parse or skip
+                                continue
                             
                         if start_time <= tweet_dt <= end_time:
                             # Check for media (video)
