@@ -158,8 +158,14 @@ async def run_live_timing_ingestion():
 async def run_overall_standings_ingestion():
     """Ingests overall standings once for running or recently completed events."""
     try:
+        from core.redis_service import get_cached_data, set_cached_data
+        from core.database_service import get_all_events_from_db, save_overall_standings_to_db
         all_events = await get_all_events_from_db()
         today = date.today()
+
+        live_events = [e for e in all_events if e.start_date <= today <= e.finish_date]
+        if not live_events:
+            return
 
         for event in all_events:
             if event.start_date <= today <= event.finish_date or (event.finish_date < today and (today - event.finish_date).days < 3):
@@ -168,9 +174,12 @@ async def run_overall_standings_ingestion():
                     overall = await strategy.fetch_overall_standings(event.id)
                     if overall:
                         redis_key = f"overall:{event.category.lower()}:{event.id}"
-                        await set_cached_data(redis_key, overall.model_dump(mode='json'), expiration_seconds=300)
-                        from core.database_service import save_overall_standings_to_db
-                        await save_overall_standings_to_db(event.id, overall)
+                        overall_dump = overall.model_dump(mode='json')
+                        old_cached = await get_cached_data(redis_key)
+                        
+                        if old_cached != overall_dump:
+                            await set_cached_data(redis_key, overall_dump, expiration_seconds=300)
+                            await save_overall_standings_to_db(event.id, overall)
                 except Exception as e:
                     logger.error(f"Error fetching {event.category} overall standings for event {event.id}: {e}")
     except Exception as e:
@@ -336,6 +345,10 @@ async def run_timeline_validation_cron():
         all_events = await get_all_events_from_db()
         today = date.today()
         now = datetime.now(timezone.utc)
+        
+        live_events = [e for e in all_events if e.start_date <= today <= e.finish_date]
+        if not live_events:
+            return
         
         # Consider events running now, or finished in the last 3 days
         recent_events = [e for e in all_events if e.start_date <= today <= e.finish_date or (e.finish_date < today and (today - e.finish_date).days <= 3)]

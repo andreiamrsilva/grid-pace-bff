@@ -4,11 +4,8 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="65ca4ed0-d96f-49db-b2bf-c0d163a9c117" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.env.example" beforeDir="false" afterPath="$PROJECT_DIR$/.env.example" afterDir="false" />
+    <list default="true" id="65ca4ed0-d96f-49db-b2bf-c0d163a9c117" name="Changes" comment="fixing dates">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/database_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/database_service.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -39,20 +36,20 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
-    "codeWithMe.voiceChat.enabledByDefault": "false",
-    "git-widget-placeholder": "main",
-    "node.js.detected.package.eslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;
   }
-}]]></component>
+}</component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
@@ -68,9 +65,109 @@
       <option name="presentableId" value="Default" />
       <updated>1783932837831</updated>
     </task>
+    <task id="LOCAL-00001" summary="Adding alembic to handle with db migrations.&#10;Added new table users.">
+      <option name="closed" value="true" />
+      <created>1783935152917</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1783935152917</updated>
+    </task>
+    <task id="LOCAL-00002" summary="Adding missing dependencies.">
+      <option name="closed" value="true" />
+      <created>1783964391452</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1783964391452</updated>
+    </task>
+    <task id="LOCAL-00003" summary="Updated news apis.">
+      <option name="closed" value="true" />
+      <created>1783965961999</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1783965961999</updated>
+    </task>
+    <task id="LOCAL-00004" summary="Updated news apis.">
+      <option name="closed" value="true" />
+      <created>1783967898466</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1783967898466</updated>
+    </task>
+    <task id="LOCAL-00005" summary="Fixing getting thumbnail content.">
+      <option name="closed" value="true" />
+      <created>1783968370310</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1783968370310</updated>
+    </task>
+    <task id="LOCAL-00006" summary="Fixing getting thumbnail content.">
+      <option name="closed" value="true" />
+      <created>1783971038247</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1783971038247</updated>
+    </task>
+    <task id="LOCAL-00007" summary="Fixing WRC videos.">
+      <option name="closed" value="true" />
+      <created>1784408400852</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1784408400852</updated>
+    </task>
+    <task id="LOCAL-00008" summary="Fixing comments section.">
+      <option name="closed" value="true" />
+      <created>1785146988191</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1785146988192</updated>
+    </task>
+    <task id="LOCAL-00009" summary="Fixing comments section.">
+      <option name="closed" value="true" />
+      <created>1785147002072</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1785147002072</updated>
+    </task>
+    <task id="LOCAL-00010" summary="Fixing twitter calls. created a twitter cron job.">
+      <option name="closed" value="true" />
+      <created>1785167299236</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1785167299236</updated>
+    </task>
+    <task id="LOCAL-00011" summary="fixing dates">
+      <option name="closed" value="true" />
+      <created>1785168017973</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1785168017973</updated>
+    </task>
+    <option name="localTasksCounter" value="12" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Adding alembic to handle with db migrations.&#10;Added new table users." />
+    <MESSAGE value="Adding missing dependencies." />
+    <MESSAGE value="Updated news apis." />
+    <MESSAGE value="Fixing getting thumbnail content." />
+    <MESSAGE value="Fixing WRC videos." />
+    <MESSAGE value="Fixing comments section." />
+    <MESSAGE value="Fixing twitter calls. created a twitter cron job." />
+    <MESSAGE value="fixing dates" />
+    <option name="LAST_COMMIT_MESSAGE" value="fixing dates" />
   </component>
 </project>

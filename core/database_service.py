@@ -172,12 +172,25 @@ async def upsert_events(events_to_upsert: List[CalendarEvent]):
                 ins_stmt = events_table.insert().values(**event_data.model_dump())
                 await db.execute(ins_stmt)
         await db.commit()
+    from core.redis_service import redis_client
+    await redis_client.delete("cache:all_events")
 
 async def get_all_events_from_db() -> List[CalendarEvent]:
+    from core.redis_service import get_cached_data, set_cached_data
+    cache_key = "cache:all_events"
+    cached = await get_cached_data(cache_key)
+    if cached:
+        return [CalendarEvent(**e) for e in cached]
+
     async with AsyncSessionLocal() as db:
         stmt = select(events_table)
         result = await db.execute(stmt)
-        return [CalendarEvent(**row._asdict()) for row in result.all()]
+        events = [CalendarEvent(**row._asdict()) for row in result.all()]
+        
+    if events:
+        await set_cached_data(cache_key, [e.model_dump(mode='json') for e in events], expiration_seconds=86400)
+    
+    return events
 
 async def get_event_by_id_from_db(event_id: int) -> Optional[CalendarEvent]:
     async with AsyncSessionLocal() as db:
@@ -204,6 +217,8 @@ async def save_stages_to_db(event_id: int, stages: List[Stage]):
                 ins_stmt = stages_table.insert().values(event_id=event_id, **dump_data)
                 await db.execute(ins_stmt)
             await db.commit()
+            from core.redis_service import redis_client
+            await redis_client.delete(f"cache:stages:{event_id}")
         except IntegrityError as e:
             await db.rollback()
             logger.warning(f"IntegrityError while saving stages for event {event_id}. Likely a concurrent insert. Error: {e}")
@@ -212,12 +227,20 @@ async def save_stages_to_db(event_id: int, stages: List[Stage]):
             logger.error(f"Error saving stages for event {event_id}: {e}")
 
 async def get_stages_from_db(event_id: int) -> Optional[List[Stage]]:
+    from core.redis_service import get_cached_data, set_cached_data
+    cache_key = f"cache:stages:{event_id}"
+    cached = await get_cached_data(cache_key)
+    if cached:
+        return [Stage(**s) for s in cached]
+
     async with AsyncSessionLocal() as db:
         stmt = select(stages_table).where(stages_table.c.event_id == event_id).order_by(stages_table.c.number)
         result = await db.execute(stmt)
         rows = result.all()
         if rows:
-            return [Stage(**row._asdict()) for row in rows]
+            stages = [Stage(**row._asdict()) for row in rows]
+            await set_cached_data(cache_key, [s.model_dump(mode='json') for s in stages], expiration_seconds=86400)
+            return stages
         return None
 
 async def get_stage_by_id_from_db(stage_id: int) -> Optional[Stage]:
@@ -321,8 +344,16 @@ async def save_timeline_events_to_db(session_id: str, events: List[TimelineEvent
             await db.execute(ins_stmt)
             
         await db.commit()
+    from core.redis_service import redis_client
+    await redis_client.delete(f"cache:timeline_db:{session_id}")
 
 async def get_timeline_events_from_db(session_id: str) -> List[TimelineEvent]:
+    from core.redis_service import get_cached_data, set_cached_data
+    cache_key = f"cache:timeline_db:{session_id}"
+    cached = await get_cached_data(cache_key)
+    if cached:
+        return [TimelineEvent(**e) for e in cached]
+
     async with AsyncSessionLocal() as db:
         stmt = select(timeline_events_table).where(timeline_events_table.c.session_id == str(session_id)).order_by(timeline_events_table.c.timestamp)
         result = await db.execute(stmt)
@@ -333,6 +364,10 @@ async def get_timeline_events_from_db(session_id: str) -> List[TimelineEvent]:
             # session_id is not in the model, pop it
             row_dict.pop('session_id', None)
             events.append(TimelineEvent(**row_dict))
+            
+        if events:
+            await set_cached_data(cache_key, [e.model_dump(mode='json') for e in events], expiration_seconds=86400)
+            
         return events
 
 async def get_or_create_user(uid: str, email: Optional[str] = None) -> UserResponse:
