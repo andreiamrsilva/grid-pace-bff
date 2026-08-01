@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Optional, Type, TypeVar
 import httpx
 from pydantic import BaseModel, TypeAdapter

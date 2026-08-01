@@ -172,8 +172,11 @@ async def upsert_events(events_to_upsert: List[CalendarEvent]):
                 ins_stmt = events_table.insert().values(**event_data.model_dump())
                 await db.execute(ins_stmt)
         await db.commit()
-    from core.redis_service import redis_client
-    await redis_client.delete("cache:all_events")
+    try:
+        from core.redis_service import redis_client
+        await redis_client.delete("cache:all_events")
+    except Exception as e:
+        logger.warning(f"Failed to clear Redis cache for all_events: {e}")
 
 async def get_all_events_from_db() -> List[CalendarEvent]:
     from core.redis_service import get_cached_data, set_cached_data
@@ -217,8 +220,11 @@ async def save_stages_to_db(event_id: int, stages: List[Stage]):
                 ins_stmt = stages_table.insert().values(event_id=event_id, **dump_data)
                 await db.execute(ins_stmt)
             await db.commit()
-            from core.redis_service import redis_client
-            await redis_client.delete(f"cache:stages:{event_id}")
+            try:
+                from core.redis_service import redis_client
+                await redis_client.delete(f"cache:stages:{event_id}")
+            except Exception as e:
+                logger.warning(f"Failed to clear Redis cache for stages:{event_id}: {e}")
         except IntegrityError as e:
             await db.rollback()
             logger.warning(f"IntegrityError while saving stages for event {event_id}. Likely a concurrent insert. Error: {e}")
@@ -319,22 +325,20 @@ async def get_championship_standings_from_db(year: int, category: str) -> Option
 async def save_timeline_events_to_db(session_id: str, events: List[TimelineEvent]):
     if not events:
         return
+    # Deduplicate events by ID to avoid UNIQUE constraint errors
+    unique_events = list({e.id: e for e in events}.values())
     async with AsyncSessionLocal() as db:
-        # For simplicity, we can do an insert or ignore / replace logic
-        # Or delete existing for the session and insert all. Since events might update,
-        # replace or insert might be better. Let's delete for session and insert.
         await db.execute(timeline_events_table.delete().where(timeline_events_table.c.session_id == str(session_id)))
         
-        for event in events:
+        for event in unique_events:
             # We dump to dict, but ensure enum types are strings, so mode='json'
             event_data = event.model_dump(mode='json')
-            # Add session_id explicitly
-            event_data['session_id'] = str(session_id)
             
-            # Since model_dump(mode='json') converts timestamp to string, we need to convert it back to datetime for SQLAlchemy
-            # if we defined the column as DateTime. The easiest is to use the original object values for DateTime.
             event_data_typed = event.model_dump()
             event_data_typed['session_id'] = str(session_id)
+            # Ensure unique PK across different sessions/stages
+            scoped_id = f"{session_id}_{event.id}" if not str(event.id).startswith(f"{session_id}_") else str(event.id)
+            event_data_typed['id'] = scoped_id
             
             # Remove tzinfo to avoid asyncpg offset-naive vs offset-aware error with TIMESTAMP WITHOUT TIME ZONE
             if event_data_typed.get('timestamp') and event_data_typed['timestamp'].tzinfo:
@@ -344,8 +348,11 @@ async def save_timeline_events_to_db(session_id: str, events: List[TimelineEvent
             await db.execute(ins_stmt)
             
         await db.commit()
-    from core.redis_service import redis_client
-    await redis_client.delete(f"cache:timeline_db:{session_id}")
+    try:
+        from core.redis_service import redis_client
+        await redis_client.delete(f"cache:timeline_db:{session_id}")
+    except Exception as e:
+        logger.warning(f"Failed to clear Redis cache for timeline_db:{session_id}: {e}")
 
 async def get_timeline_events_from_db(session_id: str) -> List[TimelineEvent]:
     from core.redis_service import get_cached_data, set_cached_data

@@ -60,10 +60,11 @@ async def run_live_timing_ingestion():
                         if success_en or success_pt:
                             await set_cached_data(notif_key, {"sent": True}, expiration_seconds=86400)
 
-                # --- AGENT 03 WRC INFERENCE ---
+                # --- AGENT 03 WRC INFERENCE & SOCIAL MEDIA INGESTION ---
                 if category.lower() == "wrc":
                     from ingestion.agent_analyst import WRCAnalystAgent
                     from models.stage_times import StageStandings as SSModel
+                    from datetime import timezone, timedelta
                     
                     old_data = await get_cached_data(redis_key)
                     if old_data:
@@ -92,6 +93,37 @@ async def run_live_timing_ingestion():
                                         send_comment_notification(category, stage_id, preview, language=lang)
                         except Exception as e:
                             logger.error(f"Error in Agent 03 WRC inference for Stage {stage_id}: {e}")
+
+                    # --- WRC SOCIAL MEDIA & NEWS LIVE INGESTION ---
+                    try:
+                        timeline_key = f"timeline:wrc:{stage_id}"
+                        now_utc = datetime.now(timezone.utc)
+                        from ingestion.twitter_client import fetch_tweets_with_media
+                        from models.timeline import TimelineEventSource
+                        new_tweets = await fetch_tweets_with_media("17781576", now_utc - timedelta(hours=3), now_utc, TimelineEventSource.WRC_SOCIAL_MEDIA, "@OfficialWRC")
+                        if new_tweets:
+                            cached_events_raw = await get_cached_data(timeline_key) or []
+                            cached_ids = {str(e['id']) for e in cached_events_raw}
+                            unique_tweets = [t for t in new_tweets if str(t.id) not in cached_ids]
+                            if unique_tweets:
+                                from core.notification_service import send_comment_notification
+                                for t in unique_tweets:
+                                    for lang in ["en", "pt"]:
+                                        lang_key = f"message_{lang}"
+                                        msg_text = t.metadata.get(lang_key, t.message) if t.metadata else t.message
+                                        preview = msg_text[:50] + ("..." if len(msg_text) > 50 else "")
+                                        logger.info(f"Triggering WRC timeline push notification ({lang}) for social media item: {preview}")
+                                        send_comment_notification(category, stage_id, preview, language=lang)
+                                
+                                cached_events_raw.extend([t.model_dump(mode='json') for t in unique_tweets])
+                                from models.timeline import TimelineEvent
+                                all_objs = [TimelineEvent(**e) for e in cached_events_raw]
+                                all_objs.sort(key=lambda x: x.timestamp)
+                                await set_cached_data(timeline_key, [e.model_dump(mode='json') for e in all_objs], expiration_seconds=86400)
+                                from core.database_service import save_timeline_events_to_db
+                                await save_timeline_events_to_db(str(stage_id), all_objs)
+                    except Exception as e:
+                        logger.error(f"Error processing WRC social media live ingestion for Stage {stage_id}: {e}")
                 
                 # --- F1 TIMELINE NOTIFICATIONS ---
                 if category.lower() == "f1":

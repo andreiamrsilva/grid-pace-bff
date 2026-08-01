@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query, Depends, Request
@@ -89,6 +89,27 @@ async def get_timeline(
                             break
                 
             if db_events:
+                # Check if social media posts/news are missing and backfill if necessary
+                has_social = any("social_media" in str(e.source).lower() for e in db_events)
+                if not has_social:
+                    try:
+                        from core.database_service import get_stage_by_id_from_db
+                        stage = await get_stage_by_id_from_db(int(session_id))
+                        if stage and stage.start_time:
+                            st_time = stage.start_time
+                            if st_time.tzinfo is None:
+                                st_time = st_time.replace(tzinfo=timezone.utc)
+                            from ingestion.twitter_client import fetch_tweets_with_media
+                            from models.timeline import TimelineEventSource
+                            social_events = await fetch_tweets_with_media("17781576", st_time, st_time + timedelta(hours=6), TimelineEventSource.WRC_SOCIAL_MEDIA, "@OfficialWRC")
+                            if social_events:
+                                db_events.extend(social_events)
+                                db_events.sort(key=lambda x: x.timestamp)
+                                from core.database_service import save_timeline_events_to_db
+                                await save_timeline_events_to_db(session_id, db_events)
+                    except Exception as ex:
+                        logger.warning(f"Error backfilling social media events for stage {session_id}: {ex}")
+
                 # Deduplicate by message to prevent race condition duplicates
                 seen_messages = set()
                 all_events = []

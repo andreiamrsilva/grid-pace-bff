@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 Models for rally and stage results from WRC API
 Important Note: this is for the entire rally up to the stage. single stage models will be under stage_models.py

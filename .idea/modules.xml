@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/grid-pace-bff.iml" filepath="$PROJECT_DIR$/.idea/grid-pace-bff.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/openwrc.iml" filepath="$PROJECT_DIR$/.idea/openwrc.iml" />
     </modules>
   </component>
 </project>

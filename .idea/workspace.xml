@@ -5,7 +5,19 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="65ca4ed0-d96f-49db-b2bf-c0d163a9c117" name="Changes" comment="fixing dates">
+      <change afterPath="$PROJECT_DIR$/.idea/openwrc.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/grid-pace-bff.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/grid-pace-bff.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/routers/timeline.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/routers/timeline.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/database_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/database_service.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ingestion/service.py" beforeDir="false" afterPath="$PROJECT_DIR$/ingestion/service.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ingestion/twitter_client.py" beforeDir="false" afterPath="$PROJECT_DIR$/ingestion/twitter_client.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/openwrc/pyproject.toml" beforeDir="false" afterPath="$PROJECT_DIR$/openwrc/pyproject.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/openwrc/src/openwrc/clients/wrc_api_client.py" beforeDir="false" afterPath="$PROJECT_DIR$/openwrc/src/openwrc/clients/wrc_api_client.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/openwrc/src/openwrc/models/external_api/itinerary_models.py" beforeDir="false" afterPath="$PROJECT_DIR$/openwrc/src/openwrc/models/external_api/itinerary_models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/openwrc/src/openwrc/models/external_api/result_models.py" beforeDir="false" afterPath="$PROJECT_DIR$/openwrc/src/openwrc/models/external_api/result_models.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -21,12 +33,12 @@
     &quot;assignee&quot;: &quot;andreiamrsilva&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings">{
-  &quot;selectedUrlAndAccountId&quot;: {
-    &quot;url&quot;: &quot;https://github.com/andreiamrsilva/grid-pace-bff.git&quot;,
-    &quot;accountId&quot;: &quot;a16c02ac-e249-44ab-9999-757012a15fed&quot;
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/andreiamrsilva/grid-pace-bff.git",
+    "accountId": "5b40a8f7-ac44-409d-9533-269f86aafab3"
   }
-}</component>
+}]]></component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 8,
   &quot;fromUser&quot;: false
@@ -36,24 +48,26 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
-    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "codeWithMe.voiceChat.enabledByDefault": "false",
+    "git-widget-placeholder": "main",
+    "node.js.detected.package.eslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "project.propVCSSupport.DirectoryMappings"
   }
-}</component>
+}]]></component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-python-sdk-50341a9f1f9c-c2ffad84badb-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-261.26222.68" />
+        <option value="bundled-python-sdk-6fa658e1df1a-5bd6d13a2a75-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-262.8665.369" />
       </set>
     </attachedChunks>
   </component>
@@ -160,6 +174,9 @@
     <option name="version" value="3" />
   </component>
   <component name="VcsManagerConfiguration">
+    <ignored-roots>
+      <path value="$PROJECT_DIR$/openwrc" />
+    </ignored-roots>
     <MESSAGE value="Adding alembic to handle with db migrations.&#10;Added new table users." />
     <MESSAGE value="Adding missing dependencies." />
     <MESSAGE value="Updated news apis." />

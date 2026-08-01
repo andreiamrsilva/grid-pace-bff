@@ -3,7 +3,7 @@ name = "openwrc"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.9"
 dependencies = [
     "aiosqlite>=0.22.1",
     "fastapi>=0.128.0",
@@ -13,7 +13,7 @@ dependencies = [
     "rich>=13.0.0",
     "pydantic-extra-types>=2.11.0",
     "sqlalchemy>=2.0.46",
-    "streamlit>=1.55.0",
+    "streamlit>=1.30.0",
     "pandas>=2.3.3",
 ]
 
