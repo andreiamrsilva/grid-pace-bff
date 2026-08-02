@@ -32,51 +32,10 @@ async def fetch_tweets_for_session(
     author_display: str = "@OfficialWRC"
 ) -> List[TimelineEvent]:
     """
-    Uses RSS Feeds to search for news in a given time window, maintaining the old method signature for compatibility.
+    Fetches social media & news items for a session (F1 or WRC) using Twitter API or RSS fallback.
     """
-    events = []
-    try:
-        rss_url = RSS_MAPPING.get(search_term)
-        if not rss_url:
-            twitter_logger.error(f"No RSS feed mapping found for search_term: {search_term}")
-            return events
-
-        loop = asyncio.get_running_loop()
-        def get_rss_sync():
-            return feedparser.parse(rss_url)
-            
-        result = await loop.run_in_executor(None, get_rss_sync)
-        
-        if result and hasattr(result, 'entries'):
-            for entry in result.entries:
-                # parsed date is time.struct_time
-                if hasattr(entry, 'published_parsed') and entry.published_parsed:
-                    ts = calendar.timegm(entry.published_parsed)
-                    dt = datetime.fromtimestamp(ts, timezone.utc)
-                else:
-                    dt = datetime.now(timezone.utc)
-                    
-                # Precise time filtering
-                if start_time <= dt <= end_time:
-                    title = getattr(entry, 'title', '')
-                    link = getattr(entry, 'link', '')
-                    deterministic_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, f"{link}_{title}"))
-                    events.append(TimelineEvent(
-                        id=deterministic_id,
-                        timestamp=dt,
-                        source=source,
-                        severity=TimelineEventSeverity.INFO,
-                        message=f"📰 {title}",
-                        metadata={
-                            "url": link,
-                            "message_pt": f"📰 {title}",
-                            "message_en": f"📰 {title}"
-                        }
-                    ))
-    except Exception as e:
-        twitter_logger.error(f"Failed to fetch RSS feeds. Query/Term: {search_term}. Error: {e}")
-        
-    return events
+    user_id = "69008563" if "f1" in search_term.lower() else "17781576"
+    return await fetch_tweets_with_media(user_id, start_time, end_time, source, author_display)
 
 TWITTER_API_IO_KEY = os.getenv("TWITTER_API_IO_KEY")
 
