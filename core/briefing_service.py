@@ -451,8 +451,8 @@ def _get_f1_official_map_url(event_name: str, country: str, city: str) -> Option
     return "https://media.formula1.com/image/upload/v1677244985/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Monaco_Circuit.png"
 
 def _get_wrc_dark_static_map_url(latitude: float, longitude: float) -> str:
-    """Generates a high-quality dark mode static map URL centered on the WRC Service Park / Event location."""
-    return f"https://maps.geoapify.com/v1/staticmap?style=dark-matter-yellow-roads&width=600&height=400&center=lonlat:{longitude},{latitude}&zoom=9"
+    """Generates a 100% free, unrestricted static map image URL centered on the WRC Service Park / Event location (no API key required)."""
+    return f"https://static-maps.yandex.ru/1.x/?l=map&pt={longitude},{latitude},pm2rdm&z=9&lang=en_US"
 
 def _generate_spectator_zones(
     stage_name: str,
@@ -550,6 +550,7 @@ async def get_event_briefing(category: str, event_id: int, language: str = "pt")
     # 3. Match against curated briefing catalog
     catalog_match = _match_catalog_entry(category_upper, event_name, country, event_id=event_id)
 
+    track_map_url: Optional[str] = None
     if catalog_match:
         name = catalog_match.get("name", event_name)
         city = catalog_match.get("city", country)
@@ -578,10 +579,12 @@ async def get_event_briefing(category: str, event_id: int, language: str = "pt")
         )
         last_winner = None
         event_record = None
+        track_map_url = None
+
     # Always enforce track map image for F1 (official CDN) and WRC (dark static map)
     if category_upper == "F1" and not track_map_url:
         track_map_url = _get_f1_official_map_url(event_name, country, city)
-    elif category_upper == "WRC":
+    elif category_upper == "WRC" and not track_map_url:
         track_map_url = _get_wrc_dark_static_map_url(latitude, longitude)
 
     # 4. Fetch First Stage/Session details & refine start/finish datetimes

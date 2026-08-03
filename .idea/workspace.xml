@@ -4,10 +4,8 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="65ca4ed0-d96f-49db-b2bf-c0d163a9c117" name="Changes" comment="Fixing briefing weather information.">
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+    <list default="true" id="65ca4ed0-d96f-49db-b2bf-c0d163a9c117" name="Changes" comment="Added svg logic and spectator zones.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/briefing_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/briefing_service.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -197,7 +195,23 @@
       <option name="project" value="LOCAL" />
       <updated>1785774868183</updated>
     </task>
-    <option name="localTasksCounter" value="17" />
+    <task id="LOCAL-00017" summary="Fixing f1 svg files.">
+      <option name="closed" value="true" />
+      <created>1785775200917</created>
+      <option name="number" value="00017" />
+      <option name="presentableId" value="LOCAL-00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1785775200917</updated>
+    </task>
+    <task id="LOCAL-00018" summary="Added svg logic and spectator zones.">
+      <option name="closed" value="true" />
+      <created>1785776404980</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1785776404980</updated>
+    </task>
+    <option name="localTasksCounter" value="19" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -220,6 +234,8 @@
     <MESSAGE value="Added briefing route." />
     <MESSAGE value="Fixing briefing route." />
     <MESSAGE value="Fixing briefing weather information." />
-    <option name="LAST_COMMIT_MESSAGE" value="Fixing briefing weather information." />
+    <MESSAGE value="Fixing f1 svg files." />
+    <MESSAGE value="Added svg logic and spectator zones." />
+    <option name="LAST_COMMIT_MESSAGE" value="Added svg logic and spectator zones." />
   </component>
 </project>

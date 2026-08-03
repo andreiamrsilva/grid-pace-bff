@@ -159,9 +159,12 @@ async def get_overall_standings(request: Request, category: str, event_id: int):
     if cached_live_data:
         return OverallStandings(**cached_live_data)
 
-    db_standings = await get_overall_standings_from_db(event_id, category.upper())
-    if db_standings:
-        return db_standings
+    try:
+        db_standings = await get_overall_standings_from_db(event_id, category.upper())
+        if db_standings:
+            return db_standings
+    except Exception as e:
+        logger.warning(f"Error fetching overall standings from DB for event {event_id}: {e}")
 
     logger.debug(f"Cache/DB MISS for overall standings: {event_id}. Fetching from source.")
     

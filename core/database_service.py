@@ -33,7 +33,11 @@ elif "&sslmode=" in db_url:
 if db_url.startswith("sqlite"):
     engine = create_async_engine(db_url, connect_args={"check_same_thread": False})
 else:
-    engine = create_async_engine(db_url)
+    engine = create_async_engine(
+        db_url,
+        pool_pre_ping=True,
+        pool_recycle=300,
+    )
 
 AsyncSessionLocal = async_sessionmaker(autocommit=False, autoflush=False, bind=engine, class_=AsyncSession)
 
