@@ -445,7 +445,7 @@ async def run_timeline_validation_cron():
         logger.error(f"Error in timeline validation cron job: {e}")
 
 async def generate_briefing_with_gemini(event_name: str, category: str, country: str) -> Optional[dict]:
-    import os, json, httpx
+    import os, json, httpx, asyncio
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         logger.info("GEMINI_API_KEY is not set. Skipping AI briefing generation.")
@@ -468,22 +468,30 @@ async def generate_briefing_with_gemini(event_name: str, category: str, country:
     )
     payload = {"contents": [{"parts": [{"text": prompt}]}]}
 
-    try:
-        async with httpx.AsyncClient(timeout=20.0) as client:
-            res = await client.post(url, json=payload)
-            if res.status_code == 200:
-                text = res.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
-                if text.startswith("```json"):
-                    text = text[7:]
-                if text.startswith("```"):
-                    text = text[3:]
-                if text.endswith("```"):
-                    text = text[:-3]
-                return json.loads(text.strip())
-            else:
-                logger.warning(f"Gemini API returned status {res.status_code}: {res.text}")
-    except Exception as e:
-        logger.error(f"Error calling Gemini API for briefing generation: {e}")
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            async with httpx.AsyncClient(timeout=25.0) as client:
+                res = await client.post(url, json=payload)
+                if res.status_code == 200:
+                    text = res.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
+                    if text.startswith("```json"):
+                        text = text[7:]
+                    if text.startswith("```"):
+                        text = text[3:]
+                    if text.endswith("```"):
+                        text = text[:-3]
+                    return json.loads(text.strip())
+                elif res.status_code == 429:
+                    wait_time = (attempt + 1) * 6
+                    logger.warning(f"Gemini API rate limited (429) for '{event_name}'. Retrying in {wait_time}s (attempt {attempt+1}/{max_retries})...")
+                    await asyncio.sleep(wait_time)
+                else:
+                    logger.warning(f"Gemini API returned status {res.status_code} for '{event_name}': {res.text}")
+                    break
+        except Exception as e:
+            logger.error(f"Error calling Gemini API for briefing generation of '{event_name}': {e}")
+            await asyncio.sleep(2)
     return None
 
 async def run_briefing_generation_cron():
@@ -524,5 +532,7 @@ async def run_briefing_generation_cron():
             await delete_cached_data(f"briefing:{cat_lower}:{event.id}:en")
             
             logger.info(f"Successfully generated & saved Gemini AI briefing for event {event.id} ({event.name})")
+            # Pacing delay between event API calls to respect Gemini rate limits
+            await asyncio.sleep(3.0)
     except Exception as e:
         logger.error(f"Error in run_briefing_generation_cron: {e}")

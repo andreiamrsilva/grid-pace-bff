@@ -4,7 +4,11 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="65ca4ed0-d96f-49db-b2bf-c0d163a9c117" name="Changes" comment="Added briefing data to db." />
+    <list default="true" id="65ca4ed0-d96f-49db-b2bf-c0d163a9c117" name="Changes" comment="Fixing crash.">
+      <change beforePath="$PROJECT_DIR$/.idea/grid-pace-bff.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/grid-pace-bff.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ingestion/service.py" beforeDir="false" afterPath="$PROJECT_DIR$/ingestion/service.py" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -241,7 +245,31 @@
       <option name="project" value="LOCAL" />
       <updated>1785781026256</updated>
     </task>
-    <option name="localTasksCounter" value="23" />
+    <task id="LOCAL-00023" summary="Added briefing logs.">
+      <option name="closed" value="true" />
+      <created>1785781503645</created>
+      <option name="number" value="00023" />
+      <option name="presentableId" value="LOCAL-00023" />
+      <option name="project" value="LOCAL" />
+      <updated>1785781503645</updated>
+    </task>
+    <task id="LOCAL-00024" summary="Added auto migrate variable.">
+      <option name="closed" value="true" />
+      <created>1785784070976</created>
+      <option name="number" value="00024" />
+      <option name="presentableId" value="LOCAL-00024" />
+      <option name="project" value="LOCAL" />
+      <updated>1785784070976</updated>
+    </task>
+    <task id="LOCAL-00025" summary="Fixing crash.">
+      <option name="closed" value="true" />
+      <created>1785784239553</created>
+      <option name="number" value="00025" />
+      <option name="presentableId" value="LOCAL-00025" />
+      <option name="project" value="LOCAL" />
+      <updated>1785784239553</updated>
+    </task>
+    <option name="localTasksCounter" value="26" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -270,6 +298,9 @@
     <MESSAGE value="Fixed _get_wrc_dark_static_map_url" />
     <MESSAGE value="Fixed f1 stages maps url." />
     <MESSAGE value="Added briefing data to db." />
-    <option name="LAST_COMMIT_MESSAGE" value="Added briefing data to db." />
+    <MESSAGE value="Added briefing logs." />
+    <MESSAGE value="Added auto migrate variable." />
+    <MESSAGE value="Fixing crash." />
+    <option name="LAST_COMMIT_MESSAGE" value="Fixing crash." />
   </component>
 </project>
