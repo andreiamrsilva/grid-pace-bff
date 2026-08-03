@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="65ca4ed0-d96f-49db-b2bf-c0d163a9c117" name="Changes" comment="Added svg logic and spectator zones.">
+    <list default="true" id="65ca4ed0-d96f-49db-b2bf-c0d163a9c117" name="Changes" comment="Fixed f1 stages maps url.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -211,7 +211,31 @@
       <option name="project" value="LOCAL" />
       <updated>1785776404980</updated>
     </task>
-    <option name="localTasksCounter" value="19" />
+    <task id="LOCAL-00019" summary="Added missing locations.">
+      <option name="closed" value="true" />
+      <created>1785776712642</created>
+      <option name="number" value="00019" />
+      <option name="presentableId" value="LOCAL-00019" />
+      <option name="project" value="LOCAL" />
+      <updated>1785776712642</updated>
+    </task>
+    <task id="LOCAL-00020" summary="Fixed _get_wrc_dark_static_map_url">
+      <option name="closed" value="true" />
+      <created>1785777860755</created>
+      <option name="number" value="00020" />
+      <option name="presentableId" value="LOCAL-00020" />
+      <option name="project" value="LOCAL" />
+      <updated>1785777860755</updated>
+    </task>
+    <task id="LOCAL-00021" summary="Fixed f1 stages maps url.">
+      <option name="closed" value="true" />
+      <created>1785778288353</created>
+      <option name="number" value="00021" />
+      <option name="presentableId" value="LOCAL-00021" />
+      <option name="project" value="LOCAL" />
+      <updated>1785778288353</updated>
+    </task>
+    <option name="localTasksCounter" value="22" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -236,6 +260,9 @@
     <MESSAGE value="Fixing briefing weather information." />
     <MESSAGE value="Fixing f1 svg files." />
     <MESSAGE value="Added svg logic and spectator zones." />
-    <option name="LAST_COMMIT_MESSAGE" value="Added svg logic and spectator zones." />
+    <MESSAGE value="Added missing locations." />
+    <MESSAGE value="Fixed _get_wrc_dark_static_map_url" />
+    <MESSAGE value="Fixed f1 stages maps url." />
+    <option name="LAST_COMMIT_MESSAGE" value="Fixed f1 stages maps url." />
   </component>
 </project>

@@ -10,6 +10,7 @@ from ingestion.service import (
     run_historic_archive,
     run_current_year_update,
     run_timeline_validation_cron,
+    run_briefing_generation_cron,
 )
 
 logger = logging.getLogger(__name__)
@@ -66,4 +67,11 @@ async def update_current_year(request: Request):
 async def validate_timeline_tweets(request: Request):
     """Validates missing tweets for recent stages and populates them."""
     await run_timeline_validation_cron()
+    return {"status": "success"}
+
+@router.get("/generate-briefings", response_model=CronResponse)
+@limiter.limit("60/minute")
+async def generate_briefings(request: Request):
+    """Generates AI briefings using Gemini API for all events and saves them to the DB."""
+    await run_briefing_generation_cron()
     return {"status": "success"}

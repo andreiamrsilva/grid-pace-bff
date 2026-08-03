@@ -1,4 +1,5 @@
 import logging
+from typing import Optional, List, Dict
 from datetime import datetime, date
 
 logger = logging.getLogger(__name__)
@@ -442,3 +443,75 @@ async def run_timeline_validation_cron():
 
     except Exception as e:
         logger.error(f"Error in timeline validation cron job: {e}")
+
+async def generate_briefing_with_gemini(event_name: str, category: str, country: str) -> Optional[dict]:
+    import os, json, httpx
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        logger.info("GEMINI_API_KEY is not set. Skipping AI briefing generation.")
+        return None
+
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
+    prompt = (
+        f"Atue como um Especialista Engenheiro de Desportos Motorizados ({category}). "
+        f"Gere uma análise tática completa, descreva o tipo de piso, identifique o último vencedor (last_winner) "
+        f"e o recorde oficial da prova (event_record) para o evento: {event_name} ({country}). "
+        f"Retorne ESTRITAMENTE um objeto JSON sem formatação markdown ou blocos de código adicionais, no formato:\n"
+        f"{{\n"
+        f'  "surface_type_pt": "...",\n'
+        f'  "surface_type_en": "...",\n'
+        f'  "tactical_briefing_pt": "...",\n'
+        f'  "tactical_briefing_en": "...",\n'
+        f'  "last_winner": "...",\n'
+        f'  "event_record": "..."\n'
+        f"}}\n"
+    )
+    payload = {"contents": [{"parts": [{"text": prompt}]}]}
+
+    try:
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            res = await client.post(url, json=payload)
+            if res.status_code == 200:
+                text = res.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
+                if text.startswith("```json"):
+                    text = text[7:]
+                if text.startswith("```"):
+                    text = text[3:]
+                if text.endswith("```"):
+                    text = text[:-3]
+                return json.loads(text.strip())
+            else:
+                logger.warning(f"Gemini API returned status {res.status_code}: {res.text}")
+    except Exception as e:
+        logger.error(f"Error calling Gemini API for briefing generation: {e}")
+    return None
+
+async def run_briefing_generation_cron():
+    """
+    Cron job that loops over all events in the database, generates tactical briefings using Gemini API,
+    and persists them to the event_briefings database table.
+    """
+    try:
+        all_events = await get_all_events_from_db()
+        if not all_events:
+            logger.info("No events found in DB for briefing generation.")
+            return
+
+        from core.database_service import save_event_briefing_to_db
+
+        for event in all_events:
+            ai_res = await generate_briefing_with_gemini(event.name, event.category, event.country or "")
+            if ai_res:
+                await save_event_briefing_to_db(
+                    event_id=event.id,
+                    category=event.category,
+                    surface_type_pt=ai_res.get("surface_type_pt"),
+                    surface_type_en=ai_res.get("surface_type_en"),
+                    tactical_briefing_pt=ai_res.get("tactical_briefing_pt"),
+                    tactical_briefing_en=ai_res.get("tactical_briefing_en"),
+                    last_winner=ai_res.get("last_winner"),
+                    event_record=ai_res.get("event_record"),
+                )
+                logger.info(f"Generated & saved AI briefing for event {event.id} ({event.name})")
+    except Exception as e:
+        logger.error(f"Error in run_briefing_generation_cron: {e}")

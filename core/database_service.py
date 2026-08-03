@@ -1,7 +1,7 @@
 import logging
 from typing import List, Optional
 
-from sqlalchemy import Column, Integer, String, Date, MetaData, Table, update, Float, Boolean, DateTime, select, JSON
+from sqlalchemy import Column, Integer, String, Date, MetaData, Table, update, Float, Boolean, DateTime, select, JSON, func
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 
 from core.config import settings
@@ -145,11 +145,48 @@ user_settings_table = Table(
     Column('notif_stage_comments', Boolean, default=True),
 )
 
+event_briefings_table = Table(
+    'event_briefings', metadata,
+    Column('event_id', Integer, primary_key=True, autoincrement=False),
+    Column('category', String, nullable=False, index=True),
+    Column('surface_type_pt', String, nullable=True),
+    Column('surface_type_en', String, nullable=True),
+    Column('tactical_briefing_pt', String, nullable=True),
+    Column('tactical_briefing_en', String, nullable=True),
+    Column('last_winner', String, nullable=True),
+    Column('event_record', String, nullable=True),
+    Column('updated_at', DateTime, default=func.now(), nullable=False),
+)
+
+import asyncio
+import os
+from alembic.config import Config
+from alembic import command
+
 logger = logging.getLogger(__name__)
 
+def run_migrations():
+    """Applies pending Alembic migrations programmatically."""
+    try:
+        ini_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "alembic.ini")
+        if not os.path.exists(ini_path):
+            logger.warning(f"alembic.ini not found at {ini_path}, skipping startup migration.")
+            return
+
+        alembic_cfg = Config(ini_path)
+        alembic_cfg.set_main_option("sqlalchemy.url", db_url)
+        command.upgrade(alembic_cfg, "head")
+        logger.info("Alembic schema migrations checked and applied successfully on startup.")
+    except Exception as e:
+        logger.error(f"Error running Alembic migrations on startup: {e}")
+
 async def init_db():
-    """Database initialization is now handled by Alembic migrations."""
-    logger.info("Database schema is now managed by Alembic. Run 'alembic upgrade head' to apply migrations.")
+    """Runs Alembic migrations asynchronously on application startup (e.g. Vercel deployment)."""
+    try:
+        loop = asyncio.get_running_loop()
+        await loop.run_in_executor(None, run_migrations)
+    except Exception as e:
+        logger.error(f"Failed to execute startup migrations: {e}")
 
 async def get_last_archived_year() -> int:
     async with AsyncSessionLocal() as db:
@@ -462,3 +499,45 @@ async def update_user_subscription_in_db(uid: str, sub_update: SubscriptionUpdat
         result = await db.execute(upd_stmt)
         await db.commit()
         return result.rowcount > 0
+
+async def get_event_briefing_from_db(event_id: int) -> Optional[dict]:
+    async with AsyncSessionLocal() as db:
+        stmt = select(event_briefings_table).where(event_briefings_table.c.event_id == event_id)
+        result = await db.execute(stmt)
+        row = result.mappings().first()
+        return dict(row) if row else None
+
+async def save_event_briefing_to_db(
+    event_id: int,
+    category: str,
+    surface_type_pt: Optional[str] = None,
+    surface_type_en: Optional[str] = None,
+    tactical_briefing_pt: Optional[str] = None,
+    tactical_briefing_en: Optional[str] = None,
+    last_winner: Optional[str] = None,
+    event_record: Optional[str] = None,
+):
+    async with AsyncSessionLocal() as db:
+        stmt = select(event_briefings_table.c.event_id).where(event_briefings_table.c.event_id == event_id)
+        res = await db.execute(stmt)
+        exists = res.scalar()
+        
+        values = {
+            "category": category,
+            "surface_type_pt": surface_type_pt,
+            "surface_type_en": surface_type_en,
+            "tactical_briefing_pt": tactical_briefing_pt,
+            "tactical_briefing_en": tactical_briefing_en,
+            "last_winner": last_winner,
+            "event_record": event_record,
+            "updated_at": func.now(),
+        }
+        
+        if exists:
+            upd = update(event_briefings_table).where(event_briefings_table.c.event_id == event_id).values(**values)
+            await db.execute(upd)
+        else:
+            values["event_id"] = event_id
+            ins = event_briefings_table.insert().values(**values)
+            await db.execute(ins)
+        await db.commit()
