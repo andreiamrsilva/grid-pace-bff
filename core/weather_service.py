@@ -154,37 +154,44 @@ async def fetch_event_weather_briefing(
             precip_prob = daily_data.get("precipitation_probability_max", [])
             codes = daily_data.get("weather_code", [])
 
-            forecast_days = []
+            all_forecast_days = []
+            matching_forecast_days = []
+
             for i in range(len(times)):
                 try:
                     d = date.fromisoformat(times[i])
+                    weather_code = codes[i] if i < len(codes) and codes[i] is not None else 0
+                    condition_str = get_wmo_condition_description(weather_code, language=language)
+
+                    day_summary = WeatherDaySummary(
+                        date=d,
+                        temp_min=t_min[i] if i < len(t_min) and t_min[i] is not None else 0.0,
+                        temp_max=t_max[i] if i < len(t_max) and t_max[i] is not None else 0.0,
+                        rain_probability=precip_prob[i] if i < len(precip_prob) and precip_prob[i] is not None else 0,
+                        weather_code=weather_code,
+                        condition=condition_str
+                    )
+
+                    all_forecast_days.append(day_summary)
+
                     # Filter for event date range if specified
                     if start_date and d < start_date:
                         continue
                     if finish_date and d > finish_date:
                         continue
 
-                    weather_code = codes[i] if i < len(codes) and codes[i] is not None else 0
-                    condition_str = get_wmo_condition_description(weather_code, language=language)
-
-                    forecast_days.append(
-                        WeatherDaySummary(
-                            date=d,
-                            temp_min=t_min[i] if i < len(t_min) and t_min[i] is not None else 0.0,
-                            temp_max=t_max[i] if i < len(t_max) and t_max[i] is not None else 0.0,
-                            rain_probability=precip_prob[i] if i < len(precip_prob) and precip_prob[i] is not None else 0,
-                            weather_code=weather_code,
-                            condition=condition_str
-                        )
-                    )
+                    matching_forecast_days.append(day_summary)
                 except (ValueError, IndexError) as e:
                     logger.warning(f"Error parsing daily weather forecast at index {i}: {e}")
                     continue
 
+            # If specific event dates matched, use them; otherwise return all available forecast days for the location
+            final_forecast = matching_forecast_days if matching_forecast_days else all_forecast_days
+
             return WeatherBriefing(
                 latitude=data.get("latitude", latitude),
                 longitude=data.get("longitude", longitude),
-                forecast_days=forecast_days
+                forecast_days=final_forecast
             )
 
     except Exception as e:
