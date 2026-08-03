@@ -163,10 +163,19 @@ import os
 from alembic.config import Config
 from alembic import command
 
-logger = logging.getLogger(__name__)
+_migrations_ran = False
 
 def run_migrations():
-    """Applies pending Alembic migrations programmatically."""
+    """Applies pending Alembic migrations programmatically if AUTO_MIGRATE env var is enabled."""
+    global _migrations_ran
+    if _migrations_ran:
+        return
+
+    auto_migrate = os.getenv("AUTO_MIGRATE", "false").lower() in ("true", "1")
+    if not auto_migrate:
+        logger.debug("AUTO_MIGRATE is not enabled, skipping startup Alembic check.")
+        return
+
     try:
         ini_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "alembic.ini")
         if not os.path.exists(ini_path):
@@ -176,6 +185,7 @@ def run_migrations():
         alembic_cfg = Config(ini_path)
         alembic_cfg.set_main_option("sqlalchemy.url", db_url)
         command.upgrade(alembic_cfg, "head")
+        _migrations_ran = True
         logger.info("Alembic schema migrations checked and applied successfully on startup.")
     except Exception as e:
         logger.error(f"Error running Alembic migrations on startup: {e}")
