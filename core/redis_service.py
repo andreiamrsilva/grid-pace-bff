@@ -50,6 +50,15 @@ async def set_cached_data(key: str, data: Any, expiration_seconds: Optional[int]
         logger.error(f"Error writing key '{key}' to Redis: {e}")
         return False
 
+async def delete_cached_data(key: str) -> bool:
+    """Deletes a key from Redis."""
+    try:
+        await redis_client.delete(key)
+        return True
+    except Exception as e:
+        logger.error(f"Error deleting key '{key}' from Redis: {e}")
+        return False
+
 async def close_redis_connection():
     """Closes the Redis connection pool."""
     await redis_client.close()

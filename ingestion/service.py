@@ -489,7 +489,8 @@ async def generate_briefing_with_gemini(event_name: str, category: str, country:
 async def run_briefing_generation_cron():
     """
     Cron job that loops over all events in the database, generates tactical briefings using Gemini API,
-    and persists them to the event_briefings database table.
+    persists them to the event_briefings database table, and clears Redis cache for those events.
+    If Gemini API fails, it logs an error and DOES NOT alter the database.
     """
     try:
         all_events = await get_all_events_from_db()
@@ -498,20 +499,30 @@ async def run_briefing_generation_cron():
             return
 
         from core.database_service import save_event_briefing_to_db
+        from core.redis_service import delete_cached_data
 
         for event in all_events:
             ai_res = await generate_briefing_with_gemini(event.name, event.category, event.country or "")
-            if ai_res:
-                await save_event_briefing_to_db(
-                    event_id=event.id,
-                    category=event.category,
-                    surface_type_pt=ai_res.get("surface_type_pt"),
-                    surface_type_en=ai_res.get("surface_type_en"),
-                    tactical_briefing_pt=ai_res.get("tactical_briefing_pt"),
-                    tactical_briefing_en=ai_res.get("tactical_briefing_en"),
-                    last_winner=ai_res.get("last_winner"),
-                    event_record=ai_res.get("event_record"),
-                )
-                logger.info(f"Generated & saved AI briefing for event {event.id} ({event.name})")
+            if not ai_res:
+                logger.error(f"Skipping DB update for event {event.id} ({event.name}): Gemini API returned no data or GEMINI_API_KEY missing.")
+                continue
+
+            await save_event_briefing_to_db(
+                event_id=event.id,
+                category=event.category,
+                surface_type_pt=ai_res.get("surface_type_pt"),
+                surface_type_en=ai_res.get("surface_type_en"),
+                tactical_briefing_pt=ai_res.get("tactical_briefing_pt"),
+                tactical_briefing_en=ai_res.get("tactical_briefing_en"),
+                last_winner=ai_res.get("last_winner"),
+                event_record=ai_res.get("event_record"),
+            )
+            
+            # Invalidate Redis briefing cache so new data is immediately served
+            cat_lower = event.category.lower()
+            await delete_cached_data(f"briefing:{cat_lower}:{event.id}:pt")
+            await delete_cached_data(f"briefing:{cat_lower}:{event.id}:en")
+            
+            logger.info(f"Successfully generated & saved Gemini AI briefing for event {event.id} ({event.name})")
     except Exception as e:
         logger.error(f"Error in run_briefing_generation_cron: {e}")
