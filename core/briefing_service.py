@@ -622,17 +622,33 @@ async def get_event_briefing(category: str, event_id: int, language: str = "pt")
 
             from urllib.parse import quote_plus
             for st in stages:
-                st_lat = getattr(st, 'latitude', None)
-                st_lon = getattr(st, 'longitude', None)
-                st_loc = getattr(st, 'location_name', None) or (f"{city}, {country}".strip(", "))
-                gmaps = getattr(st, 'google_maps_url', None)
-                if not gmaps:
-                    if st_lat and st_lon:
-                        gmaps = f"https://www.google.com/maps/search/?api=1&query={st_lat},{st_lon}"
-                    else:
-                        gmaps = f"https://www.google.com/maps/search/?api=1&query={quote_plus(f'{st.name} {country}')}"
+                if category_upper == "F1":
+                    st_lat = latitude
+                    st_lon = longitude
+                    st_loc = f"{name}, {city}".strip(", ")
+                    gmaps = f"https://www.google.com/maps/search/?api=1&query={latitude},{longitude}"
+                    spectator_zones = [
+                        BriefingSpectatorZone(
+                            id="ZE1",
+                            name="Entrada Principal do Circuito & Paddock" if lang_code == "pt" else "Main Circuit Entrance & Paddock",
+                            description=f"Acesso principal ao {name} com entrada para as bancadas e Paddock." if lang_code == "pt" else f"Main entrance to {name} with grandstand and Paddock access.",
+                            latitude=latitude,
+                            longitude=longitude,
+                            google_maps_url=gmaps
+                        )
+                    ]
+                else:
+                    st_lat = getattr(st, 'latitude', None) or latitude
+                    st_lon = getattr(st, 'longitude', None) or longitude
+                    st_loc = getattr(st, 'location_name', None) or (f"{city}, {country}".strip(", "))
+                    gmaps = getattr(st, 'google_maps_url', None)
+                    if not gmaps:
+                        if st_lat and st_lon:
+                            gmaps = f"https://www.google.com/maps/search/?api=1&query={st_lat},{st_lon}"
+                        else:
+                            gmaps = f"https://www.google.com/maps/search/?api=1&query={quote_plus(f'{st.name} {country}')}"
 
-                spectator_zones = _generate_spectator_zones(st.name, st_lat, st_lon, country, lang_code)
+                    spectator_zones = _generate_spectator_zones(st.name, st_lat, st_lon, country, lang_code)
 
                 briefing_stages.append(
                     BriefingStage(
