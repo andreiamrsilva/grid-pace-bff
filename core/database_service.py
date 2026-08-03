@@ -163,6 +163,7 @@ import os
 from alembic.config import Config
 from alembic import command
 
+logger = logging.getLogger(__name__)
 _migrations_ran = False
 
 def run_migrations():
