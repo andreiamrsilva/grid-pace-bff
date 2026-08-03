@@ -494,7 +494,7 @@ async def generate_briefing_with_gemini(event_name: str, category: str, country:
             await asyncio.sleep(2)
     return None
 
-async def run_briefing_generation_cron():
+async def run_briefing_generation_cron(force_update: bool = False):
     """
     Cron job that loops over all events in the database, generates tactical briefings using Gemini API,
     persists them to the event_briefings database table, and clears Redis cache for those events.
@@ -506,13 +506,20 @@ async def run_briefing_generation_cron():
             logger.info("No events found in DB for briefing generation.")
             return
 
-        from core.database_service import save_event_briefing_to_db
+        from core.database_service import save_event_briefing_to_db, get_event_briefing_from_db
         from core.redis_service import delete_cached_data
 
         for event in all_events:
+            # Skip if event already has a persistent briefing in DB (unless force_update is True)
+            if not force_update:
+                existing_db = await get_event_briefing_from_db(event.id)
+                if existing_db and existing_db.get("tactical_briefing_pt"):
+                    logger.info(f"Skipping event {event.id} ({event.name}): Briefing already exists in DB.")
+                    continue
+
             ai_res = await generate_briefing_with_gemini(event.name, event.category, event.country or "")
             if not ai_res:
-                logger.error(f"Skipping DB update for event {event.id} ({event.name}): Gemini API returned no data or GEMINI_API_KEY missing.")
+                logger.error(f"Skipping DB update for event {event.id} ({event.name}): Gemini API returned no data or GEMINI_API_KEY missing/rate limited.")
                 continue
 
             await save_event_briefing_to_db(

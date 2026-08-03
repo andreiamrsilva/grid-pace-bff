@@ -71,7 +71,7 @@ async def validate_timeline_tweets(request: Request):
 
 @router.get("/generate-briefings", response_model=CronResponse)
 @limiter.limit("60/minute")
-async def generate_briefings(request: Request):
-    """Generates AI briefings using Gemini API for all events and saves them to the DB."""
-    await run_briefing_generation_cron()
+async def generate_briefings(request: Request, force: bool = False):
+    """Generates AI briefings using Gemini API for events and saves them to the DB (skips already populated events unless force=true)."""
+    await run_briefing_generation_cron(force_update=force)
     return {"status": "success"}
