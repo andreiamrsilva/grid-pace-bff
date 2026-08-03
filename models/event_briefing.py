@@ -15,6 +15,26 @@ class WeatherBriefing(BaseModel):
     longitude: float = Field(description="Longitude of the event location")
     forecast_days: List[WeatherDaySummary] = Field(default_factory=list, description="Daily weather forecasts for event days")
 
+class BriefingSpectatorZone(BaseModel):
+    id: Optional[str] = Field(default=None, description="Spectator zone code (e.g. 'ZE1', 'ZE2')")
+    name: str = Field(description="Name or title of spectator zone (e.g. 'ZE 1 - Salto de Fafe')")
+    description: Optional[str] = Field(default=None, description="Access instructions, parking details or viewing notes")
+    latitude: float = Field(description="Latitude of spectator zone access/parking point")
+    longitude: float = Field(description="Longitude of spectator zone access/parking point")
+    google_maps_url: str = Field(description="Google Maps / Waze navigation URL for fans to navigate to this spectator zone")
+
+class BriefingStage(BaseModel):
+    id: Optional[int] = Field(default=None, description="Stage or session identifier")
+    name: str = Field(description="Stage or session name (e.g. 'SS1 - Figueira da Foz' or 'Practice 1')")
+    number: Optional[int] = Field(default=None, description="Stage number")
+    distance_km: Optional[float] = Field(default=None, description="Distance of the stage in kilometers")
+    start_time: Optional[datetime] = Field(default=None, description="Scheduled start date and time")
+    location_name: Optional[str] = Field(default=None, description="Stage location or municipality name")
+    latitude: Optional[float] = Field(default=None, description="Stage start latitude")
+    longitude: Optional[float] = Field(default=None, description="Stage start longitude")
+    google_maps_url: Optional[str] = Field(default=None, description="Google Maps / Waze navigation URL to stage start location")
+    spectator_zones: List[BriefingSpectatorZone] = Field(default_factory=list, description="Designated Spectator Zones (ZE / Zonas de Espectáculo) for fan viewing & parking")
+
 class EventBriefing(BaseModel):
     event_id: int = Field(description="Event identifier")
     category: str = Field(description="Category of motorsport: 'F1' or 'WRC'")
@@ -37,4 +57,5 @@ class EventBriefing(BaseModel):
     track_map_url: Optional[str] = Field(default=None, description="URL to the circuit layout or stage map image")
     track_map_svg: Optional[str] = Field(default=None, description="Optional raw SVG string or vector representation")
     weather: Optional[WeatherBriefing] = Field(default=None, description="Weather forecast during the event days")
+    stages: List[BriefingStage] = Field(default_factory=list, description="List of scheduled stages / PECs with navigation links for pre-event planning")
 

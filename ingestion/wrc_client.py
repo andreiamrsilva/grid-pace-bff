@@ -175,8 +175,36 @@ async def _fetch_wrc_event_stages(event_id: int) -> List[Stage]:
                                     winner_time = format_ms_to_time(winner_result.stage_time_ms)
                         except Exception:
                             pass
+
+                    from urllib.parse import quote_plus
+                    stage_lat = getattr(stage_details, 'start_latitude', None) or getattr(stage_details, 'latitude', None)
+                    stage_lon = getattr(stage_details, 'start_longitude', None) or getattr(stage_details, 'longitude', None)
+                    loc_name = getattr(stage_details, 'location', None) or stage_details.name
+
+                    if stage_lat and stage_lon:
+                        gmaps_url = f"https://www.google.com/maps/search/?api=1&query={stage_lat},{stage_lon}"
+                    else:
+                        gmaps_url = f"https://www.google.com/maps/search/?api=1&query={quote_plus(f'{stage_details.name} WRC')}"
                             
-                    stages.append(Stage(id=stage_details.stage_id, name=stage_details.name, number=stage_details.number, distance=stage_details.distance, start_time=start_time, status=actual_status, is_live=actual_status == "Running", winner_name=winner_name, winner_logo_path=winner_logo_path, winner_time=winner_time))
+                    stages.append(
+                        Stage(
+                            id=stage_details.stage_id,
+                            event_id=event_id,
+                            name=stage_details.name,
+                            number=stage_details.number,
+                            distance=stage_details.distance,
+                            start_time=start_time,
+                            status=actual_status,
+                            is_live=actual_status == "Running",
+                            winner_name=winner_name,
+                            winner_logo_path=winner_logo_path,
+                            winner_time=winner_time,
+                            latitude=stage_lat,
+                            longitude=stage_lon,
+                            location_name=loc_name,
+                            google_maps_url=gmaps_url
+                        )
+                    )
         
         stages.sort(key=lambda s: s.number)
         return stages

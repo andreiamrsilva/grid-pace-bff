@@ -1,7 +1,7 @@
 import logging
-from typing import Optional, Dict, Any, Tuple
+from typing import Optional, Dict, Any, Tuple, List
 from datetime import date, datetime
-from models.event_briefing import EventBriefing, WeatherBriefing
+from models.event_briefing import EventBriefing, WeatherBriefing, BriefingStage, BriefingSpectatorZone
 from core.weather_service import fetch_event_weather_briefing
 from core.database_service import get_event_by_id_from_db
 from core.redis_service import get_cached_data, set_cached_data
@@ -445,6 +445,80 @@ def _get_f1_official_map_url(event_name: str, country: str, city: str) -> Option
             return f"https://media.formula1.com/image/upload/v1677244985/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/{slug}_Circuit.png"
     return "https://media.formula1.com/image/upload/v1677244985/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Monaco_Circuit.png"
 
+def _get_wrc_dark_static_map_url(latitude: float, longitude: float) -> str:
+    """Generates a high-quality dark mode static map URL centered on the WRC Service Park / Event location."""
+    return f"https://maps.geoapify.com/v1/staticmap?style=dark-matter-yellow-roads&width=600&height=400&center=lonlat:{longitude},{latitude}&zoom=9"
+
+def _generate_spectator_zones(
+    stage_name: str,
+    stage_lat: Optional[float],
+    stage_lon: Optional[float],
+    country: str,
+    lang_code: str
+) -> List[BriefingSpectatorZone]:
+    name_lower = stage_name.lower()
+    zones: List[BriefingSpectatorZone] = []
+
+    # Iconic Curated Spectator Zones
+    if "fafe" in name_lower:
+        zones.append(
+            BriefingSpectatorZone(
+                id="ZE1",
+                name="ZE 1 - Salto de Fafe" if lang_code == "pt" else "ZE 1 - Fafe Jump",
+                description="Zona do icónico salto de Fafe com parque de estacionamento e bancada natural." if lang_code == "pt" else "Iconic Fafe jump viewing zone with public parking and natural slope seating.",
+                latitude=41.4502,
+                longitude=-8.1725,
+                google_maps_url="https://www.google.com/maps/search/?api=1&query=41.4502,-8.1725"
+            )
+        )
+        zones.append(
+            BriefingSpectatorZone(
+                id="ZE2",
+                name="ZE 2 - Confurco",
+                description="Zona rápida com excelente visibilidade na aproximação ao cruzamento do Confurco." if lang_code == "pt" else "Fast section with excellent visibility on approach to Confurco junction.",
+                latitude=41.4610,
+                longitude=-8.1580,
+                google_maps_url="https://www.google.com/maps/search/?api=1&query=41.4610,-8.1580"
+            )
+        )
+    elif "lousã" in name_lower or "lousa" in name_lower:
+        zones.append(
+            BriefingSpectatorZone(
+                id="ZE1",
+                name="ZE 1 - Senhora da Piedade",
+                description="Acesso alcatroado perto do santuário com zona reservada a espetadores." if lang_code == "pt" else "Tarmac access near the sanctuary with dedicated viewing zone.",
+                latitude=40.1050,
+                longitude=-8.2410,
+                google_maps_url="https://www.google.com/maps/search/?api=1&query=40.1050,-8.2410"
+            )
+        )
+    elif "turini" in name_lower:
+        zones.append(
+            BriefingSpectatorZone(
+                id="ZE1",
+                name="ZE 1 - Col de Turini Pass",
+                description="Topo da montanha com vista sobre os ganchos épicos do Turini." if lang_code == "pt" else "Mountain summit overlooking the legendary Turini hairpins.",
+                latitude=43.9780,
+                longitude=7.3910,
+                google_maps_url="https://www.google.com/maps/search/?api=1&query=43.9780,7.3910"
+            )
+        )
+
+    # Generic Spectator Zone Fallback using Stage start coordinates if no curated zone matched
+    if not zones and stage_lat and stage_lon:
+        zones.append(
+            BriefingSpectatorZone(
+                id="ZE1",
+                name="ZE 1 - Acesso Principal" if lang_code == "pt" else "ZE 1 - Main Access",
+                description="Zona de acesso oficial ao público e estacionamento recomendado." if lang_code == "pt" else "Official public access zone and recommended parking area.",
+                latitude=stage_lat,
+                longitude=stage_lon,
+                google_maps_url=f"https://www.google.com/maps/search/?api=1&query={stage_lat},{stage_lon}"
+            )
+        )
+
+    return zones
+
 async def get_event_briefing(category: str, event_id: int, language: str = "pt") -> EventBriefing:
     """
     Retrieves complete briefing for an event localized in the specified language ('pt' or 'en').
@@ -499,11 +573,11 @@ async def get_event_briefing(category: str, event_id: int, language: str = "pt")
         )
         last_winner = None
         event_record = None
-        track_map_url = None
-
-    # Always enforce official F1 CDN track map image for F1 events
+    # Always enforce track map image for F1 (official CDN) and WRC (dark static map)
     if category_upper == "F1" and not track_map_url:
         track_map_url = _get_f1_official_map_url(event_name, country, city)
+    elif category_upper == "WRC":
+        track_map_url = _get_wrc_dark_static_map_url(latitude, longitude)
 
     # 4. Fetch First Stage/Session details & refine start/finish datetimes
     first_stage_name: Optional[str] = None
@@ -515,6 +589,7 @@ async def get_event_briefing(category: str, event_id: int, language: str = "pt")
     start_datetime = datetime.combine(start_date, time(8, 0)).replace(tzinfo=timezone.utc) if isinstance(start_date, date) and not isinstance(start_date, datetime) else start_date
     finish_datetime = datetime.combine(finish_date, time(18, 0)).replace(tzinfo=timezone.utc) if isinstance(finish_date, date) and not isinstance(finish_date, datetime) else finish_date
 
+    briefing_stages: List[BriefingStage] = []
     try:
         from core.database_service import get_stages_from_db
         stages = await get_stages_from_db(event_id)
@@ -536,6 +611,35 @@ async def get_event_briefing(category: str, event_id: int, language: str = "pt")
             last_stage = stages[-1]
             if last_stage.start_time:
                 finish_datetime = last_stage.start_time
+
+            from urllib.parse import quote_plus
+            for st in stages:
+                st_lat = getattr(st, 'latitude', None)
+                st_lon = getattr(st, 'longitude', None)
+                st_loc = getattr(st, 'location_name', None) or (f"{city}, {country}".strip(", "))
+                gmaps = getattr(st, 'google_maps_url', None)
+                if not gmaps:
+                    if st_lat and st_lon:
+                        gmaps = f"https://www.google.com/maps/search/?api=1&query={st_lat},{st_lon}"
+                    else:
+                        gmaps = f"https://www.google.com/maps/search/?api=1&query={quote_plus(f'{st.name} {country}')}"
+
+                spectator_zones = _generate_spectator_zones(st.name, st_lat, st_lon, country, lang_code)
+
+                briefing_stages.append(
+                    BriefingStage(
+                        id=st.id,
+                        name=st.name,
+                        number=getattr(st, 'number', None),
+                        distance_km=getattr(st, 'distance', None),
+                        start_time=st.start_time,
+                        location_name=st_loc,
+                        latitude=st_lat,
+                        longitude=st_lon,
+                        google_maps_url=gmaps,
+                        spectator_zones=spectator_zones
+                    )
+                )
     except Exception as e:
         logger.warning(f"Could not retrieve stages for event {event_id}: {e}")
 
@@ -570,7 +674,8 @@ async def get_event_briefing(category: str, event_id: int, language: str = "pt")
         last_winner=last_winner,
         event_record=event_record,
         track_map_url=track_map_url,
-        weather=weather_briefing
+        weather=weather_briefing,
+        stages=briefing_stages
     )
 
     # Cache response in Redis for 1 hour (3600s)

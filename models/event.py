@@ -14,3 +14,8 @@ class Stage(BaseModel):
     winner_name: Optional[str] = None
     winner_logo_path: Optional[str] = None
     winner_time: Optional[str] = None
+    # Location & PEC Navigation Fields
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    location_name: Optional[str] = None
+    google_maps_url: Optional[str] = None
