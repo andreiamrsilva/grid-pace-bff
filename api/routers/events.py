@@ -1,5 +1,5 @@
 from typing import List, Optional
-from fastapi import APIRouter, HTTPException, Depends, Request
+from fastapi import APIRouter, HTTPException, Depends, Request, Query
 from datetime import datetime, timezone
 
 import sys
@@ -187,17 +187,23 @@ from core.briefing_service import get_event_briefing
 
 @router.get("/{category}/{event_id}/briefing", response_model=EventBriefing)
 @limiter.limit("60/minute")
-async def get_event_briefing_endpoint(request: Request, category: str, event_id: int):
+async def get_event_briefing_endpoint(
+    request: Request,
+    category: str,
+    event_id: int,
+    language: str = Query("pt", description="Language code for briefing content (e.g. 'pt', 'en'). Defaults to 'pt'.")
+):
     """
     Get comprehensive pre-event briefing for an F1 or WRC event.
     Provides weather forecast, circuit/rally metadata, surface type, total distance,
     laps count (F1), tactical briefing, last winner, event record, and track map layout.
+    Supports language localization ('pt', 'en').
     """
     if category.lower() not in ("wrc", "f1"):
         raise HTTPException(status_code=404, detail="Category not supported.")
 
     try:
-        briefing = await get_event_briefing(category, event_id)
+        briefing = await get_event_briefing(category, event_id, language=language)
         if not briefing:
             raise HTTPException(status_code=404, detail=f"Briefing not found for event {event_id}.")
         return briefing

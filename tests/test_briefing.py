@@ -28,8 +28,8 @@ MOCK_F1_BRIEFING = EventBriefing(
     city="Monte Carlo",
     country="Monaco",
     country_image_url="https://flag.png",
-    start_date=date(2026, 5, 22),
-    finish_date=date(2026, 5, 24),
+    start_date=datetime(2026, 5, 22, 13, 30),
+    finish_date=datetime(2026, 5, 24, 16, 0),
     first_stage_name="Practice 1",
     first_stage_start_time=datetime(2026, 5, 22, 13, 30),
     first_stage_location="Monte Carlo, Monaco",
@@ -63,8 +63,8 @@ MOCK_WRC_BRIEFING = EventBriefing(
     event_title="Vodafone Rally de Portugal 2026",
     city="Matosinhos",
     country="Portugal",
-    start_date=date(2026, 5, 14),
-    finish_date=date(2026, 5, 17),
+    start_date=datetime(2026, 5, 14, 17, 5),
+    finish_date=datetime(2026, 5, 17, 14, 15),
     first_stage_name="SS1 - Figueira da Foz",
     first_stage_start_time=datetime(2026, 5, 14, 17, 5),
     first_stage_location="Matosinhos, Portugal",
@@ -91,6 +91,8 @@ async def test_get_event_briefing_f1_success(mock_get_briefing):
     assert data["name"] == "Circuit de Monaco"
     assert data["city"] == "Monte Carlo"
     assert data["country"] == "Monaco"
+    assert data["start_date"] == "2026-05-22T13:30:00"
+    assert data["finish_date"] == "2026-05-24T16:00:00"
     assert data["first_stage_name"] == "Practice 1"
     assert data["first_stage_start_time"] == "2026-05-22T13:30:00"
     assert data["first_stage_location"] == "Monte Carlo, Monaco"
@@ -115,6 +117,8 @@ async def test_get_event_briefing_wrc_success(mock_get_briefing):
     data = response.json()
     assert data["category"] == "WRC"
     assert data["name"] == "Vodafone Rally de Portugal"
+    assert data["start_date"] == "2026-05-14T17:05:00"
+    assert data["finish_date"] == "2026-05-17T14:15:00"
     assert data["first_stage_name"] == "SS1 - Figueira da Foz"
     assert data["laps_count"] is None
     assert data["surface_type"] == "Terra"
@@ -127,3 +131,14 @@ async def test_get_event_briefing_invalid_category():
 
     assert response.status_code == 404
     assert response.json() == {"detail": "Category not supported."}
+
+async def test_get_event_briefing_language_localization():
+    """Test briefing service localization for PT and EN."""
+    from core.briefing_service import get_event_briefing
+    briefing_pt = await get_event_briefing("F1", 9158, language="pt")
+    assert briefing_pt.surface_type == "Asfalto (Circuito de Rua)"
+    assert "Mónaco" in briefing_pt.tactical_briefing
+
+    briefing_en = await get_event_briefing("F1", 9158, language="en")
+    assert briefing_en.surface_type == "Tarmac (Street Circuit)"
+    assert "Monaco GP" in briefing_en.tactical_briefing

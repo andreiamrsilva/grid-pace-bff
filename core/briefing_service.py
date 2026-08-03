@@ -1,6 +1,6 @@
 import logging
 from typing import Optional, Dict, Any
-from datetime import date
+from datetime import date, datetime
 from models.event_briefing import EventBriefing, WeatherBriefing
 from core.weather_service import fetch_event_weather_briefing
 from core.database_service import get_event_by_id_from_db
@@ -8,7 +8,7 @@ from core.redis_service import get_cached_data, set_cached_data
 
 logger = logging.getLogger(__name__)
 
-# --- Curated Motorsport Briefing Database ---
+# --- Curated Motorsport Briefing Database with Multi-language Support ---
 
 BRIEFING_CATALOG: Dict[str, Dict[str, Any]] = {
     # F1 Circuits
@@ -18,13 +18,21 @@ BRIEFING_CATALOG: Dict[str, Dict[str, Any]] = {
         "country": "Monaco",
         "latitude": 43.7347,
         "longitude": 7.4206,
-        "surface_type": "Asfalto (Circuito de Rua)",
+        "surface_type": {
+            "pt": "Asfalto (Circuito de Rua)",
+            "en": "Tarmac (Street Circuit)"
+        },
         "total_distance_km": 260.286,
         "laps_count": 78,
-        "tactical_briefing": "O GP de Mónaco é a prova mais exigente em termos de precisão técnica e qualificação. "
-                            "Devido à extrema dificuldade de ultrapassagem nas ruas estreitas, a posição de partida "
-                            "e a estratégia de pit stop sob Safety Car são determinantes. A degradação de pneus é baixa, "
-                            "mas a margem de erro nos raios das curvas é zero.",
+        "tactical_briefing": {
+            "pt": "O GP de Mónaco é a prova mais exigente em termos de precisão técnica e qualificação. "
+                  "Devido à extrema dificuldade de ultrapassagem nas ruas estreitas, a posição de partida "
+                  "e a estratégia de pit stop sob Safety Car são determinantes. A degradação de pneus é baixa, "
+                  "mas a margem de erro nos raios das curvas é zero.",
+            "en": "The Monaco GP is the most demanding event for technical precision and qualifying pace. "
+                  "Due to extreme overtaking difficulty on narrow streets, grid position and pit stop strategy under Safety Car are decisive. "
+                  "Tire degradation is low, but the margin for error in corner entries is zero."
+        },
         "last_winner": "Charles Leclerc (Ferrari)",
         "event_record": "1:12.909 - Lewis Hamilton (2021)",
         "track_map_url": "https://media.formula1.com/image/upload/v1677244985/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Monaco_Circuit.png",
@@ -35,13 +43,21 @@ BRIEFING_CATALOG: Dict[str, Dict[str, Any]] = {
         "country": "Reino Unido",
         "latitude": 52.0786,
         "longitude": -1.0169,
-        "surface_type": "Asfalto (Alta Aderência / Alta Velocidade)",
+        "surface_type": {
+            "pt": "Asfalto (Alta Aderência / Alta Velocidade)",
+            "en": "Tarmac (High Grip / High Speed)"
+        },
         "total_distance_km": 306.198,
         "laps_count": 52,
-        "tactical_briefing": "Circuito ultrarrápido com sequências icónicas como Maggotts, Becketts e Chapel. "
-                            "Impõe altíssima carga lateral nos pneus (especialmente dianteiro esquerdo), tornando o "
-                            "gestão de borracha e acerto de alta pressão aerodinâmica cruciais. Ventos cruzados e chuvas "
-                            "súbitas costumam alterar drasticamente a aderência.",
+        "tactical_briefing": {
+            "pt": "Circuito ultrarrápido com sequências icónicas como Maggotts, Becketts e Chapel. "
+                  "Impõe altíssima carga lateral nos pneus (especialmente dianteiro esquerdo), tornando o "
+                  "gestão de borracha e acerto de alta pressão aerodinâmica cruciais. Ventos cruzados e chuvas "
+                  "súbitas costumam alterar drasticamente a aderência.",
+            "en": "Ultra-fast circuit featuring iconic corner sequences like Maggotts, Becketts, and Chapel. "
+                  "Puts extreme lateral loads on tires (especially front-left), making tire management and high-downforce setup crucial. "
+                  "Crosswinds and sudden rain showers frequently alter track grip."
+        },
         "last_winner": "Lewis Hamilton (Mercedes)",
         "event_record": "1:27.097 - Max Verstappen (2020)",
         "track_map_url": "https://media.formula1.com/image/upload/v1677244985/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Great_Britain_Circuit.png",
@@ -52,12 +68,19 @@ BRIEFING_CATALOG: Dict[str, Dict[str, Any]] = {
         "country": "Bélgica",
         "latitude": 50.4372,
         "longitude": 5.9714,
-        "surface_type": "Asfalto (Circuito Misto de Montanha)",
+        "surface_type": {
+            "pt": "Asfalto (Circuito Misto de Montanha)",
+            "en": "Tarmac (Mixed Mountain Circuit)"
+        },
         "total_distance_km": 308.052,
         "laps_count": 44,
-        "tactical_briefing": "O circuito mais longo do calendário. Requer um compromisso aerodinâmico entre "
-                            "alta velocidade de ponta no Setor 1/3 (reta de Kemmel) e apoio na secção sinuosa do Setor 2. "
-                            "O clima nas Ardenas é notoriamente imprevisível, sendo comum chover num setor e estar seco noutro.",
+        "tactical_briefing": {
+            "pt": "O circuito mais longo do calendário. Requer um compromisso aerodinâmico entre "
+                  "alta velocidade de ponta no Setor 1/3 (reta de Kemmel) e apoio na secção sinuosa do Setor 2. "
+                  "O clima nas Ardenas é notoriamente imprevisível, sendo comum chover num setor e estar seco noutro.",
+            "en": "The longest circuit on the calendar. Demands an aerodynamic compromise between top speed in Sectors 1 & 3 (Kemmel straight) "
+                  "and downforce in the twisty Sector 2. Weather in the Ardennes is notoriously unpredictable, often raining on one part of the track while dry elsewhere."
+        },
         "last_winner": "Lewis Hamilton (Mercedes)",
         "event_record": "1:46.286 - Valtteri Bottas (2018)",
         "track_map_url": "https://media.formula1.com/image/upload/v1677244985/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Belgium_Circuit.png",
@@ -68,11 +91,17 @@ BRIEFING_CATALOG: Dict[str, Dict[str, Any]] = {
         "country": "Itália",
         "latitude": 45.6156,
         "longitude": 9.2811,
-        "surface_type": "Asfalto (Templo da Velocidade)",
+        "surface_type": {
+            "pt": "Asfalto (Templo da Velocidade)",
+            "en": "Tarmac (Temple of Speed)"
+        },
         "total_distance_km": 306.720,
         "laps_count": 53,
-        "tactical_briefing": "Configuração de mínima carga aerodinâmica (low downforce) para maximizar a velocidade máxima nas retas. "
-                            "As travagens violentas para as chicanes (Prima Variante e Ascari) exigem estabilidade extrema nas travagens e boa tração à saída.",
+        "tactical_briefing": {
+            "pt": "Configuração de mínima carga aerodinâmica (low downforce) para maximizar a velocidade máxima nas retas. "
+                  "As travagens violentas para as chicanes (Prima Variante e Ascari) exigem estabilidade extrema nas travagens e boa tração à saída.",
+            "en": "Low downforce setup to maximize straight-line speed. Heavy braking zones into chicanes (Prima Variante and Ascari) demand extreme braking stability and traction on exit."
+        },
         "last_winner": "Charles Leclerc (Ferrari)",
         "event_record": "1:21.046 - Rubens Barrichello (2004)",
         "track_map_url": "https://media.formula1.com/image/upload/v1677244985/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Italy_Circuit.png",
@@ -83,11 +112,17 @@ BRIEFING_CATALOG: Dict[str, Dict[str, Any]] = {
         "country": "Brasil",
         "latitude": -23.7036,
         "longitude": -46.6997,
-        "surface_type": "Asfalto (Circuito Anti-horário)",
+        "surface_type": {
+            "pt": "Asfalto (Circuito Anti-horário)",
+            "en": "Tarmac (Anti-clockwise Circuit)"
+        },
         "total_distance_km": 305.909,
         "laps_count": 71,
-        "tactical_briefing": "Layout fluido em sentido anti-horário com acentuadas variações de relevo e excelentes oportunidades de ultrapassagem no S do Senna. "
-                            "As condições meteorológicas em São Paulo são frequentemente instáveis, gerando corridas caóticas e cheias de alternâncias.",
+        "tactical_briefing": {
+            "pt": "Layout fluido em sentido anti-horário com acentuadas variações de relevo e excelentes oportunidades de ultrapassagem no S do Senna. "
+                  "As condições meteorológicas em São Paulo são frequentemente instáveis, gerando corridas caóticas e cheias de alternâncias.",
+            "en": "Flowing anti-clockwise layout with pronounced elevation changes and great overtaking opportunities into Senna S. Weather in São Paulo is volatile, frequently leading to chaotic races."
+        },
         "last_winner": "Max Verstappen (Red Bull Racing)",
         "event_record": "1:10.540 - Valtteri Bottas (2018)",
         "track_map_url": "https://media.formula1.com/image/upload/v1677244985/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Brazil_Circuit.png",
@@ -100,13 +135,19 @@ BRIEFING_CATALOG: Dict[str, Dict[str, Any]] = {
         "country": "Mónaco / França",
         "latitude": 44.5596,
         "longitude": 6.0798,
-        "surface_type": "Misto (Asfalto, Gelo e Neve)",
+        "surface_type": {
+            "pt": "Misto (Asfalto, Gelo e Neve)",
+            "en": "Mixed (Tarmac, Ice & Snow)"
+        },
         "total_distance_km": 324.44,
-        "tactical_briefing": "O rali mais imprevisível do campeonato. A escolha de pneus (slicks, pneus de neve com ou sem cravos) "
-                            "em troços com asfalto seco no vale e gelo negro no topo dos passos de montanha como Col de Turini é o fator chave para a vitória. "
-                            "A leitura das equipas de batedores (gravel crews) é crucial.",
+        "tactical_briefing": {
+            "pt": "O rali mais imprevisível do campeonato. A escolha de pneus (slicks, pneus de neve com ou sem cravos) "
+                  "em troços com asfalto seco no vale e gelo negro no topo dos passos de montanha como Col de Turini é o fator chave para a vitória. "
+                  "A leitura das equipas de batedores (gravel crews) é crucial.",
+            "en": "The most unpredictable rally of the WRC. Tire selection (slicks, snow tires studded or unstudded) on stages with dry asphalt in valleys and black ice atop mountain passes like Col de Turini is the key winning factor. Gravel crew intel is vital."
+        },
         "last_winner": "Thierry Neuville (Hyundai Shell Mobis WRT)",
-        "event_record": "Sébastien Ogier - 9 Vitórias",
+        "event_record": "Sébastien Ogier - 9 Vitórias / Wins",
         "track_map_url": "https://www.wrc.com/cws/images/wrc_maps_montecarlo.png",
     },
     "wrc_portugal": {
@@ -115,13 +156,19 @@ BRIEFING_CATALOG: Dict[str, Dict[str, Any]] = {
         "country": "Portugal",
         "latitude": 41.1822,
         "longitude": -8.6908,
-        "surface_type": "Terra (Gravel arenoso e abrasivo)",
+        "surface_type": {
+            "pt": "Terra (Gravel arenoso e abrasivo)",
+            "en": "Gravel (Sandy & Abrasive Gravel)"
+        },
         "total_distance_km": 337.04,
-        "tactical_briefing": "Troços técnicos em terra no norte e centro de Portugal (Lousã, Arganil, Fafe). "
-                            "Na primeira passagem a pista tem gravilha solta beneficiando quem parte atrás; na segunda passagem sobem as pedras e pedregulhos soltos, "
-                            "exigindo gestão dos pneus e proteção mecânica da suspensão. O salto de Fafe é o momento apogeu.",
+        "tactical_briefing": {
+            "pt": "Troços técnicos em terra no norte e centro de Portugal (Lousã, Arganil, Fafe). "
+                  "Na primeira passagem a pista tem gravilha solta beneficiando quem parte atrás; na segunda passagem sobem as pedras e pedregulhos soltos, "
+                  "exigindo gestão dos pneus e proteção mecânica da suspensão. O salto de Fafe é o momento apogeu.",
+            "en": "Technical gravel stages in northern and central Portugal (Lousã, Arganil, Fafe). Loose gravel on first pass favors later starters; exposed rocks on second pass demand tire management and suspension protection. The iconic Fafe jump is the highlight."
+        },
         "last_winner": "Sébastien Ogier (Toyota Gazoo Racing WRT)",
-        "event_record": "Sébastien Ogier - 6 Vitórias",
+        "event_record": "Sébastien Ogier - 6 Vitórias / Wins",
         "track_map_url": "https://www.wrc.com/cws/images/wrc_maps_portugal.png",
     },
     "wrc_finland": {
@@ -130,12 +177,18 @@ BRIEFING_CATALOG: Dict[str, Dict[str, Any]] = {
         "country": "Finlândia",
         "latitude": 62.2426,
         "longitude": 25.7473,
-        "surface_type": "Terra Rápida (Gravel compacto com grandes saltos)",
+        "surface_type": {
+            "pt": "Terra Rápida (Gravel compacto com grandes saltos)",
+            "en": "Fast Gravel (Smooth Gravel with Big Jumps)"
+        },
         "total_distance_km": 305.69,
-        "tactical_briefing": "Conhecido como a 'Grande Corrida de Gran Prix em Terra'. Média de velocidades impressionante com cristas cegas e saltos gigantescos (ex: Ouninpohja). "
-                            "A precisão nas notas de ritmo (pacenotes) é vital: um carro desalinhado ao descolar do salto pode resultar numa saída violenta.",
+        "tactical_briefing": {
+            "pt": "Conhecido como a 'Grande Corrida de Gran Prix em Terra'. Média de velocidades impressionante com cristas cegas e saltos gigantescos (ex: Ouninpohja). "
+                  "A precisão nas notas de ritmo (pacenotes) é vital: um carro desalinhado ao descolar do salto pode resultar numa saída violenta.",
+            "en": "Known as the 'Grand Prix of Gravel'. Blistering average speeds with blind crests and massive jumps (e.g. Ouninpohja). Pacenote precision is crucial: taking a jump slightly off-line can lead to a severe crash."
+        },
         "last_winner": "Sébastien Ogier (Toyota Gazoo Racing WRT)",
-        "event_record": "Marcus Grönholm - 7 Vitórias",
+        "event_record": "Marcus Grönholm - 7 Vitórias / Wins",
         "track_map_url": "https://www.wrc.com/cws/images/wrc_maps_finland.png",
     },
     "wrc_safari": {
@@ -144,12 +197,18 @@ BRIEFING_CATALOG: Dict[str, Dict[str, Any]] = {
         "country": "Quénia",
         "latitude": -0.7172,
         "longitude": 36.4310,
-        "surface_type": "Terra Exterminadora (Fesh-fesh, lama e pedras cortantes)",
+        "surface_type": {
+            "pt": "Terra Exterminadora (Fesh-fesh, lama e pedras cortantes)",
+            "en": "Brutal Gravel (Fesh-fesh, Mud & Sharp Rocks)"
+        },
         "total_distance_km": 367.76,
-        "tactical_briefing": "O teste derradeiro de resistência física e mecânica. O terreno alterna entre poeira ultrafina (fesh-fesh) que sufoca motores, "
-                            "rochas gigantes e valas profundas. As tempestades tropicais podem transformar troços secos num lamaçal impraticável em minutos.",
+        "tactical_briefing": {
+            "pt": "O teste derradeiro de resistência física e mecânica. O terreno alterna entre poeira ultrafina (fesh-fesh) que sufoca motores, "
+                  "rochas gigantes e valas profundas. As tempestades tropicais podem transformar troços secos num lamaçal impraticável em minutos.",
+            "en": "The ultimate test of mechanical endurance. Terrain alternates between ultra-fine dust (fesh-fesh) that chokes engines, giant boulders, and deep ruts. Tropical rainstorms can turn dry tracks into impassable mud within minutes."
+        },
         "last_winner": "Kalle Rovanperä (Toyota Gazoo Racing WRT)",
-        "event_record": "Shekhar Mehta / Sébastien Ogier - 5 Vitórias",
+        "event_record": "Shekhar Mehta / Sébastien Ogier - 5 Vitórias / Wins",
         "track_map_url": "https://www.wrc.com/cws/images/wrc_maps_kenya.png",
     },
     "wrc_acropolis": {
@@ -158,15 +217,28 @@ BRIEFING_CATALOG: Dict[str, Dict[str, Any]] = {
         "country": "Grécia",
         "latitude": 38.8959,
         "longitude": 22.4347,
-        "surface_type": "Terra Rochosa (Temperaturas extremas e pedras soltas)",
+        "surface_type": {
+            "pt": "Terra Rochosa (Temperaturas extremas e pedras soltas)",
+            "en": "Rocky Gravel (Extreme Temperatures & Loose Rocks)"
+        },
         "total_distance_km": 305.30,
-        "tactical_briefing": "O 'Rali dos Deuses'. Piso composto por pedras pontiagudas e calor sufocante na cabine. "
-                            "A chave não é apenas andar rápido, mas preservar o carro, amortecedores e carcaça dos pneus contra furos graves.",
+        "tactical_briefing": {
+            "pt": "O 'Rali dos Deuses'. Piso composto por pedras pontiagudas e calor sufocante na cabine. "
+                  "A chave não é apenas andar rápido, mas preservar o carro, amortecedores e carcaça dos pneus contra furos graves.",
+            "en": "The 'Rally of Gods'. Rough bedrock surfaces with razor-sharp rocks and punishing cockpit heat. Success requires balancing speed with car preservation, damper management, and avoiding punctures."
+        },
         "last_winner": "Thierry Neuville (Hyundai Shell Mobis WRT)",
-        "event_record": "Colin McRae - 5 Vitórias",
+        "event_record": "Colin McRae - 5 Vitórias / Wins",
         "track_map_url": "https://www.wrc.com/cws/images/wrc_maps_acropolis.png",
     }
 }
+
+def _get_localized(field_value: Any, lang: str) -> str:
+    """Extracts localized text from a dict or string based on language code."""
+    if isinstance(field_value, dict):
+        lang_key = "en" if lang.lower().startswith("en") else "pt"
+        return field_value.get(lang_key, field_value.get("pt", field_value.get("en", "")))
+    return str(field_value or "")
 
 def _match_catalog_entry(category: str, event_name: str, country: str) -> Optional[Dict[str, Any]]:
     """Helper to find the best matching briefing entry in our catalog."""
@@ -184,12 +256,13 @@ def _match_catalog_entry(category: str, event_name: str, country: str) -> Option
                 return data
     return None
 
-async def get_event_briefing(category: str, event_id: int) -> EventBriefing:
+async def get_event_briefing(category: str, event_id: int, language: str = "pt") -> EventBriefing:
     """
-    Retrieves complete briefing for an event including circuit info, tactical analysis, records, and weather forecast.
+    Retrieves complete briefing for an event localized in the specified language ('pt' or 'en').
     """
     category_upper = category.upper()
-    cache_key = f"briefing:{category_upper.lower()}:{event_id}"
+    lang_code = "en" if language.lower().startswith("en") else "pt"
+    cache_key = f"briefing:{category_upper.lower()}:{event_id}:{lang_code}"
     
     # 1. Try Redis cache
     cached = await get_cached_data(cache_key)
@@ -214,34 +287,40 @@ async def get_event_briefing(category: str, event_id: int) -> EventBriefing:
         city = catalog_match.get("city", country)
         latitude = catalog_match.get("latitude", 0.0)
         longitude = catalog_match.get("longitude", 0.0)
-        surface_type = catalog_match.get("surface_type", "Asfalto" if category_upper == "F1" else "Terra")
+        surface_type = _get_localized(catalog_match.get("surface_type"), lang_code)
         total_distance_km = catalog_match.get("total_distance_km")
         laps_count = catalog_match.get("laps_count") if category_upper == "F1" else None
-        tactical_briefing = catalog_match.get("tactical_briefing", "")
+        tactical_briefing = _get_localized(catalog_match.get("tactical_briefing"), lang_code)
         last_winner = catalog_match.get("last_winner")
         event_record = catalog_match.get("event_record")
         track_map_url = catalog_match.get("track_map_url")
     else:
         # Generic fallback if not in curated catalog
-        name = event_name if category_upper == "WRC" else f"Circuito de {country or event_name}"
-        city = country or "Desconhecido"
+        name = event_name if category_upper == "WRC" else (f"{country or event_name} Circuit" if lang_code == "en" else f"Circuito de {country or event_name}")
+        city = country or ("Unknown" if lang_code == "en" else "Desconhecido")
         latitude = 45.0
         longitude = 9.0
-        surface_type = "Asfalto" if category_upper == "F1" else "Terra (Misto)"
+        surface_type = "Tarmac" if (category_upper == "F1" and lang_code == "en") else ("Asfalto" if category_upper == "F1" else ("Gravel (Mixed)" if lang_code == "en" else "Terra (Misto)"))
         total_distance_km = 305.0 if category_upper == "F1" else 320.0
         laps_count = 55 if category_upper == "F1" else None
         tactical_briefing = (
-            f"Análise tática para o {event_name}. Preparação focada na afinação aerodinâmica, "
-            f"estratégia de gestão de pneus e adaptação rápida às condições do piso e meteorologia local."
+            f"Tactical analysis for {event_name}. Preparation focused on aerodynamic setup, tire management strategy, and rapid adaptation to surface conditions and local weather."
+            if lang_code == "en"
+            else f"Análise tática para o {event_name}. Preparação focada na afinação aerodinâmica, estratégia de gestão de pneus e adaptação rápida às condições do piso e meteorologia local."
         )
         last_winner = None
         event_record = None
         track_map_url = None
 
-    # 4. Fetch First Stage/Session details
+    # 4. Fetch First Stage/Session details & refine start/finish datetimes
     first_stage_name: Optional[str] = None
     first_stage_start_time: Optional[datetime] = None
     first_stage_location: Optional[str] = f"{city}, {country}".strip(", ")
+
+    from datetime import time, timezone
+
+    start_datetime = datetime.combine(start_date, time(8, 0)).replace(tzinfo=timezone.utc) if isinstance(start_date, date) and not isinstance(start_date, datetime) else start_date
+    finish_datetime = datetime.combine(finish_date, time(18, 0)).replace(tzinfo=timezone.utc) if isinstance(finish_date, date) and not isinstance(finish_date, datetime) else finish_date
 
     try:
         from core.database_service import get_stages_from_db
@@ -258,8 +337,14 @@ async def get_event_briefing(category: str, event_id: int) -> EventBriefing:
             first_stage = stages[0]
             first_stage_name = first_stage.name
             first_stage_start_time = first_stage.start_time
+            if first_stage.start_time:
+                start_datetime = first_stage.start_time
+
+            last_stage = stages[-1]
+            if last_stage.start_time:
+                finish_datetime = last_stage.start_time
     except Exception as e:
-        logger.warning(f"Could not retrieve first stage for event {event_id}: {e}")
+        logger.warning(f"Could not retrieve stages for event {event_id}: {e}")
 
     # 5. Fetch Weather Briefing
     weather_briefing: Optional[WeatherBriefing] = None
@@ -267,20 +352,21 @@ async def get_event_briefing(category: str, event_id: int) -> EventBriefing:
         weather_briefing = await fetch_event_weather_briefing(
             latitude=latitude,
             longitude=longitude,
-            start_date=start_date,
-            finish_date=finish_date
+            start_date=start_date if isinstance(start_date, date) else start_date.date(),
+            finish_date=finish_date if isinstance(finish_date, date) else finish_date.date(),
+            language=lang_code
         )
 
     briefing_res = EventBriefing(
         event_id=event_id,
         category=category_upper,
         name=name,
-        event_title=f"{event_name} {start_date.year if start_date else ''}".strip(),
+        event_title=f"{event_name} {start_datetime.year}".strip(),
         city=city,
         country=country or city,
         country_image_url=country_img,
-        start_date=start_date,
-        finish_date=finish_date,
+        start_date=start_datetime,
+        finish_date=finish_datetime,
         first_stage_name=first_stage_name,
         first_stage_start_time=first_stage_start_time,
         first_stage_location=first_stage_location,

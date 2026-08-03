@@ -67,7 +67,7 @@ async def fetch_weather_forecast(latitude: float, longitude: float) -> Optional[
         logger.error(f"Failed to fetch weather from Open-Meteo for {latitude}, {longitude}: {e}")
         return None
 
-WMO_WEATHER_MAP = {
+WMO_WEATHER_MAP_PT = {
     0: "Ensolarado / Céu Limpo",
     1: "Predominantemente Limpo",
     2: "Parcialmente Nublado",
@@ -91,8 +91,34 @@ WMO_WEATHER_MAP = {
     99: "Trovoada com Granizo Forte",
 }
 
-def get_wmo_condition_description(code: int) -> str:
-    return WMO_WEATHER_MAP.get(code, "Variável / Indeterminado")
+WMO_WEATHER_MAP_EN = {
+    0: "Sunny / Clear Sky",
+    1: "Mainly Clear",
+    2: "Partly Cloudy",
+    3: "Overcast",
+    45: "Fog",
+    48: "Depositing Rime Fog",
+    51: "Light Drizzle",
+    53: "Moderate Drizzle",
+    55: "Dense Drizzle",
+    61: "Slight Rain",
+    63: "Moderate Rain",
+    65: "Heavy Rain",
+    71: "Slight Snow Fall",
+    73: "Moderate Snow Fall",
+    75: "Heavy Snow Fall",
+    80: "Slight Rain Showers",
+    81: "Moderate Rain Showers",
+    82: "Violent Rain Showers",
+    95: "Thunderstorm",
+    96: "Thunderstorm with Slight Hail",
+    99: "Thunderstorm with Heavy Hail",
+}
+
+def get_wmo_condition_description(code: int, language: str = "pt") -> str:
+    weather_map = WMO_WEATHER_MAP_EN if language.lower().startswith("en") else WMO_WEATHER_MAP_PT
+    default_text = "Variable / Undetermined" if language.lower().startswith("en") else "Variável / Indeterminado"
+    return weather_map.get(code, default_text)
 
 from models.event_briefing import WeatherBriefing, WeatherDaySummary
 from datetime import date, timedelta
@@ -102,7 +128,8 @@ async def fetch_event_weather_briefing(
     latitude: float,
     longitude: float,
     start_date: Optional[date] = None,
-    finish_date: Optional[date] = None
+    finish_date: Optional[date] = None,
+    language: str = "pt"
 ) -> Optional[WeatherBriefing]:
     """
     Fetches weather forecast for an event location and aggregates hourly data into a daily briefing.
@@ -138,7 +165,7 @@ async def fetch_event_weather_briefing(
                         continue
 
                     weather_code = codes[i] if i < len(codes) and codes[i] is not None else 0
-                    condition_str = get_wmo_condition_description(weather_code)
+                    condition_str = get_wmo_condition_description(weather_code, language=language)
 
                     forecast_days.append(
                         WeatherDaySummary(

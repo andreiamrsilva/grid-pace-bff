@@ -4,13 +4,13 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="65ca4ed0-d96f-49db-b2bf-c0d163a9c117" name="Changes" comment="Improving social media requests for F1.">
+    <list default="true" id="65ca4ed0-d96f-49db-b2bf-c0d163a9c117" name="Changes" comment="Added briefing route.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/api/routers/events.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/routers/events.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/briefing_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/briefing_service.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/core/weather_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/weather_service.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_calendar.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_calendar.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_events.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_events.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/event_briefing.py" beforeDir="false" afterPath="$PROJECT_DIR$/models/event_briefing.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_briefing.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_briefing.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -176,7 +176,15 @@
       <option name="project" value="LOCAL" />
       <updated>1785668446411</updated>
     </task>
-    <option name="localTasksCounter" value="14" />
+    <task id="LOCAL-00014" summary="Added briefing route.">
+      <option name="closed" value="true" />
+      <created>1785771719698</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1785771719698</updated>
+    </task>
+    <option name="localTasksCounter" value="15" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -196,6 +204,7 @@
     <MESSAGE value="fixing dates" />
     <MESSAGE value="Improving social media requests for wrc." />
     <MESSAGE value="Improving social media requests for F1." />
-    <option name="LAST_COMMIT_MESSAGE" value="Improving social media requests for F1." />
+    <MESSAGE value="Added briefing route." />
+    <option name="LAST_COMMIT_MESSAGE" value="Added briefing route." />
   </component>
 </project>
