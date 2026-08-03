@@ -4,20 +4,13 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="65ca4ed0-d96f-49db-b2bf-c0d163a9c117" name="Changes" comment="fixing dates">
-      <change afterPath="$PROJECT_DIR$/.idea/openwrc.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/grid-pace-bff.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/grid-pace-bff.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+    <list default="true" id="65ca4ed0-d96f-49db-b2bf-c0d163a9c117" name="Changes" comment="Improving social media requests for F1.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/routers/timeline.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/routers/timeline.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/database_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/database_service.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ingestion/service.py" beforeDir="false" afterPath="$PROJECT_DIR$/ingestion/service.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ingestion/twitter_client.py" beforeDir="false" afterPath="$PROJECT_DIR$/ingestion/twitter_client.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/openwrc/pyproject.toml" beforeDir="false" afterPath="$PROJECT_DIR$/openwrc/pyproject.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/openwrc/src/openwrc/clients/wrc_api_client.py" beforeDir="false" afterPath="$PROJECT_DIR$/openwrc/src/openwrc/clients/wrc_api_client.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/openwrc/src/openwrc/models/external_api/itinerary_models.py" beforeDir="false" afterPath="$PROJECT_DIR$/openwrc/src/openwrc/models/external_api/itinerary_models.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/openwrc/src/openwrc/models/external_api/result_models.py" beforeDir="false" afterPath="$PROJECT_DIR$/openwrc/src/openwrc/models/external_api/result_models.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/routers/events.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/routers/events.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/weather_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/weather_service.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_calendar.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_calendar.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_events.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_events.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -167,7 +160,23 @@
       <option name="project" value="LOCAL" />
       <updated>1785168017973</updated>
     </task>
-    <option name="localTasksCounter" value="12" />
+    <task id="LOCAL-00012" summary="Improving social media requests for wrc.">
+      <option name="closed" value="true" />
+      <created>1785623515160</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1785623515160</updated>
+    </task>
+    <task id="LOCAL-00013" summary="Improving social media requests for F1.">
+      <option name="closed" value="true" />
+      <created>1785668446411</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1785668446411</updated>
+    </task>
+    <option name="localTasksCounter" value="14" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -185,6 +194,8 @@
     <MESSAGE value="Fixing comments section." />
     <MESSAGE value="Fixing twitter calls. created a twitter cron job." />
     <MESSAGE value="fixing dates" />
-    <option name="LAST_COMMIT_MESSAGE" value="fixing dates" />
+    <MESSAGE value="Improving social media requests for wrc." />
+    <MESSAGE value="Improving social media requests for F1." />
+    <option name="LAST_COMMIT_MESSAGE" value="Improving social media requests for F1." />
   </component>
 </project>

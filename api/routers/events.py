@@ -38,6 +38,9 @@ async def get_event_details(request: Request, category: str, event_id: int):
     """
     Get all stages/sessions for a given event, using a multi-layer caching strategy.
     """
+    if category.lower() not in ("wrc", "f1"):
+        raise HTTPException(status_code=404, detail="Category not supported.")
+
     redis_key = f"event:{category.lower()}:{event_id}:stages"
     
     # 1. Try Redis first (for active events populated by the worker)
@@ -178,3 +181,27 @@ async def get_overall_standings(request: Request, category: str, event_id: int):
         await save_overall_standings_to_db(event_id, standings_to_cache)
         
     return standings_to_cache
+
+from models.event_briefing import EventBriefing
+from core.briefing_service import get_event_briefing
+
+@router.get("/{category}/{event_id}/briefing", response_model=EventBriefing)
+@limiter.limit("60/minute")
+async def get_event_briefing_endpoint(request: Request, category: str, event_id: int):
+    """
+    Get comprehensive pre-event briefing for an F1 or WRC event.
+    Provides weather forecast, circuit/rally metadata, surface type, total distance,
+    laps count (F1), tactical briefing, last winner, event record, and track map layout.
+    """
+    if category.lower() not in ("wrc", "f1"):
+        raise HTTPException(status_code=404, detail="Category not supported.")
+
+    try:
+        briefing = await get_event_briefing(category, event_id)
+        if not briefing:
+            raise HTTPException(status_code=404, detail=f"Briefing not found for event {event_id}.")
+        return briefing
+    except Exception as e:
+        logger.error(f"Error fetching event briefing for {category} event {event_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve event briefing.")
+

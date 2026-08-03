@@ -103,16 +103,72 @@ Interactive documentation is available after starting the server:
 
 ### 4.1. Calendar (`GET /calendar`)
 
-Retrieves the motorsport events calendar. It combines long-term historic data from a database with fresh, frequently updated data for the current and next year from a cache.
+Retrieves the motorsport events calendar for WRC and F1. Supports filtering by `categories` (WRC, F1) and `year`.
 
 ---
 
-### 4.2. Event Stages (`GET /events/{category}/{event_id}/stages`)
+### 4.2. Event Briefing (`GET /events/{category}/{event_id}/briefing`)
 
-Returns the list of stages (WRC) or sessions (F1) for a specific event. This data is served from a Redis cache that is pre-warmed and kept up-to-date by the background worker for active events, ensuring instant responses.
+Returns a comprehensive pre-event briefing for an upcoming F1 or WRC event. Provides weather forecasts for event days, circuit/rally metadata (city, country, surface type, total distance, lap count for F1), tactical briefing, start time and location of the 1st stage/session, last winner, event/lap record, and track layout map URL.
 
 ---
 
-### 4.3. Stage Times (`GET /events/{category}/{event_id}/stages/{stage_id}/times`)
+### 4.3. Event Stages / Sessions (`GET /events/{category}/{event_id}/stages`)
 
-Returns the live or final timings for a specific stage/session. This endpoint reads directly from the Redis cache, which is populated by the Cron Jobs (`/cron/ingest-live-timing`) for any live stage, providing a near-real-time experience.
+Returns the list of stages (WRC) or sessions (F1) for a specific event. Data is served using a multi-layer cache strategy (Redis -> SQLite DB -> Upstream APIs).
+
+---
+
+### 4.4. Stage Times (`GET /events/{category}/{event_id}/stages/{stage_id}/times`)
+
+Returns live or final timings for a specific stage or session. Supports Smart Polling via `last_sync_time` (returns HTTP 304 if no new data is available).
+
+---
+
+### 4.5. Overall Event Standings (`GET /events/{category}/{event_id}/overall`)
+
+Returns current or final overall standings for a specific event (cumulative driver positions, time gaps, and points).
+
+---
+
+### 4.6. Driver Championship Standings (`GET /championship/drivers/{year}`)
+
+Returns the overall driver championship standings for a given year and categories (`WRC`, `F1`).
+
+---
+
+### 4.7. Team Championship Standings (`GET /championship/teams/{year}`)
+
+Returns the overall team/constructor championship standings for a given year and categories (`WRC`, `F1`).
+
+---
+
+### 4.8. Motorsport News (`GET /news`)
+
+Retrieves the latest news articles for specified categories (`WRC`, `F1`) and language (`pt`, `en`). Cached for 15 minutes.
+
+---
+
+### 4.9. Live Timeline & Race Control (`GET /api/v1/timeline/{category}/{session_id}`)
+
+Retrieves a chronologically ordered feed of live events, incidents, race control messages, driver quotes, and social media updates for a session. Supports Smart Polling (`last_event_time`) and multilanguage commentary (`language`).
+
+---
+
+### 4.10. User Profile & Settings (`GET /api/v1/users/me`, `PATCH /api/v1/users/me/settings`)
+
+- `GET /api/v1/users/me`: Gets or creates the current user profile, subscription status, and notification preferences.
+- `PATCH /api/v1/users/me/settings`: Updates notification preferences and followed categories.
+
+---
+
+### 4.11. Cron Jobs (`GET /cron/*`)
+
+Protected endpoints triggered by serverless schedulers to ingest and cache motorsport data:
+- `GET /cron/ingest-live-timing`: Ingests live timings for active sessions.
+- `GET /cron/ingest-overall-standings`: Ingests event overall standings.
+- `GET /cron/ingest-championship`: Ingests driver and team championship standings.
+- `GET /cron/update-current-year`: Updates calendar and stages for current year events.
+- `GET /cron/archive-historic`: Archives historic data into the permanent database.
+- `GET /cron/validate-timeline-tweets`: Backfills missing social media commentary for recent stages.
+

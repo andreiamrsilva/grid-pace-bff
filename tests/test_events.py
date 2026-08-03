@@ -1,14 +1,23 @@
 import pytest
 from fastapi.testclient import TestClient
 from unittest.mock import patch, AsyncMock
-import httpx
 from datetime import datetime
 
 from main import app
+from core.security import verify_client_token, verify_app_check_token
 from models.event import Stage
 from models.stage_times import StageStandings, DriverTime
 
 pytestmark = pytest.mark.asyncio
+
+@pytest.fixture(autouse=True)
+def override_security():
+    async def mock_security_pass():
+        return True
+    app.dependency_overrides[verify_client_token] = mock_security_pass
+    app.dependency_overrides[verify_app_check_token] = mock_security_pass
+    yield
+    app.dependency_overrides.clear()
 
 client = TestClient(app)
 
@@ -53,7 +62,7 @@ MOCK_STANDINGS = StageStandings(
 
 # --- Test Cases for /events/{category}/{event_id}/stages ---
 
-@patch('api.routers.events.get_wrc_event_stages', new_callable=AsyncMock)
+@patch('api.routers.events.fetch_wrc_event_stages', new_callable=AsyncMock)
 async def test_get_event_details_wrc_success(mock_wrc_stages):
     """Test successful retrieval of WRC stages."""
     mock_wrc_stages.return_value = [MOCK_WRC_STAGE]
@@ -67,10 +76,9 @@ async def test_get_event_details_wrc_success(mock_wrc_stages):
     assert data[0]['winner_name'] == "T. Neuville"
     assert data[0]['winner_logo_path'] == "/logos/hyundai.png"
 
-@patch('api.routers.events.get_wrc_event_stages', new_callable=AsyncMock)
+@patch('api.routers.events.fetch_wrc_event_stages', new_callable=AsyncMock)
 async def test_get_event_details_wrc_not_found(mock_wrc_stages):
     """Test WRC event not found scenario."""
-    # Simulate the HTTPException raised by the actual function when an event doesn't exist
     from fastapi import HTTPException
     mock_wrc_stages.side_effect = HTTPException(status_code=404, detail="Event not found")
     
@@ -103,11 +111,11 @@ async def test_get_event_details_f1_invalid_id():
     """Test F1 with invalid ID format."""
     response = client.get("/events/f1/abc/stages")
     
-    assert response.status_code == 422 # FastAPI validation error for int
+    assert response.status_code == 422
 
 # --- Test Cases for /events/{category}/{event_id}/stages/{stage_id}/times ---
 
-@patch('api.routers.events.get_wrc_stage_times', new_callable=AsyncMock)
+@patch('api.routers.events.fetch_wrc_stage_times', new_callable=AsyncMock)
 async def test_get_stage_times_wrc_success(mock_wrc_times):
     """Test successful retrieval of live WRC stage times."""
     mock_wrc_times.return_value = MOCK_STANDINGS
@@ -120,16 +128,14 @@ async def test_get_stage_times_wrc_success(mock_wrc_times):
     assert data['is_live'] is True
     assert len(data['standings']) == 2
     
-    # Check the first driver (Finished)
     assert data['standings'][0]['driver_name'] == "T. Neuville"
     assert data['standings'][0]['status'] == "Finished"
     assert data['standings'][0]['logo_path'] == "/logos/hyundai.png"
     
-    # Check the second driver (On Track)
     assert data['standings'][1]['driver_name'] == "S. Ogier"
     assert data['standings'][1]['status'] == "OnTrack"
 
-@patch('api.routers.events.get_wrc_stage_times', new_callable=AsyncMock)
+@patch('api.routers.events.fetch_wrc_stage_times', new_callable=AsyncMock)
 async def test_get_stage_times_wrc_api_error(mock_wrc_times):
     """Test behavior when external API fails during live timing."""
     from fastapi import HTTPException
