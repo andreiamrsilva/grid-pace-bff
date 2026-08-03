@@ -373,6 +373,78 @@ def _match_catalog_entry(category: str, event_name: str, country: str, event_id:
                 return data
     return None
 
+F1_MAP_SLUGS: Dict[str, str] = {
+    "bahrain": "Bahrain",
+    "sakhir": "Bahrain",
+    "saudi": "Saudi_Arabia",
+    "jeddah": "Saudi_Arabia",
+    "australia": "Australia",
+    "melbourne": "Australia",
+    "japan": "Japan",
+    "suzuka": "Japan",
+    "china": "China",
+    "shanghai": "China",
+    "miami": "Miami",
+    "imola": "Emilia_Romagna",
+    "emilia": "Emilia_Romagna",
+    "monaco": "Monaco",
+    "mónaco": "Monaco",
+    "canada": "Canada",
+    "canadá": "Canada",
+    "spain": "Spain",
+    "espanha": "Spain",
+    "barcelona": "Spain",
+    "catalunya": "Spain",
+    "austria": "Austria",
+    "áustria": "Austria",
+    "spielberg": "Austria",
+    "silverstone": "Great_Britain",
+    "britain": "Great_Britain",
+    "uk": "Great_Britain",
+    "reino unido": "Great_Britain",
+    "hungary": "Hungary",
+    "hungria": "Hungary",
+    "hungaroring": "Hungary",
+    "spa": "Belgium",
+    "belgium": "Belgium",
+    "bélgica": "Belgium",
+    "stavelot": "Belgium",
+    "zandvoort": "Netherlands",
+    "netherlands": "Netherlands",
+    "holanda": "Netherlands",
+    "países baixos": "Netherlands",
+    "monza": "Italy",
+    "italy": "Italy",
+    "itália": "Italy",
+    "baku": "Baku",
+    "azerbaijan": "Baku",
+    "azerbaijão": "Baku",
+    "singapore": "Singapore",
+    "singapura": "Singapore",
+    "austin": "USA",
+    "usa": "USA",
+    "eua": "USA",
+    "mexico": "Mexico",
+    "méxico": "Mexico",
+    "brazil": "Brazil",
+    "brasil": "Brazil",
+    "interlagos": "Brazil",
+    "são paulo": "Brazil",
+    "las vegas": "Las_Vegas",
+    "qatar": "Qatar",
+    "catar": "Qatar",
+    "abu dhabi": "Abu_Dhabi",
+    "uae": "Abu_Dhabi",
+    "emirados árabes": "Abu_Dhabi",
+}
+
+def _get_f1_official_map_url(event_name: str, country: str, city: str) -> Optional[str]:
+    search_text = f"{event_name} {country} {city}".lower()
+    for keyword, slug in F1_MAP_SLUGS.items():
+        if keyword in search_text:
+            return f"https://media.formula1.com/image/upload/v1677244985/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/{slug}_Circuit.png"
+    return "https://media.formula1.com/image/upload/v1677244985/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Monaco_Circuit.png"
+
 async def get_event_briefing(category: str, event_id: int, language: str = "pt") -> EventBriefing:
     """
     Retrieves complete briefing for an event localized in the specified language ('pt' or 'en').
@@ -428,6 +500,10 @@ async def get_event_briefing(category: str, event_id: int, language: str = "pt")
         last_winner = None
         event_record = None
         track_map_url = None
+
+    # Always enforce official F1 CDN track map image for F1 events
+    if category_upper == "F1" and not track_map_url:
+        track_map_url = _get_f1_official_map_url(event_name, country, city)
 
     # 4. Fetch First Stage/Session details & refine start/finish datetimes
     first_stage_name: Optional[str] = None

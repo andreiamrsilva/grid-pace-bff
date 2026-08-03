@@ -4,13 +4,10 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="65ca4ed0-d96f-49db-b2bf-c0d163a9c117" name="Changes" comment="Added briefing route.">
+    <list default="true" id="65ca4ed0-d96f-49db-b2bf-c0d163a9c117" name="Changes" comment="Fixing briefing weather information.">
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/routers/events.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/routers/events.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/core/briefing_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/briefing_service.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/weather_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/weather_service.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/models/event_briefing.py" beforeDir="false" afterPath="$PROJECT_DIR$/models/event_briefing.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_briefing.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_briefing.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -184,7 +181,23 @@
       <option name="project" value="LOCAL" />
       <updated>1785771719698</updated>
     </task>
-    <option name="localTasksCounter" value="15" />
+    <task id="LOCAL-00015" summary="Fixing briefing route.">
+      <option name="closed" value="true" />
+      <created>1785773974349</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1785773974349</updated>
+    </task>
+    <task id="LOCAL-00016" summary="Fixing briefing weather information.">
+      <option name="closed" value="true" />
+      <created>1785774868183</created>
+      <option name="number" value="00016" />
+      <option name="presentableId" value="LOCAL-00016" />
+      <option name="project" value="LOCAL" />
+      <updated>1785774868183</updated>
+    </task>
+    <option name="localTasksCounter" value="17" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -205,6 +218,8 @@
     <MESSAGE value="Improving social media requests for wrc." />
     <MESSAGE value="Improving social media requests for F1." />
     <MESSAGE value="Added briefing route." />
-    <option name="LAST_COMMIT_MESSAGE" value="Added briefing route." />
+    <MESSAGE value="Fixing briefing route." />
+    <MESSAGE value="Fixing briefing weather information." />
+    <option name="LAST_COMMIT_MESSAGE" value="Fixing briefing weather information." />
   </component>
 </project>

@@ -2,3 +2,4 @@
 /local_cron_runner.py
 secrets/
 .env
+/.idea/
