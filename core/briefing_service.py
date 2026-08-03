@@ -110,6 +110,11 @@ LOCATION_COORDINATES: Dict[str, Tuple[float, float]] = {
     "passau": (48.5667, 13.4667),
     "canarias": (28.1235, -15.4363),
     "canárias": (28.1235, -15.4363),
+    "paraguay": (-27.3306, -55.8666),
+    "paraguai": (-27.3306, -55.8666),
+    "encarnación": (-27.3306, -55.8666),
+    "encarnacion": (-27.3306, -55.8666),
+    "itapúa": (-27.3306, -55.8666),
 }
 
 def _resolve_coordinates(event_name: str, country: str, city: str) -> Tuple[float, float]:
@@ -642,6 +647,91 @@ async def get_event_briefing(category: str, event_id: int, language: str = "pt")
                 )
     except Exception as e:
         logger.warning(f"Could not retrieve stages for event {event_id}: {e}")
+
+    # Fallback pre-event itinerary stage items if upstream API hasn't published live stages yet
+    if not briefing_stages:
+        gmaps_park = f"https://www.google.com/maps/search/?api=1&query={latitude},{longitude}"
+        default_ze = BriefingSpectatorZone(
+            id="ZE1",
+            name="ZE 1 - Parque de Assistência" if lang_code == "pt" else "ZE 1 - Service Park",
+            description="Zona de acesso principal ao Parque de Assistência do evento." if lang_code == "pt" else "Main access point to Event Service Park.",
+            latitude=latitude,
+            longitude=longitude,
+            google_maps_url=gmaps_park
+        )
+        if category_upper == "WRC":
+            briefing_stages = [
+                BriefingStage(
+                    name="Shakedown & Cerimónia de Abertura" if lang_code == "pt" else "Shakedown & Opening Ceremony",
+                    start_time=start_datetime,
+                    location_name=city,
+                    latitude=latitude,
+                    longitude=longitude,
+                    google_maps_url=gmaps_park,
+                    spectator_zones=[default_ze]
+                ),
+                BriefingStage(
+                    name="Etapa 1 - Dia de Abertura" if lang_code == "pt" else "Leg 1 - Opening Day",
+                    start_time=start_datetime,
+                    location_name=city,
+                    latitude=latitude,
+                    longitude=longitude,
+                    google_maps_url=gmaps_park,
+                    spectator_zones=[default_ze]
+                ),
+                BriefingStage(
+                    name="Etapa 2 - Dia Principal" if lang_code == "pt" else "Leg 2 - Main Day",
+                    start_time=finish_datetime,
+                    location_name=city,
+                    latitude=latitude,
+                    longitude=longitude,
+                    google_maps_url=gmaps_park,
+                    spectator_zones=[default_ze]
+                ),
+                BriefingStage(
+                    name="Etapa 3 - Power Stage & Pódio" if lang_code == "pt" else "Leg 3 - Power Stage & Podium",
+                    start_time=finish_datetime,
+                    location_name=city,
+                    latitude=latitude,
+                    longitude=longitude,
+                    google_maps_url=gmaps_park,
+                    spectator_zones=[default_ze]
+                ),
+            ]
+        elif category_upper == "F1":
+            briefing_stages = [
+                BriefingStage(
+                    name="Treinos Livres (FP1 & FP2)" if lang_code == "pt" else "Free Practice (FP1 & FP2)",
+                    start_time=start_datetime,
+                    location_name=city,
+                    latitude=latitude,
+                    longitude=longitude,
+                    google_maps_url=gmaps_park,
+                    spectator_zones=[default_ze]
+                ),
+                BriefingStage(
+                    name="Qualificação / Sprint" if lang_code == "pt" else "Qualifying / Sprint",
+                    start_time=start_datetime,
+                    location_name=city,
+                    latitude=latitude,
+                    longitude=longitude,
+                    google_maps_url=gmaps_park,
+                    spectator_zones=[default_ze]
+                ),
+                BriefingStage(
+                    name="Grande Prémio (Corrida Principal)" if lang_code == "pt" else "Grand Prix (Main Race)",
+                    start_time=finish_datetime,
+                    location_name=city,
+                    latitude=latitude,
+                    longitude=longitude,
+                    google_maps_url=gmaps_park,
+                    spectator_zones=[default_ze]
+                ),
+            ]
+
+    if not first_stage_name and briefing_stages:
+        first_stage_name = briefing_stages[0].name
+        first_stage_start_time = briefing_stages[0].start_time
 
     # 5. Fetch Weather Briefing
     weather_briefing: Optional[WeatherBriefing] = None
