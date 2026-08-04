@@ -451,7 +451,7 @@ async def generate_briefing_with_gemini(event_name: str, category: str, country:
         logger.info("GEMINI_API_KEY is not set. Skipping AI briefing generation.")
         return None
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
     prompt = (
         f"Atue como um Especialista Engenheiro de Desportos Motorizados ({category}). "
         f"Gere uma análise tática completa, descreva o tipo de piso, identifique o último vencedor (last_winner) "
