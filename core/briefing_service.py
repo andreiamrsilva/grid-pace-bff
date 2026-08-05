@@ -524,6 +524,257 @@ def _generate_spectator_zones(
 
     return zones
 
+def _generate_wrc_pre_event_itinerary(
+    event_name: str,
+    country: str,
+    city: str,
+    latitude: float,
+    longitude: float,
+    start_datetime: datetime,
+    finish_datetime: datetime,
+    lang_code: str
+) -> List[BriefingStage]:
+    name_lower = event_name.lower()
+    country_lower = country.lower()
+    gmaps_park = f"https://www.google.com/maps/search/?api=1&query={latitude},{longitude}"
+
+    default_ze = BriefingSpectatorZone(
+        id="ZE1",
+        name="ZE 1 - Parque de Assistência" if lang_code == "pt" else "ZE 1 - Service Park",
+        description=f"Zona de acesso principal ao Parque de Assistência do {event_name} em {city}." if lang_code == "pt" else f"Main access zone to {event_name} Service Park in {city}.",
+        latitude=latitude,
+        longitude=longitude,
+        google_maps_url=gmaps_park
+    )
+
+    # 1. Curated Itinerary: Rally de Portugal
+    if "portugal" in name_lower or "portugal" in country_lower:
+        ze_fafe = BriefingSpectatorZone(
+            id="ZE1",
+            name="ZE 1 - Salto de Fafe",
+            description="Zona do icónico salto de Fafe com parque de estacionamento e bancada natural." if lang_code == "pt" else "Iconic Fafe jump viewing zone with public parking and natural slope seating.",
+            latitude=41.4502,
+            longitude=-8.1725,
+            google_maps_url="https://www.google.com/maps/search/?api=1&query=41.4502,-8.1725"
+        )
+        ze_confurco = BriefingSpectatorZone(
+            id="ZE2",
+            name="ZE 2 - Cruzamento do Confurco",
+            description="Zona rápida com excelente visibilidade na aproximação ao cruzamento do Confurco." if lang_code == "pt" else "Fast section with excellent visibility on approach to Confurco junction.",
+            latitude=41.4610,
+            longitude=-8.1580,
+            google_maps_url="https://www.google.com/maps/search/?api=1&query=41.4610,-8.1580"
+        )
+        ze_lousa = BriefingSpectatorZone(
+            id="ZE1",
+            name="ZE 1 - Senhora da Piedade (Lousã)",
+            description="Acesso alcatroado perto do santuário com zona reservada a espetadores." if lang_code == "pt" else "Tarmac access near the sanctuary with dedicated viewing zone.",
+            latitude=40.1050,
+            longitude=-8.2410,
+            google_maps_url="https://www.google.com/maps/search/?api=1&query=40.1050,-8.2410"
+        )
+        ze_lousada = BriefingSpectatorZone(
+            id="ZE1",
+            name="ZE 1 - Pista de Ralicross de Lousada",
+            description="Super Especial em pista fechada com vista total para todo o trajeto dos carros." if lang_code == "pt" else "Super Special stage on closed circuit with full view of car head-to-head action.",
+            latitude=41.2760,
+            longitude=-8.2810,
+            google_maps_url="https://www.google.com/maps/search/?api=1&query=41.2760,-8.2810"
+        )
+        return [
+            BriefingStage(
+                name="Shakedown & Cerimónia de Abertura" if lang_code == "pt" else "Shakedown & Opening Ceremony",
+                start_time=start_datetime,
+                location_name="Baltar / Coimbra",
+                latitude=41.1960,
+                longitude=-8.3880,
+                google_maps_url="https://www.google.com/maps/search/?api=1&query=41.1960,-8.3880",
+                spectator_zones=[default_ze]
+            ),
+            BriefingStage(
+                name="Etapa 1 - Lousã, Góis, Arganil & SSS Lousada" if lang_code == "pt" else "Leg 1 - Lousã, Góis, Arganil & SSS Lousada",
+                start_time=start_datetime,
+                location_name="Serra da Lousã & Arganil",
+                latitude=40.1050,
+                longitude=-8.2410,
+                google_maps_url="https://www.google.com/maps/search/?api=1&query=40.1050,-8.2410",
+                spectator_zones=[ze_lousa, ze_lousada]
+            ),
+            BriefingStage(
+                name="Etapa 2 - Felgueiras, Montim, Amarante & Paredes" if lang_code == "pt" else "Leg 2 - Felgueiras, Montim, Amarante & Paredes",
+                start_time=finish_datetime,
+                location_name="Amarante & Paredes",
+                latitude=41.2710,
+                longitude=-7.8810,
+                google_maps_url="https://www.google.com/maps/search/?api=1&query=41.2710,-7.8810",
+                spectator_zones=[default_ze]
+            ),
+            BriefingStage(
+                name="Etapa 3 - Cabeceiras de Basto & Fafe (Power Stage)" if lang_code == "pt" else "Leg 3 - Cabeceiras de Basto & Fafe (Power Stage)",
+                start_time=finish_datetime,
+                location_name="Fafe",
+                latitude=41.4502,
+                longitude=-8.1725,
+                google_maps_url="https://www.google.com/maps/search/?api=1&query=41.4502,-8.1725",
+                spectator_zones=[ze_fafe, ze_confurco]
+            ),
+        ]
+
+    # 2. Curated Itinerary: Rallye Monte-Carlo
+    elif "monte carlo" in name_lower or "monte-carlo" in name_lower or "monaco" in country_lower:
+        ze_turini = BriefingSpectatorZone(
+            id="ZE1",
+            name="ZE 1 - Col de Turini Summit",
+            description="Topo da montanha com vista sobre os ganchos épicos do Turini." if lang_code == "pt" else "Mountain summit overlooking the legendary Turini hairpins.",
+            latitude=43.9780,
+            longitude=7.3910,
+            google_maps_url="https://www.google.com/maps/search/?api=1&query=43.9780,7.3910"
+        )
+        return [
+            BriefingStage(
+                name="Shakedown & Nocturna de Gap" if lang_code == "pt" else "Shakedown & Gap Night Stage",
+                start_time=start_datetime,
+                location_name="Gap",
+                latitude=44.5596,
+                longitude=6.0798,
+                google_maps_url=gmaps_park,
+                spectator_zones=[default_ze]
+            ),
+            BriefingStage(
+                name="Etapa 1 - Troços de Altos-Alpes" if lang_code == "pt" else "Leg 1 - Hautes-Alpes Stages",
+                start_time=start_datetime,
+                location_name="Throard / Bayons",
+                latitude=44.5596,
+                longitude=6.0798,
+                google_maps_url=gmaps_park,
+                spectator_zones=[default_ze]
+            ),
+            BriefingStage(
+                name="Etapa 2 - Passos de Montanha" if lang_code == "pt" else "Leg 2 - Mountain Passes",
+                start_time=finish_datetime,
+                location_name="Saint-Léger-les-Mélèzes",
+                latitude=44.6400,
+                longitude=6.2000,
+                google_maps_url=gmaps_park,
+                spectator_zones=[default_ze]
+            ),
+            BriefingStage(
+                name="Etapa 3 - Col de Turini & Pódio Monaco" if lang_code == "pt" else "Leg 3 - Col de Turini & Monaco Podium",
+                start_time=finish_datetime,
+                location_name="Col de Turini / Mónaco",
+                latitude=43.9780,
+                longitude=7.3910,
+                google_maps_url="https://www.google.com/maps/search/?api=1&query=43.9780,7.3910",
+                spectator_zones=[ze_turini]
+            ),
+        ]
+
+    # 3. Curated Itinerary: Secto Rally Finland
+    elif "finland" in name_lower or "finlândia" in name_lower or "finland" in country_lower:
+        return [
+            BriefingStage(
+                name="Shakedown & SSS Harju (Jyväskylä)" if lang_code == "pt" else "Shakedown & SSS Harju (Jyväskylä)",
+                start_time=start_datetime,
+                location_name="Jyväskylä",
+                latitude=62.2426,
+                longitude=25.7473,
+                google_maps_url=gmaps_park,
+                spectator_zones=[default_ze]
+            ),
+            BriefingStage(
+                name="Etapa 1 - Troços Rápidos de Laukaa & Saarikas" if lang_code == "pt" else "Leg 1 - Fast Stages of Laukaa & Saarikas",
+                start_time=start_datetime,
+                location_name="Laukaa",
+                latitude=62.4100,
+                longitude=25.9500,
+                google_maps_url=gmaps_park,
+                spectator_zones=[default_ze]
+            ),
+            BriefingStage(
+                name="Etapa 2 - Ouninpohja & Västilä" if lang_code == "pt" else "Leg 2 - Ouninpohja & Västilä",
+                start_time=finish_datetime,
+                location_name="Jämsä / Ouninpohja",
+                latitude=61.8600,
+                longitude=25.1800,
+                google_maps_url=gmaps_park,
+                spectator_zones=[default_ze]
+            ),
+            BriefingStage(
+                name="Etapa 3 - Power Stage Laajavuori & Pódio" if lang_code == "pt" else "Leg 3 - Power Stage Laajavuori & Podium",
+                start_time=finish_datetime,
+                location_name="Laajavuori",
+                latitude=62.2600,
+                longitude=25.7000,
+                google_maps_url=gmaps_park,
+                spectator_zones=[default_ze]
+            ),
+        ]
+
+    # 4. Standard Structured WRC Pre-Event Itinerary for all other WRC rounds
+    ze_stage1 = BriefingSpectatorZone(
+        id="ZE1",
+        name="ZE 1 - Acesso Principal Dia 1" if lang_code == "pt" else "ZE 1 - Day 1 Main Access",
+        description=f"Zona recomendada de assistência e espetadores para o primeiro dia do {event_name}." if lang_code == "pt" else f"Recommended viewing and access zone for Day 1 of {event_name}.",
+        latitude=latitude,
+        longitude=longitude,
+        google_maps_url=gmaps_park
+    )
+    ze_stage2 = BriefingSpectatorZone(
+        id="ZE1",
+        name="ZE 1 - Acesso Principal Dia 2" if lang_code == "pt" else "ZE 1 - Day 2 Main Access",
+        description=f"Zona recomendada de espetadores para a etapa principal do {event_name}." if lang_code == "pt" else f"Recommended viewing zone for the main leg of {event_name}.",
+        latitude=latitude,
+        longitude=longitude,
+        google_maps_url=gmaps_park
+    )
+    ze_power = BriefingSpectatorZone(
+        id="ZE1",
+        name="ZE 1 - Arena Power Stage & Pódio" if lang_code == "pt" else "ZE 1 - Power Stage Arena & Podium",
+        description=f"Zona reservada de espetadores para a Power Stage decisiva e cerimónia de pódio." if lang_code == "pt" else f"Dedicated spectator area for the decisive Power Stage and podium ceremony.",
+        latitude=latitude,
+        longitude=longitude,
+        google_maps_url=gmaps_park
+    )
+
+    return [
+        BriefingStage(
+            name="Shakedown & Cerimónia de Partida" if lang_code == "pt" else "Shakedown & Ceremonial Start",
+            start_time=start_datetime,
+            location_name=f"Parque de Assistência ({city})" if lang_code == "pt" else f"Service Park ({city})",
+            latitude=latitude,
+            longitude=longitude,
+            google_maps_url=gmaps_park,
+            spectator_zones=[default_ze]
+        ),
+        BriefingStage(
+            name="Etapa 1 - Troços de Sexta-feira" if lang_code == "pt" else "Leg 1 - Friday Stages",
+            start_time=start_datetime,
+            location_name=f"Especiais do Dia 1 ({country})" if lang_code == "pt" else f"Day 1 Stages ({country})",
+            latitude=latitude,
+            longitude=longitude,
+            google_maps_url=gmaps_park,
+            spectator_zones=[ze_stage1]
+        ),
+        BriefingStage(
+            name="Etapa 2 - Troços de Sábado" if lang_code == "pt" else "Leg 2 - Saturday Stages",
+            start_time=finish_datetime,
+            location_name=f"Especiais do Dia 2 ({country})" if lang_code == "pt" else f"Day 2 Stages ({country})",
+            latitude=latitude,
+            longitude=longitude,
+            google_maps_url=gmaps_park,
+            spectator_zones=[ze_stage2]
+        ),
+        BriefingStage(
+            name="Etapa 3 - Power Stage Final & Pódio" if lang_code == "pt" else "Leg 3 - Final Power Stage & Podium",
+            start_time=finish_datetime,
+            location_name=f"Power Stage & Pódio ({city})" if lang_code == "pt" else f"Power Stage & Podium ({city})",
+            latitude=latitude,
+            longitude=longitude,
+            google_maps_url=gmaps_park,
+            spectator_zones=[ze_power]
+        ),
+    ]
+
 async def get_event_briefing(category: str, event_id: int, language: str = "pt") -> EventBriefing:
     """
     Retrieves complete briefing for an event localized in the specified language ('pt' or 'en').
@@ -701,44 +952,16 @@ async def get_event_briefing(category: str, event_id: int, language: str = "pt")
             google_maps_url=gmaps_park
         )
         if category_upper == "WRC":
-            briefing_stages = [
-                BriefingStage(
-                    name="Shakedown & Cerimónia de Abertura" if lang_code == "pt" else "Shakedown & Opening Ceremony",
-                    start_time=start_datetime,
-                    location_name=city,
-                    latitude=latitude,
-                    longitude=longitude,
-                    google_maps_url=gmaps_park,
-                    spectator_zones=[default_ze]
-                ),
-                BriefingStage(
-                    name="Etapa 1 - Dia de Abertura" if lang_code == "pt" else "Leg 1 - Opening Day",
-                    start_time=start_datetime,
-                    location_name=city,
-                    latitude=latitude,
-                    longitude=longitude,
-                    google_maps_url=gmaps_park,
-                    spectator_zones=[default_ze]
-                ),
-                BriefingStage(
-                    name="Etapa 2 - Dia Principal" if lang_code == "pt" else "Leg 2 - Main Day",
-                    start_time=finish_datetime,
-                    location_name=city,
-                    latitude=latitude,
-                    longitude=longitude,
-                    google_maps_url=gmaps_park,
-                    spectator_zones=[default_ze]
-                ),
-                BriefingStage(
-                    name="Etapa 3 - Power Stage & Pódio" if lang_code == "pt" else "Leg 3 - Power Stage & Podium",
-                    start_time=finish_datetime,
-                    location_name=city,
-                    latitude=latitude,
-                    longitude=longitude,
-                    google_maps_url=gmaps_park,
-                    spectator_zones=[default_ze]
-                ),
-            ]
+            briefing_stages = _generate_wrc_pre_event_itinerary(
+                event_name=event_name,
+                country=country,
+                city=city,
+                latitude=latitude,
+                longitude=longitude,
+                start_datetime=start_datetime,
+                finish_datetime=finish_datetime,
+                lang_code=lang_code
+            )
         elif category_upper == "F1":
             briefing_stages = [
                 BriefingStage(
