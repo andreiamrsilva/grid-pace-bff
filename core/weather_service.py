@@ -185,8 +185,8 @@ async def fetch_event_weather_briefing(
                     logger.warning(f"Error parsing daily weather forecast at index {i}: {e}")
                     continue
 
-            # If specific event dates matched, use them; otherwise return all available forecast days for the location
-            final_forecast = matching_forecast_days if matching_forecast_days else all_forecast_days
+            # Only return forecast days that strictly match the event date range (start_date <= date <= finish_date)
+            final_forecast = matching_forecast_days
 
             return WeatherBriefing(
                 latitude=data.get("latitude", latitude),

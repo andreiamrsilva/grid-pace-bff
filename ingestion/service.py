@@ -452,9 +452,8 @@ async def generate_briefing_with_gemini(event_name: str, category: str, country:
         return None
 
     endpoints = [
-        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={api_key}",
-        f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}",
         f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}",
+        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={api_key}",
         f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={api_key}",
     ]
     prompt = (
@@ -474,10 +473,10 @@ async def generate_briefing_with_gemini(event_name: str, category: str, country:
     payload = {"contents": [{"parts": [{"text": prompt}]}]}
 
     for url in endpoints:
-        max_retries = 2
+        max_retries = 3
         for attempt in range(max_retries):
             try:
-                async with httpx.AsyncClient(timeout=25.0) as client:
+                async with httpx.AsyncClient(timeout=30.0) as client:
                     res = await client.post(url, json=payload)
                     if res.status_code == 200:
                         text = res.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
@@ -489,8 +488,8 @@ async def generate_briefing_with_gemini(event_name: str, category: str, country:
                             text = text[:-3]
                         return json.loads(text.strip())
                     elif res.status_code == 429:
-                        wait_time = (attempt + 1) * 6
-                        logger.warning(f"Gemini API rate limited (429) for '{event_name}'. Retrying in {wait_time}s...")
+                        wait_time = (attempt + 1) * 10
+                        logger.warning(f"Gemini API rate limited (429) for '{event_name}'. Waiting {wait_time}s before retry (attempt {attempt+1}/{max_retries})...")
                         await asyncio.sleep(wait_time)
                     elif res.status_code == 404:
                         logger.warning(f"Gemini model endpoint returned 404. Trying next model endpoint...")
@@ -500,7 +499,7 @@ async def generate_briefing_with_gemini(event_name: str, category: str, country:
                         break
             except Exception as e:
                 logger.error(f"Error calling Gemini API for briefing generation of '{event_name}': {e}")
-                await asyncio.sleep(2)
+                await asyncio.sleep(3)
     return None
 
 async def run_briefing_generation_cron(force_update: bool = False):
@@ -548,7 +547,7 @@ async def run_briefing_generation_cron(force_update: bool = False):
             await delete_cached_data(f"briefing:{cat_lower}:{event.id}:en")
             
             logger.info(f"Successfully generated & saved Gemini AI briefing for event {event.id} ({event.name})")
-            # Pacing delay between event API calls to respect Gemini rate limits
-            await asyncio.sleep(3.0)
+            # Pacing delay between event API calls (6s = max 10 RPM) to respect Gemini rate limits
+            await asyncio.sleep(6.0)
     except Exception as e:
         logger.error(f"Error in run_briefing_generation_cron: {e}")
