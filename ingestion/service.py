@@ -9,6 +9,8 @@ from core.database_service import get_all_events_from_db, get_last_archived_year
 from ingestion.strategy import registry
 
 # Ensure strategies are registered by importing clients
+import ingestion.wrc_client
+import ingestion.openf1_client
 
 async def find_live_stages():
     """
@@ -279,6 +281,52 @@ async def run_current_year_update():
         await upsert_events(all_events)
     except Exception as e:
         logger.error(f"Error in current year update orchestration: {e}")
+
+async def run_stage_times_repair(event_id: Optional[int] = None, category: str = "wrc"):
+    """
+    Cleans up legacy/corrupted stage_times entries in DB and Redis cache,
+    and re-ingests correct stage times from upstream APIs for specified event or all recent events.
+    """
+    logger.info(f"Running stage times repair for category='{category}', event_id={event_id}...")
+    from core.database_service import get_stages_from_db, save_stage_times_to_db, AsyncSessionLocal, stage_times_table, get_all_events_from_db
+    from core.redis_service import delete_cached_data
+    from sqlalchemy import delete
+    
+    cat_upper = category.upper()
+    cat_lower = category.lower()
+    
+    async with AsyncSessionLocal() as db:
+        if event_id:
+            await db.execute(delete(stage_times_table).where(stage_times_table.c.event_id == event_id, stage_times_table.c.category == cat_upper))
+        else:
+            await db.execute(delete(stage_times_table).where(stage_times_table.c.category == None))
+        await db.commit()
+
+    events_to_repair = []
+    if event_id:
+        events_to_repair = [event_id]
+    else:
+        all_events = await get_all_events_from_db()
+        events_to_repair = [e.id for e in all_events if e.category.lower() == cat_lower]
+
+    try:
+        strategy = registry.get_strategy(cat_lower)
+        for ev_id in events_to_repair:
+            stages = await get_stages_from_db(ev_id)
+            if not stages:
+                stages = await strategy.fetch_event_stages(ev_id)
+            if not stages:
+                continue
+            for stage in stages:
+                redis_key = f"live:times:{cat_lower}:{stage.id}"
+                await delete_cached_data(redis_key)
+                
+                standings = await strategy.fetch_live_timing(ev_id, stage.id)
+                if standings and standings.standings:
+                    await save_stage_times_to_db(stage.id, standings)
+                    logger.info(f"Repaired DB stage times for {cat_upper} stage {stage.id} ({len(standings.standings)} drivers).")
+    except Exception as e:
+        logger.error(f"Error during stage times repair: {e}")
 
 async def populate_historic_timeline(stage_id: int) -> list:
     """Populates historical timeline for a WRC stage combining basic system inference and Twitter scraping."""

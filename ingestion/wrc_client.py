@@ -162,7 +162,7 @@ async def _fetch_wrc_event_stages(event_id: int) -> List[Stage]:
                             actual_status = "Completed"
                             
                     winner_name, winner_logo_path, winner_time = None, None, None
-                    if actual_status == "Completed":
+                    if actual_status in ("Completed", "Interrupted"):
                         try:
                             stage_results = await client.get_event_stage_results(event_id, stage_details.stage_id, main_rally.rally_id)
                             if stage_results:

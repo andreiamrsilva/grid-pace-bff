@@ -78,6 +78,8 @@ stage_times_table = Table(
     'stage_times', metadata,
     Column('id', Integer, primary_key=True),
     Column('stage_id', Integer, index=True),
+    Column('category', String, nullable=True, index=True),
+    Column('event_id', Integer, nullable=True, index=True),
     Column('entry_id', Integer),
     Column('driver_name', String),
     Column('logo_path', String, nullable=True),
@@ -191,13 +193,39 @@ def run_migrations():
     except Exception as e:
         logger.error(f"Error running Alembic migrations on startup: {e}")
 
+async def _ensure_stage_times_columns():
+    """Ensures stage_times table has category and event_id columns if connecting to a DB created prior to migration."""
+    try:
+        async with AsyncSessionLocal() as db:
+            try:
+                await db.execute(select(stage_times_table.c.category).limit(1))
+            except Exception:
+                await db.rollback()
+                try:
+                    from sqlalchemy import text
+                    engine_name = db.bind.dialect.name if db.bind else ""
+                    if "postgres" in str(engine_name).lower():
+                        await db.execute(text("ALTER TABLE stage_times ADD COLUMN IF NOT EXISTS category VARCHAR;"))
+                        await db.execute(text("ALTER TABLE stage_times ADD COLUMN IF NOT EXISTS event_id INTEGER;"))
+                    else:
+                        await db.execute(text("ALTER TABLE stage_times ADD COLUMN category VARCHAR;"))
+                        await db.execute(text("ALTER TABLE stage_times ADD COLUMN event_id INTEGER;"))
+                    await db.commit()
+                    logger.info("Successfully added missing category and event_id columns to stage_times table.")
+                except Exception as ex:
+                    await db.rollback()
+                    logger.debug(f"Note during stage_times column check: {ex}")
+    except Exception as e:
+        logger.debug(f"Skipped stage_times column check: {e}")
+
 async def init_db():
-    """Runs Alembic migrations asynchronously on application startup (e.g. Vercel deployment)."""
+    """Runs Alembic migrations and column checks asynchronously on application startup."""
     try:
         loop = asyncio.get_running_loop()
         await loop.run_in_executor(None, run_migrations)
     except Exception as e:
         logger.error(f"Failed to execute startup migrations: {e}")
+    await _ensure_stage_times_columns()
 
 async def get_last_archived_year() -> int:
     async with AsyncSessionLocal() as db:
@@ -311,21 +339,40 @@ async def get_stage_by_id_from_db(stage_id: int) -> Optional[Stage]:
         return None
 
 async def save_stage_times_to_db(stage_id: int, standings: StageStandings):
+    cat = standings.category.upper() if standings.category else "WRC"
+    ev_id = standings.event_id
     async with AsyncSessionLocal() as db:
-        await db.execute(stage_times_table.delete().where(stage_times_table.c.stage_id == stage_id))
+        await db.execute(
+            stage_times_table.delete().where(
+                stage_times_table.c.stage_id == stage_id,
+                stage_times_table.c.category == cat
+            )
+        )
         for driver_time in standings.standings:
-            ins_stmt = stage_times_table.insert().values(stage_id=stage_id, **driver_time.model_dump())
+            data = driver_time.model_dump()
+            data['category'] = cat
+            data['event_id'] = ev_id
+            ins_stmt = stage_times_table.insert().values(stage_id=stage_id, **data)
             await db.execute(ins_stmt)
         await db.commit()
 
 async def get_stage_times_from_db(stage_id: int, event_id: int, category: str) -> Optional[StageStandings]:
+    cat = category.upper()
     async with AsyncSessionLocal() as db:
-        stmt = select(stage_times_table).where(stage_times_table.c.stage_id == stage_id).order_by(stage_times_table.c.position)
+        stmt = select(stage_times_table).where(
+            stage_times_table.c.stage_id == stage_id,
+            func.upper(stage_times_table.c.category) == cat
+        ).order_by(stage_times_table.c.position)
         result = await db.execute(stmt)
         rows = result.all()
         if rows:
-            standings = [DriverTime(**row._asdict()) for row in rows]
-            return StageStandings(stage_id=stage_id, event_id=event_id, category=category, is_live=False, standings=standings)
+            standings = []
+            for row in rows:
+                row_dict = row._asdict()
+                row_dict.pop('category', None)
+                row_dict.pop('event_id', None)
+                standings.append(DriverTime(**row_dict))
+            return StageStandings(stage_id=stage_id, event_id=event_id, category=cat, is_live=False, standings=standings)
         return None
 
 async def save_overall_standings_to_db(event_id: int, standings: OverallStandings):

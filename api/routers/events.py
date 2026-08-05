@@ -49,11 +49,13 @@ async def get_event_details(request: Request, category: str, event_id: int):
         logger.debug(f"Redis HIT for event stages: {redis_key}")
         return [Stage(**stage_data) for stage_data in cached_stages]
 
+    terminal_statuses = {"Completed", "Interrupted", "Cancelled", "Canceled"}
+
     # 2. Try DB cache (for completed, historic events)
     db_stages = await get_stages_from_db(event_id)
     if db_stages:
-        if len(db_stages) > 0 and db_stages[-1].status == "Completed":
-            logger.debug(f"DB HIT for event stages (Completed): {event_id}")
+        if len(db_stages) > 0 and db_stages[-1].status in terminal_statuses:
+            logger.debug(f"DB HIT for event stages (Completed/Finished): {event_id}")
             return db_stages
         else:
             logger.debug(f"DB stages found but event not completed. Will re-fetch: {event_id}")
@@ -66,12 +68,12 @@ async def get_event_details(request: Request, category: str, event_id: int):
 
     if category.lower() == "wrc":
         stages_to_cache = await fetch_wrc_event_stages(event_id)
-        if stages_to_cache and stages_to_cache[-1].start_time and stages_to_cache[-1].status == "Completed":
+        if stages_to_cache and stages_to_cache[-1].start_time and stages_to_cache[-1].status in terminal_statuses:
             is_past_event = True
     
     elif category.lower() == "f1":
         stages_to_cache = await get_f1_event_sessions(event_id)
-        if stages_to_cache and stages_to_cache[-1].status == "Completed":
+        if stages_to_cache and stages_to_cache[-1].status in terminal_statuses:
             is_past_event = True
     else:
         raise HTTPException(status_code=404, detail="Category not supported.")

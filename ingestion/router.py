@@ -12,6 +12,7 @@ from ingestion.service import (
     run_current_year_update,
     run_timeline_validation_cron,
     run_briefing_generation_cron,
+    run_stage_times_repair,
 )
 
 logger = logging.getLogger(__name__)
@@ -76,3 +77,11 @@ async def generate_briefings(request: Request, background_tasks: BackgroundTasks
     """Triggers AI briefing generation using Gemini API in a background task to prevent HTTP 30s timeouts."""
     background_tasks.add_task(run_briefing_generation_cron, force_update=force, batch_limit=limit)
     return {"status": "success", "message": "Briefing generation started in background"}
+
+@router.get("/repair-stage-times", response_model=CronResponse)
+@limiter.limit("60/minute")
+async def repair_stage_times_endpoint(request: Request, background_tasks: BackgroundTasks, event_id: Optional[int] = None, category: str = "wrc"):
+    """Triggers cleanup and re-ingestion of stage times to repair corrupted database entries."""
+    background_tasks.add_task(run_stage_times_repair, event_id=event_id, category=category)
+    return {"status": "success", "message": f"Stage times repair started in background for category '{category}'"}
+

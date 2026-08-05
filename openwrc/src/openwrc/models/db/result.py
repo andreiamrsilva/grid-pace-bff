@@ -12,6 +12,8 @@ class StageStatus(PyEnum):
     """Status of stage completion"""
 
     COMPLETED = "Completed"
+    INTERRUPTED = "Interrupted"
+    CANCELLED = "Cancelled"
     RETIRED = "Retired"
     DNF = "DNF"
     RUNNING = "Running"
