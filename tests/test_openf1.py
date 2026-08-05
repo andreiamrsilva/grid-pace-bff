@@ -55,7 +55,7 @@ async def test_fetch_f1_session_times_race_total_time(mock_fetch):
     # Driver 63: sum of 91.0 + 86.0 = 177.0s -> 02m 57.000s
     assert result.standings[1].driver_name == "George RUSSELL"
     assert result.standings[1].time == "02m 57.000s"
-    assert result.standings[1].diff_to_first == "02.000s"
+    assert result.standings[1].diff_to_first == "+2.000s"
 
 
 @patch("ingestion.openf1_client.fetch_json_with_retry", new_callable=AsyncMock)
