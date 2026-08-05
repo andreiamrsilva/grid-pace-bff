@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, Request
+from typing import Optional
+from fastapi import APIRouter, Depends, Request, BackgroundTasks
 from pydantic import BaseModel
 import asyncio
 import logging
@@ -71,7 +72,7 @@ async def validate_timeline_tweets(request: Request):
 
 @router.get("/generate-briefings", response_model=CronResponse)
 @limiter.limit("60/minute")
-async def generate_briefings(request: Request, force: bool = False):
-    """Generates AI briefings using Gemini API for events and saves them to the DB (skips already populated events unless force=true)."""
-    await run_briefing_generation_cron(force_update=force)
-    return {"status": "success"}
+async def generate_briefings(request: Request, background_tasks: BackgroundTasks, force: bool = False, limit: Optional[int] = None):
+    """Triggers AI briefing generation using Gemini API in a background task to prevent HTTP 30s timeouts."""
+    background_tasks.add_task(run_briefing_generation_cron, force_update=force, batch_limit=limit)
+    return {"status": "success", "message": "Briefing generation started in background"}

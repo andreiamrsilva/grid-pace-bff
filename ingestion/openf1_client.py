@@ -128,9 +128,9 @@ async def fetch_json_with_retry(client: httpx.AsyncClient, url: str) -> Any:
     response.raise_for_status()
     return response.json()
 
-async def get_race_winner_from_openf1(client: httpx.AsyncClient, session_key: int) -> Tuple[Optional[str], Optional[str]]:
+async def get_race_winner_from_openf1(client: httpx.AsyncClient, session_key: int) -> Tuple[Optional[str], Optional[str], Optional[str]]:
     """
-    Fetches the winner of a race session using the OpenF1 API.
+    Fetches the winner of a race session and their total race time using the OpenF1 API.
     """
     try:
         position_data = await fetch_json_with_retry(
@@ -138,7 +138,7 @@ async def get_race_winner_from_openf1(client: httpx.AsyncClient, session_key: in
         )
         
         if not position_data:
-            return None, None
+            return None, None, None
             
         position_data.sort(key=lambda x: x['date'], reverse=True)
         final_p1_record = position_data[0]
@@ -149,14 +149,23 @@ async def get_race_winner_from_openf1(client: httpx.AsyncClient, session_key: in
             client, f"{OPENF1_API_URL}/drivers?session_key={session_key}&driver_number={driver_number}"
         )
         
+        winner_time = None
+        laps_data = await fetch_json_with_retry(
+            client, f"{OPENF1_API_URL}/laps?session_key={session_key}&driver_number={driver_number}"
+        )
+        if laps_data:
+            valid_laps = [lap['lap_duration'] for lap in laps_data if lap.get('lap_duration') is not None]
+            if valid_laps:
+                winner_time = format_seconds_to_time(sum(valid_laps))
+
         if driver_data:
             driver = driver_data[0]
-            return driver.get('full_name'), driver.get('team_name')
+            return driver.get('full_name'), driver.get('team_name'), winner_time
             
-        return None, None
+        return None, None, None
     except Exception as e:
         logger.warning(f"Failed to fetch race winner for session {session_key}: {e}")
-        return None, None
+        return None, None, None
 
 async def get_session_fastest_driver(client: httpx.AsyncClient, session_key: int) -> Tuple[Optional[str], Optional[str], Optional[str]]:
     """
@@ -237,7 +246,7 @@ async def get_openf1_calendar_events(year: int) -> List[CalendarEvent]:
 
                 winner_name, team_name = None, None
                 if event_status in ["Running", "Completed"] and race_session:
-                    winner_name, team_name = await get_race_winner_from_openf1(client, race_session['session_key'])
+                    winner_name, team_name, _ = await get_race_winner_from_openf1(client, race_session['session_key'])
 
                 f1_events.append(
                     CalendarEvent(
@@ -283,8 +292,8 @@ async def get_f1_event_sessions(meeting_key: int) -> List[Stage]:
                     session_key = session['session_key']
                     
                     if session_name in ["Race", "Sprint"]:
-                        w_name, t_name = await get_race_winner_from_openf1(client, session_key)
-                        winner_name, winner_logo_path = w_name, get_logo_path(t_name) if t_name else None
+                        w_name, t_name, w_time = await get_race_winner_from_openf1(client, session_key)
+                        winner_name, winner_logo_path, winner_time = w_name, get_logo_path(t_name) if t_name else None, w_time
                     else:
                         w_name, t_name, w_time = await get_session_fastest_driver(client, session_key)
                         winner_name, winner_logo_path, winner_time = w_name, get_logo_path(t_name) if t_name else None, w_time
@@ -317,6 +326,14 @@ async def fetch_f1_session_times(session_key: int, meeting_key: int, session_nam
 
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
+            # If session_name is "Unknown", resolve true session_name from OpenF1 API
+            if session_name == "Unknown":
+                try:
+                    session_info = await fetch_json_with_retry(client, f"{OPENF1_API_URL}/sessions?session_key={session_key}")
+                    if session_info and isinstance(session_info, list) and len(session_info) > 0:
+                        session_name = session_info[0].get('session_name', 'Unknown')
+                except Exception as err:
+                    logger.warning(f"Could not resolve session_name for session {session_key}: {err}")
             # 1. Fetch drivers, positions, and laps sequentially to avoid hitting API rate limits (429)
             try:
                 drivers_data = await fetch_json_with_retry(client, f"{OPENF1_API_URL}/drivers?session_key={session_key}")

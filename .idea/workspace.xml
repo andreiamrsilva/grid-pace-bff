@@ -4,8 +4,12 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="65ca4ed0-d96f-49db-b2bf-c0d163a9c117" name="Changes" comment="Updated gemini model.">
+    <list default="true" id="65ca4ed0-d96f-49db-b2bf-c0d163a9c117" name="Changes" comment="Updated gemini models.&#10;Removed the weather fallback.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ingestion/openf1_client.py" beforeDir="false" afterPath="$PROJECT_DIR$/ingestion/openf1_client.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ingestion/router.py" beforeDir="false" afterPath="$PROJECT_DIR$/ingestion/router.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ingestion/service.py" beforeDir="false" afterPath="$PROJECT_DIR$/ingestion/service.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scratch2.py" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -21,12 +25,12 @@
     &quot;assignee&quot;: &quot;andreiamrsilva&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/andreiamrsilva/grid-pace-bff.git",
-    "accountId": "5b40a8f7-ac44-409d-9533-269f86aafab3"
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/andreiamrsilva/grid-pace-bff.git&quot;,
+    &quot;accountId&quot;: &quot;5b40a8f7-ac44-409d-9533-269f86aafab3&quot;
   }
-}]]></component>
+}</component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 8,
   &quot;fromUser&quot;: false
@@ -36,22 +40,22 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
-    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "codeWithMe.voiceChat.enabledByDefault": "false",
-    "git-widget-placeholder": "main",
-    "node.js.detected.package.eslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "project.propVCSSupport.DirectoryMappings"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;project.propVCSSupport.DirectoryMappings&quot;
   }
-}]]></component>
+}</component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
@@ -66,6 +70,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1783932837831</updated>
+      <workItem from="1785968359074" duration="1201000" />
     </task>
     <task id="LOCAL-00001" summary="Adding alembic to handle with db migrations.&#10;Added new table users.">
       <option name="closed" value="true" />
@@ -291,7 +296,23 @@
       <option name="project" value="LOCAL" />
       <updated>1785855332776</updated>
     </task>
-    <option name="localTasksCounter" value="29" />
+    <task id="LOCAL-00029" summary="Updated gemini models.">
+      <option name="closed" value="true" />
+      <created>1785968425770</created>
+      <option name="number" value="00029" />
+      <option name="presentableId" value="LOCAL-00029" />
+      <option name="project" value="LOCAL" />
+      <updated>1785968425770</updated>
+    </task>
+    <task id="LOCAL-00030" summary="Updated gemini models.&#10;Removed the weather fallback.">
+      <option name="closed" value="true" />
+      <created>1785969110213</created>
+      <option name="number" value="00030" />
+      <option name="presentableId" value="LOCAL-00030" />
+      <option name="project" value="LOCAL" />
+      <updated>1785969110213</updated>
+    </task>
+    <option name="localTasksCounter" value="31" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -301,8 +322,6 @@
     <ignored-roots>
       <path value="$PROJECT_DIR$/openwrc" />
     </ignored-roots>
-    <MESSAGE value="Adding alembic to handle with db migrations.&#10;Added new table users." />
-    <MESSAGE value="Adding missing dependencies." />
     <MESSAGE value="Updated news apis." />
     <MESSAGE value="Fixing getting thumbnail content." />
     <MESSAGE value="Fixing WRC videos." />
@@ -326,6 +345,8 @@
     <MESSAGE value="Fixing too many requests." />
     <MESSAGE value="Adding force=true to the generate briefing cron job." />
     <MESSAGE value="Updated gemini model." />
-    <option name="LAST_COMMIT_MESSAGE" value="Updated gemini model." />
+    <MESSAGE value="Updated gemini models." />
+    <MESSAGE value="Updated gemini models.&#10;Removed the weather fallback." />
+    <option name="LAST_COMMIT_MESSAGE" value="Updated gemini models.&#10;Removed the weather fallback." />
   </component>
 </project>

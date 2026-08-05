@@ -502,7 +502,7 @@ async def generate_briefing_with_gemini(event_name: str, category: str, country:
                 await asyncio.sleep(3)
     return None
 
-async def run_briefing_generation_cron(force_update: bool = False):
+async def run_briefing_generation_cron(force_update: bool = False, batch_limit: Optional[int] = None):
     """
     Cron job that loops over all events in the database, generates tactical briefings using Gemini API,
     persists them to the event_briefings database table, and clears Redis cache for those events.
@@ -517,7 +517,12 @@ async def run_briefing_generation_cron(force_update: bool = False):
         from core.database_service import save_event_briefing_to_db, get_event_briefing_from_db
         from core.redis_service import delete_cached_data
 
+        processed_count = 0
         for event in all_events:
+            if batch_limit and processed_count >= batch_limit:
+                logger.info(f"Reached batch limit of {batch_limit} events. Stopping briefing generation run.")
+                break
+
             # Skip if event already has a persistent briefing in DB (unless force_update is True)
             if not force_update:
                 existing_db = await get_event_briefing_from_db(event.id)
@@ -546,6 +551,7 @@ async def run_briefing_generation_cron(force_update: bool = False):
             await delete_cached_data(f"briefing:{cat_lower}:{event.id}:pt")
             await delete_cached_data(f"briefing:{cat_lower}:{event.id}:en")
             
+            processed_count += 1
             logger.info(f"Successfully generated & saved Gemini AI briefing for event {event.id} ({event.name})")
             # Pacing delay between event API calls (6s = max 10 RPM) to respect Gemini rate limits
             await asyncio.sleep(6.0)
