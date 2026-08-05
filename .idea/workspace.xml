@@ -4,10 +4,8 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="65ca4ed0-d96f-49db-b2bf-c0d163a9c117" name="Changes" comment="Fixing crash.">
-      <change beforePath="$PROJECT_DIR$/.idea/grid-pace-bff.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/grid-pace-bff.iml" afterDir="false" />
+    <list default="true" id="65ca4ed0-d96f-49db-b2bf-c0d163a9c117" name="Changes" comment="Updated gemini model.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ingestion/service.py" beforeDir="false" afterPath="$PROJECT_DIR$/ingestion/service.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -269,7 +267,31 @@
       <option name="project" value="LOCAL" />
       <updated>1785784239553</updated>
     </task>
-    <option name="localTasksCounter" value="26" />
+    <task id="LOCAL-00026" summary="Fixing too many requests.">
+      <option name="closed" value="true" />
+      <created>1785784541212</created>
+      <option name="number" value="00026" />
+      <option name="presentableId" value="LOCAL-00026" />
+      <option name="project" value="LOCAL" />
+      <updated>1785784541212</updated>
+    </task>
+    <task id="LOCAL-00027" summary="Adding force=true to the generate briefing cron job.">
+      <option name="closed" value="true" />
+      <created>1785784851268</created>
+      <option name="number" value="00027" />
+      <option name="presentableId" value="LOCAL-00027" />
+      <option name="project" value="LOCAL" />
+      <updated>1785784851268</updated>
+    </task>
+    <task id="LOCAL-00028" summary="Updated gemini model.">
+      <option name="closed" value="true" />
+      <created>1785855332776</created>
+      <option name="number" value="00028" />
+      <option name="presentableId" value="LOCAL-00028" />
+      <option name="project" value="LOCAL" />
+      <updated>1785855332776</updated>
+    </task>
+    <option name="localTasksCounter" value="29" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -301,6 +323,9 @@
     <MESSAGE value="Added briefing logs." />
     <MESSAGE value="Added auto migrate variable." />
     <MESSAGE value="Fixing crash." />
-    <option name="LAST_COMMIT_MESSAGE" value="Fixing crash." />
+    <MESSAGE value="Fixing too many requests." />
+    <MESSAGE value="Adding force=true to the generate briefing cron job." />
+    <MESSAGE value="Updated gemini model." />
+    <option name="LAST_COMMIT_MESSAGE" value="Updated gemini model." />
   </component>
 </project>

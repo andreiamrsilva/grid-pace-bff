@@ -451,7 +451,12 @@ async def generate_briefing_with_gemini(event_name: str, category: str, country:
         logger.info("GEMINI_API_KEY is not set. Skipping AI briefing generation.")
         return None
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+    endpoints = [
+        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={api_key}",
+        f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}",
+        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}",
+        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={api_key}",
+    ]
     prompt = (
         f"Atue como um Especialista Engenheiro de Desportos Motorizados ({category}). "
         f"Gere uma análise tática completa, descreva o tipo de piso, identifique o último vencedor (last_winner) "
@@ -468,30 +473,34 @@ async def generate_briefing_with_gemini(event_name: str, category: str, country:
     )
     payload = {"contents": [{"parts": [{"text": prompt}]}]}
 
-    max_retries = 3
-    for attempt in range(max_retries):
-        try:
-            async with httpx.AsyncClient(timeout=25.0) as client:
-                res = await client.post(url, json=payload)
-                if res.status_code == 200:
-                    text = res.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
-                    if text.startswith("```json"):
-                        text = text[7:]
-                    if text.startswith("```"):
-                        text = text[3:]
-                    if text.endswith("```"):
-                        text = text[:-3]
-                    return json.loads(text.strip())
-                elif res.status_code == 429:
-                    wait_time = (attempt + 1) * 6
-                    logger.warning(f"Gemini API rate limited (429) for '{event_name}'. Retrying in {wait_time}s (attempt {attempt+1}/{max_retries})...")
-                    await asyncio.sleep(wait_time)
-                else:
-                    logger.warning(f"Gemini API returned status {res.status_code} for '{event_name}': {res.text}")
-                    break
-        except Exception as e:
-            logger.error(f"Error calling Gemini API for briefing generation of '{event_name}': {e}")
-            await asyncio.sleep(2)
+    for url in endpoints:
+        max_retries = 2
+        for attempt in range(max_retries):
+            try:
+                async with httpx.AsyncClient(timeout=25.0) as client:
+                    res = await client.post(url, json=payload)
+                    if res.status_code == 200:
+                        text = res.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
+                        if text.startswith("```json"):
+                            text = text[7:]
+                        if text.startswith("```"):
+                            text = text[3:]
+                        if text.endswith("```"):
+                            text = text[:-3]
+                        return json.loads(text.strip())
+                    elif res.status_code == 429:
+                        wait_time = (attempt + 1) * 6
+                        logger.warning(f"Gemini API rate limited (429) for '{event_name}'. Retrying in {wait_time}s...")
+                        await asyncio.sleep(wait_time)
+                    elif res.status_code == 404:
+                        logger.warning(f"Gemini model endpoint returned 404. Trying next model endpoint...")
+                        break
+                    else:
+                        logger.warning(f"Gemini API returned status {res.status_code} for '{event_name}': {res.text}")
+                        break
+            except Exception as e:
+                logger.error(f"Error calling Gemini API for briefing generation of '{event_name}': {e}")
+                await asyncio.sleep(2)
     return None
 
 async def run_briefing_generation_cron(force_update: bool = False):
