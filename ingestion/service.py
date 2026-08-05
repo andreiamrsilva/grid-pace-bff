@@ -315,6 +315,9 @@ async def run_stage_times_repair(event_id: Optional[int] = None, category: str =
             stages = await get_stages_from_db(ev_id)
             if not stages:
                 stages = await strategy.fetch_event_stages(ev_id)
+                if stages:
+                    from core.database_service import save_stages_to_db
+                    await save_stages_to_db(ev_id, stages)
             if not stages:
                 continue
             for stage in stages:

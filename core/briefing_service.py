@@ -623,6 +623,13 @@ async def get_event_briefing(category: str, event_id: int, language: str = "pt")
             elif category_upper == "F1":
                 from ingestion.openf1_client import get_f1_event_sessions
                 stages = await get_f1_event_sessions(event_id)
+            
+            if stages:
+                try:
+                    from core.database_service import save_stages_to_db
+                    await save_stages_to_db(event_id, stages)
+                except Exception as ex:
+                    logger.warning(f"Could not persist fetched stages for event {event_id}: {ex}")
         
         if stages and len(stages) > 0:
             first_stage = stages[0]

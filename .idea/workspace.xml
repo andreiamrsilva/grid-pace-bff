@@ -4,16 +4,7 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="65ca4ed0-d96f-49db-b2bf-c0d163a9c117" name="Changes" comment="Trying new models to populate briefing.">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/routers/events.py" beforeDir="false" afterPath="$PROJECT_DIR$/api/routers/events.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/database_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/database_service.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ingestion/router.py" beforeDir="false" afterPath="$PROJECT_DIR$/ingestion/router.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ingestion/service.py" beforeDir="false" afterPath="$PROJECT_DIR$/ingestion/service.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ingestion/wrc_client.py" beforeDir="false" afterPath="$PROJECT_DIR$/ingestion/wrc_client.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/migrations.db" beforeDir="false" afterPath="$PROJECT_DIR$/migrations.db" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/openwrc/src/openwrc/models/db/result.py" beforeDir="false" afterPath="$PROJECT_DIR$/openwrc/src/openwrc/models/db/result.py" afterDir="false" />
-    </list>
+    <list default="true" id="65ca4ed0-d96f-49db-b2bf-c0d163a9c117" name="Changes" comment="Fixing f1 times interval sum." />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -73,7 +64,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1783932837831</updated>
-      <workItem from="1785968359074" duration="2481000" />
+      <workItem from="1785968359074" duration="3288000" />
     </task>
     <task id="LOCAL-00001" summary="Adding alembic to handle with db migrations.&#10;Added new table users.">
       <option name="closed" value="true" />
@@ -331,7 +322,23 @@
       <option name="project" value="LOCAL" />
       <updated>1785969959369</updated>
     </task>
-    <option name="localTasksCounter" value="33" />
+    <task id="LOCAL-00033" summary="Fixing some bd problems.">
+      <option name="closed" value="true" />
+      <created>1785971460681</created>
+      <option name="number" value="00033" />
+      <option name="presentableId" value="LOCAL-00033" />
+      <option name="project" value="LOCAL" />
+      <updated>1785971460681</updated>
+    </task>
+    <task id="LOCAL-00034" summary="Fixing f1 times interval sum.">
+      <option name="closed" value="true" />
+      <created>1785972036087</created>
+      <option name="number" value="00034" />
+      <option name="presentableId" value="LOCAL-00034" />
+      <option name="project" value="LOCAL" />
+      <updated>1785972036087</updated>
+    </task>
+    <option name="localTasksCounter" value="35" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -341,8 +348,6 @@
     <ignored-roots>
       <path value="$PROJECT_DIR$/openwrc" />
     </ignored-roots>
-    <MESSAGE value="Fixing WRC videos." />
-    <MESSAGE value="Fixing comments section." />
     <MESSAGE value="Fixing twitter calls. created a twitter cron job." />
     <MESSAGE value="fixing dates" />
     <MESSAGE value="Improving social media requests for wrc." />
@@ -366,6 +371,8 @@
     <MESSAGE value="Updated gemini models.&#10;Removed the weather fallback." />
     <MESSAGE value="Added unit tests.&#10;Fixed F1 race results.&#10;Added background tasks to the briefing cron job." />
     <MESSAGE value="Trying new models to populate briefing." />
-    <option name="LAST_COMMIT_MESSAGE" value="Trying new models to populate briefing." />
+    <MESSAGE value="Fixing some bd problems." />
+    <MESSAGE value="Fixing f1 times interval sum." />
+    <option name="LAST_COMMIT_MESSAGE" value="Fixing f1 times interval sum." />
   </component>
 </project>
