@@ -505,9 +505,6 @@ async def generate_briefing_with_gemini(event_name: str, category: str, country:
     endpoints = [
         f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}",
         f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key={api_key}",
-        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-8b:generateContent?key={api_key}",
-        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={api_key}",
-        f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={api_key}",
     ]
     prompt = (
         f"Atue como um Especialista Engenheiro de Desportos Motorizados ({category}). "
@@ -583,6 +580,7 @@ async def run_briefing_generation_cron(force_update: bool = False, batch_limit: 
             ai_res = await generate_briefing_with_gemini(event.name, event.category, event.country or "")
             if not ai_res:
                 logger.error(f"Skipping DB update for event {event.id} ({event.name}): Gemini API returned no data or GEMINI_API_KEY missing/rate limited.")
+                await asyncio.sleep(6.0)
                 continue
 
             await save_event_briefing_to_db(
