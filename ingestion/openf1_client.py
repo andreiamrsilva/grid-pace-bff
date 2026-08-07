@@ -111,10 +111,11 @@ auth_manager = OpenF1AuthManager()
     reraise=True,
     retry=retry_if_exception(is_retryable_exception)
 )
-async def fetch_json_with_retry(client: httpx.AsyncClient, url: str) -> Any:
+async def fetch_json_with_retry(client: httpx.AsyncClient, url: str, allow_404: bool = False) -> Any:
     """
     Helper to fetch JSON from an API with exponential backoff.
-    Will retry up to 3 times on any exception (including HTTPStatusError) except 401/403.
+    Will retry up to 3 times on any exception except 401/403/404.
+    If allow_404 is True, returns [] on HTTP 404.
     """
     logger.debug(f"Fetching URL (with retry): {url}")
     headers = {}
@@ -124,9 +125,16 @@ async def fetch_json_with_retry(client: httpx.AsyncClient, url: str) -> Any:
             headers["Authorization"] = f"Bearer {token}"
             headers["accept"] = "application/json"
 
-    response = await client.get(url, headers=headers)
-    response.raise_for_status()
-    return response.json()
+    try:
+        response = await client.get(url, headers=headers)
+        if allow_404 and response.status_code == 404:
+            return []
+        response.raise_for_status()
+        return response.json()
+    except httpx.HTTPStatusError as e:
+        if allow_404 and e.response.status_code == 404:
+            return []
+        raise
 
 async def get_race_winner_from_openf1(client: httpx.AsyncClient, session_key: int) -> Tuple[Optional[str], Optional[str], Optional[str]]:
     """
@@ -334,40 +342,53 @@ async def fetch_f1_session_times(session_key: int, meeting_key: int, session_nam
                         session_name = session_info[0].get('session_name', 'Unknown')
                 except Exception as err:
                     logger.warning(f"Could not resolve session_name for session {session_key}: {err}")
-            # 1. Fetch drivers, positions, laps, and intervals sequentially
+            # 1. Fetch drivers, positions, laps, and intervals sequentially (using allow_404=True for telemetry endpoints)
             try:
-                drivers_data = await fetch_json_with_retry(client, f"{OPENF1_API_URL}/drivers?session_key={session_key}")
-                positions_data = await fetch_json_with_retry(client, f"{OPENF1_API_URL}/position?session_key={session_key}")
-                laps_data = await fetch_json_with_retry(client, f"{OPENF1_API_URL}/laps?session_key={session_key}")
+                drivers_data = await fetch_json_with_retry(client, f"{OPENF1_API_URL}/drivers?session_key={session_key}", allow_404=True)
+                positions_data = await fetch_json_with_retry(client, f"{OPENF1_API_URL}/position?session_key={session_key}", allow_404=True)
+                laps_data = await fetch_json_with_retry(client, f"{OPENF1_API_URL}/laps?session_key={session_key}", allow_404=True)
+                intervals_data = await fetch_json_with_retry(client, f"{OPENF1_API_URL}/intervals?session_key={session_key}", allow_404=True)
             except Exception as res:
                 logger.warning(f"Error in fetching session {session_key} data bulk tasks: {res}")
                 return None
-
-            intervals_data = []
-            try:
-                intervals_data = await fetch_json_with_retry(client, f"{OPENF1_API_URL}/intervals?session_key={session_key}")
-            except Exception as err:
-                logger.debug(f"Could not fetch intervals for session {session_key}: {err}")
             
             if not drivers_data:
-                logger.warning(f"No driver data found for session {session_key}")
+                logger.debug(f"No driver data found for session {session_key}")
                 return None
                 
             # 2. Group positions by driver_number
             first_positions = {}
             latest_positions = {}
-            for p in sorted(positions_data, key=lambda x: x['date'], reverse=False):
-                d_num = p['driver_number']
-                if d_num not in first_positions:
-                    first_positions[d_num] = p['position']
-                latest_positions[d_num] = p['position']
+            if positions_data:
+                for p in sorted(positions_data, key=lambda x: x['date'], reverse=False):
+                    d_num = p['driver_number']
+                    if d_num not in first_positions:
+                        first_positions[d_num] = p['position']
+                    latest_positions[d_num] = p['position']
                 
             # 3. Group laps by driver_number
             laps_by_driver = {}
-            for lap in laps_data:
-                d_num = lap['driver_number']
-                if lap.get('lap_duration') is not None:
-                    laps_by_driver.setdefault(d_num, []).append(lap['lap_duration'])
+            if laps_data:
+                for lap in laps_data:
+                    d_num = lap['driver_number']
+                    if lap.get('lap_duration') is not None:
+                        laps_by_driver.setdefault(d_num, []).append(lap['lap_duration'])
+
+            # Fallback: if positions_data is 404/empty, infer positions from laps data
+            if not latest_positions and laps_by_driver:
+                if session_name in ["Race", "Sprint"]:
+                    sorted_drivers = sorted(
+                        laps_by_driver.keys(),
+                        key=lambda d: (len(laps_by_driver[d]), -sum(laps_by_driver[d])),
+                        reverse=True
+                    )
+                else:
+                    sorted_drivers = sorted(
+                        laps_by_driver.keys(),
+                        key=lambda d: min(laps_by_driver[d]) if laps_by_driver[d] else 999999
+                    )
+                for idx, d_num in enumerate(sorted_drivers, start=1):
+                    latest_positions[d_num] = idx
 
             # 4. Group latest intervals by driver_number
             latest_intervals = {}

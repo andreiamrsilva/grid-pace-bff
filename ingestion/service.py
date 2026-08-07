@@ -329,6 +329,8 @@ async def run_stage_times_repair(event_id: Optional[int] = None, category: str =
                 if standings and standings.standings:
                     await save_stage_times_to_db(stage.id, standings)
                     logger.info(f"Repaired DB stage times for {cat_upper} stage {stage.id} ({len(standings.standings)} drivers).")
+                # Add small pacing delay to avoid hitting OpenF1/OpenWRC 429 rate limits
+                await asyncio.sleep(0.3)
     except Exception as e:
         logger.error(f"Error during stage times repair: {e}")
 

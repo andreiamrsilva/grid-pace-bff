@@ -29,7 +29,7 @@ MOCK_SESSION_PRACTICE = [{"session_key": 11316, "session_name": "Practice 1", "s
 @patch("ingestion.openf1_client.fetch_json_with_retry", new_callable=AsyncMock)
 async def test_fetch_f1_session_times_race_total_time(mock_fetch):
     """Test that Race session returns total race time (sum of laps) even if session_name is Unknown initially."""
-    def mock_fetch_side_effect(client, url):
+    def mock_fetch_side_effect(client, url, *args, **kwargs):
         if "/sessions" in url:
             return MOCK_SESSION_RACE
         elif "/drivers" in url:
@@ -61,7 +61,7 @@ async def test_fetch_f1_session_times_race_total_time(mock_fetch):
 @patch("ingestion.openf1_client.fetch_json_with_retry", new_callable=AsyncMock)
 async def test_fetch_f1_session_times_practice_fastest_lap(mock_fetch):
     """Test that Practice session returns fastest lap time (min of laps)."""
-    def mock_fetch_side_effect(client, url):
+    def mock_fetch_side_effect(client, url, *args, **kwargs):
         if "/sessions" in url:
             return MOCK_SESSION_PRACTICE
         elif "/drivers" in url:
@@ -87,7 +87,7 @@ async def test_fetch_f1_session_times_practice_fastest_lap(mock_fetch):
 @patch("ingestion.openf1_client.fetch_json_with_retry", new_callable=AsyncMock)
 async def test_get_race_winner_returns_time(mock_fetch):
     """Test that get_race_winner_from_openf1 returns winner name, team, and total race time."""
-    def mock_fetch_side_effect(client, url):
+    def mock_fetch_side_effect(client, url, *args, **kwargs):
         if "/position" in url:
             return [{"driver_number": 16, "date": "2026-07-05T15:30:00Z"}]
         elif "/drivers" in url:
