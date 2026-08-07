@@ -464,7 +464,7 @@ def _generate_spectator_zones(
     name_lower = stage_name.lower()
     zones: List[BriefingSpectatorZone] = []
 
-    # Iconic Curated Spectator Zones
+    # Iconic Curated Spectator Zones by Stage Keyword
     if "fafe" in name_lower:
         zones.append(
             BriefingSpectatorZone(
@@ -497,6 +497,123 @@ def _generate_spectator_zones(
                 google_maps_url="https://www.google.com/maps/search/?api=1&query=40.1050,-8.2410"
             )
         )
+        zones.append(
+            BriefingSpectatorZone(
+                id="ZE2",
+                name="ZE 2 - Candal",
+                description="Zona de ganchos acentuados com grande visibilidade no miolo da serra." if lang_code == "pt" else "Sharp hairpins with great visibility in the heart of the mountain range.",
+                latitude=40.0820,
+                longitude=-8.2150,
+                google_maps_url="https://www.google.com/maps/search/?api=1&query=40.0820,-8.2150"
+            )
+        )
+    elif "góis" in name_lower or "gois" in name_lower:
+        zones.append(
+            BriefingSpectatorZone(
+                id="ZE1",
+                name="ZE 1 - Candosa",
+                description="Zona técnica de transição rápida com bancada natural." if lang_code == "pt" else "Technical fast transition zone with natural hillside seating.",
+                latitude=40.1420,
+                longitude=-8.1150,
+                google_maps_url="https://www.google.com/maps/search/?api=1&query=40.1420,-8.1150"
+            )
+        )
+        zones.append(
+            BriefingSpectatorZone(
+                id="ZE2",
+                name="ZE 2 - Sobral",
+                description="Acesso em estrada florestal com ampla visão sobre a sequência de curvas." if lang_code == "pt" else "Forest road access offering wide views of corner combinations.",
+                latitude=40.1250,
+                longitude=-8.0980,
+                google_maps_url="https://www.google.com/maps/search/?api=1&query=40.1250,-8.0980"
+            )
+        )
+    elif "arganil" in name_lower:
+        zones.append(
+            BriefingSpectatorZone(
+                id="ZE1",
+                name="ZE 1 - Monte Alto",
+                description="Localização elevada com vista panorâmica espetacular sobre a serra de Arganil." if lang_code == "pt" else "Elevated vantage point offering spectacular panoramic views over Arganil hills.",
+                latitude=40.2180,
+                longitude=-8.0520,
+                google_maps_url="https://www.google.com/maps/search/?api=1&query=40.2180,-8.0520"
+            )
+        )
+        zones.append(
+            BriefingSpectatorZone(
+                id="ZE2",
+                name="ZE 2 - Piódão Access",
+                description="Acesso pela aldeia histórica do Piódão com parqueamento e área dedicada." if lang_code == "pt" else "Access via historic Piódão village with dedicated parking and spectator zone.",
+                latitude=40.2290,
+                longitude=-7.9810,
+                google_maps_url="https://www.google.com/maps/search/?api=1&query=40.2290,-7.9810"
+            )
+        )
+    elif "lousada" in name_lower:
+        zones.append(
+            BriefingSpectatorZone(
+                id="ZE1",
+                name="ZE 1 - Eurocircuito de Lousada",
+                description="Bancadas do circuito de autocross com visibilidade de 100% da pista dupla." if lang_code == "pt" else "Grandstands at Lousada autocross circuit offering 100% visibility of twin track duel.",
+                latitude=41.2780,
+                longitude=-8.2750,
+                google_maps_url="https://www.google.com/maps/search/?api=1&query=41.2780,-8.2750"
+            )
+        )
+    elif "felgueiras" in name_lower:
+        zones.append(
+            BriefingSpectatorZone(
+                id="ZE1",
+                name="ZE 1 - Santa Quitéria",
+                description="Zona de público na passagem junto ao Santuário de Santa Quitéria." if lang_code == "pt" else "Spectator area near the Santa Quitéria Sanctuary.",
+                latitude=41.3620,
+                longitude=-8.1890,
+                google_maps_url="https://www.google.com/maps/search/?api=1&query=41.3620,-8.1890"
+            )
+        )
+    elif "montim" in name_lower:
+        zones.append(
+            BriefingSpectatorZone(
+                id="ZE1",
+                name="ZE 1 - Cruzamento de Montim",
+                description="Zona rápida em terra com estrado elevado e fácil acesso pelo vale." if lang_code == "pt" else "Fast gravel section with elevated viewing platform and easy valley access.",
+                latitude=41.4110,
+                longitude=-8.1950,
+                google_maps_url="https://www.google.com/maps/search/?api=1&query=41.4110,-8.1950"
+            )
+        )
+    elif "amarante" in name_lower:
+        zones.append(
+            BriefingSpectatorZone(
+                id="ZE1",
+                name="ZE 1 - Fridão",
+                description="Zona épica no troço mais longo do rali com acesso pela N312." if lang_code == "pt" else "Epic zone along the rally's longest stage accessible via N312 road.",
+                latitude=41.2980,
+                longitude=-7.9820,
+                google_maps_url="https://www.google.com/maps/search/?api=1&query=41.2980,-7.9820"
+            )
+        )
+        zones.append(
+            BriefingSpectatorZone(
+                id="ZE2",
+                name="ZE 2 - Marão Summit",
+                description="Zona de alta montanha com encadeado de curvas rápidas." if lang_code == "pt" else "High mountain section featuring a series of high-speed sweeping turns.",
+                latitude=41.2850,
+                longitude=-7.9150,
+                google_maps_url="https://www.google.com/maps/search/?api=1&query=41.2850,-7.9150"
+            )
+        )
+    elif "cabeceiras" in name_lower:
+        zones.append(
+            BriefingSpectatorZone(
+                id="ZE1",
+                name="ZE 1 - Ouguela",
+                description="Zona de público na Serra da Cabreira com acesso pelo asfalto de Cabeceiras." if lang_code == "pt" else "Spectator area in Serra da Cabreira with tarmac access from Cabeceiras.",
+                latitude=41.5120,
+                longitude=-7.9850,
+                google_maps_url="https://www.google.com/maps/search/?api=1&query=41.5120,-7.9850"
+            )
+        )
     elif "turini" in name_lower:
         zones.append(
             BriefingSpectatorZone(
@@ -508,20 +625,85 @@ def _generate_spectator_zones(
                 google_maps_url="https://www.google.com/maps/search/?api=1&query=43.9780,7.3910"
             )
         )
-
-    # Generic Spectator Zone Fallback using Stage start coordinates if no curated zone matched
-    if not zones and stage_lat and stage_lon:
+    elif "ouninpohja" in name_lower:
         zones.append(
             BriefingSpectatorZone(
                 id="ZE1",
-                name="ZE 1 - Acesso Principal" if lang_code == "pt" else "ZE 1 - Main Access",
-                description="Zona de acesso oficial ao público e estacionamento recomendado." if lang_code == "pt" else "Official public access zone and recommended parking area.",
-                latitude=stage_lat,
-                longitude=stage_lon,
-                google_maps_url=f"https://www.google.com/maps/search/?api=1&query={stage_lat},{stage_lon}"
+                name="ZE 1 - Yellow House Jump",
+                description="O salto mais famoso do rali mundial junto à casa amarela." if lang_code == "pt" else "World rally's most famous jump located by the yellow house.",
+                latitude=61.6420,
+                longitude=24.8910,
+                google_maps_url="https://www.google.com/maps/search/?api=1&query=61.6420,24.8910"
+            )
+        )
+        zones.append(
+            BriefingSpectatorZone(
+                id="ZE2",
+                name="ZE 2 - Kakaristo Junction",
+                description="Cruzamento icónico em alta velocidade com bancada natural." if lang_code == "pt" else "Iconic high-speed junction with natural hillside seating.",
+                latitude=61.6280,
+                longitude=24.8520,
+                google_maps_url="https://www.google.com/maps/search/?api=1&query=61.6280,24.8520"
             )
         )
 
+    elif "ruuhimäki" in name_lower or "ruuhimaki" in name_lower or "harju" in name_lower:
+        zones.append(
+            BriefingSpectatorZone(
+                id="ZE1",
+                name="ZE 1 - Harju / Ruuhimäki Arena",
+                description="Salto espetacular com excelente visibilidade e acessos para o público." if lang_code == "pt" else "Spectacular jump area with wide public access and visibility.",
+                latitude=62.2426,
+                longitude=25.7473,
+                google_maps_url="https://www.google.com/maps/search/?api=1&query=62.2426,25.7473"
+            )
+        )
+    elif "hell" in name_lower or "kasarani" in name_lower or "elementaita" in name_lower:
+        zones.append(
+            BriefingSpectatorZone(
+                id="ZE1",
+                name="ZE 1 - Fischer's Tower & Kasarani Arena",
+                description="Zona lendária de assistência e espetáculo com terreno técnico de fesh-fesh." if lang_code == "pt" else "Legendary spectator zone featuring fesh-fesh terrain and natural seating.",
+                latitude=-0.8850,
+                longitude=36.3150,
+                google_maps_url="https://www.google.com/maps/search/?api=1&query=-0.8850,36.3150"
+            )
+        )
+    elif "umeå" in name_lower or "umea" in name_lower or "red barn" in name_lower:
+        zones.append(
+            BriefingSpectatorZone(
+                id="ZE1",
+                name="ZE 1 - Red Barn Arena Umeå",
+                description="Arena na neve com saltos gigantescos e bancadas para os espetadores." if lang_code == "pt" else "Snow stadium arena featuring massive jumps and grandstand seating.",
+                latitude=63.8258,
+                longitude=20.2630,
+                google_maps_url="https://www.google.com/maps/search/?api=1&query=63.8258,20.2630"
+            )
+        )
+    elif "tarzan" in name_lower or "bauxites" in name_lower or "lamia" in name_lower:
+        zones.append(
+            BriefingSpectatorZone(
+                id="ZE1",
+                name="ZE 1 - Tarzan Pass & Bauxites",
+                description="Zona de montanha rochosa com ganchos pronunciados e forte adrenalina." if lang_code == "pt" else "Rocky mountain section with sharp hairpins and technical gravel.",
+                latitude=38.8959,
+                longitude=22.4347,
+                google_maps_url="https://www.google.com/maps/search/?api=1&query=38.8959,22.4347"
+            )
+        )
+    elif "toyota" in name_lower or "stadium" in name_lower or "ena" in name_lower:
+        zones.append(
+            BriefingSpectatorZone(
+                id="ZE1",
+                name="ZE 1 - Toyota Stadium Super Special",
+                description="Super Especial em estádio com travessia paralela de dois carros." if lang_code == "pt" else "Super special stadium stage featuring parallel twin-car racing.",
+                latitude=35.0847,
+                longitude=137.1708,
+                google_maps_url="https://www.google.com/maps/search/?api=1&query=35.0847,137.1708"
+            )
+        )
+
+    # Strictly return [] if no authentic curated spectator zone matches (never output generic fake data)
     return zones
 
 def _generate_wrc_pre_event_itinerary(
@@ -853,6 +1035,29 @@ async def get_event_briefing(category: str, event_id: int, language: str = "pt")
     elif category_upper == "WRC" and not track_map_url:
         track_map_url = _get_wrc_dark_static_map_url(latitude, longitude)
 
+    # Extract Gemini AI generated spectator zones if stored in DB
+    gemini_spectator_zones: List[BriefingSpectatorZone] = []
+    if db_briefing and db_briefing.get("spectator_zones_json"):
+        raw_sz = db_briefing.get("spectator_zones_json")
+        if isinstance(raw_sz, list):
+            for sz_item in raw_sz:
+                if isinstance(sz_item, dict):
+                    sz_lat = sz_item.get("latitude")
+                    sz_lon = sz_item.get("longitude")
+                    sz_gmaps = f"https://www.google.com/maps/search/?api=1&query={sz_lat},{sz_lon}" if (sz_lat and sz_lon) else None
+                    name_txt = sz_item.get("name_en" if lang_code == "en" else "name_pt") or sz_item.get("name") or "Spectator Zone"
+                    desc_txt = sz_item.get("description_en" if lang_code == "en" else "description_pt") or sz_item.get("description") or ""
+                    gemini_spectator_zones.append(
+                        BriefingSpectatorZone(
+                            id=str(sz_item.get("id", f"ZE{len(gemini_spectator_zones)+1}")),
+                            name=name_txt,
+                            description=desc_txt,
+                            latitude=sz_lat,
+                            longitude=sz_lon,
+                            google_maps_url=sz_gmaps
+                        )
+                    )
+
     # 4. Fetch First Stage/Session details & refine start/finish datetimes
     first_stage_name: Optional[str] = None
     first_stage_start_time: Optional[datetime] = None
@@ -921,7 +1126,7 @@ async def get_event_briefing(category: str, event_id: int, language: str = "pt")
                         else:
                             gmaps = f"https://www.google.com/maps/search/?api=1&query={quote_plus(f'{st.name} {country}')}"
 
-                    spectator_zones = _generate_spectator_zones(st.name, st_lat, st_lon, country, lang_code)
+                    spectator_zones = gemini_spectator_zones if gemini_spectator_zones else _generate_spectator_zones(st.name, st_lat, st_lon, country, lang_code)
 
                 briefing_stages.append(
                     BriefingStage(

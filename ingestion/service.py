@@ -512,8 +512,8 @@ async def generate_briefing_with_gemini(event_name: str, category: str, country:
     ]
     prompt = (
         f"Atue como um Especialista Engenheiro de Desportos Motorizados ({category}). "
-        f"Gere uma análise tática completa, descreva o tipo de piso, identifique o último vencedor (last_winner) "
-        f"e o recorde oficial da prova (event_record) para o evento: {event_name} ({country}). "
+        f"Gere uma análise tática completa, descreva o tipo de piso, identifique o último vencedor (last_winner), "
+        f"o recorde oficial da prova (event_record) e identifique as Zonas de Espetáculo reais/oficiais (spectator_zones) com coordenadas GPS precisas para o evento: {event_name} ({country}). "
         f"Retorne ESTRITAMENTE um objeto JSON sem formatação markdown ou blocos de código adicionais, no formato:\n"
         f"{{\n"
         f'  "surface_type_pt": "...",\n'
@@ -521,7 +521,18 @@ async def generate_briefing_with_gemini(event_name: str, category: str, country:
         f'  "tactical_briefing_pt": "...",\n'
         f'  "tactical_briefing_en": "...",\n'
         f'  "last_winner": "...",\n'
-        f'  "event_record": "..."\n'
+        f'  "event_record": "...",\n'
+        f'  "spectator_zones": [\n'
+        f'     {{\n'
+        f'       "id": "ZE1",\n'
+        f'       "name_pt": "...",\n'
+        f'       "name_en": "...",\n'
+        f'       "description_pt": "...",\n'
+        f'       "description_en": "...",\n'
+        f'       "latitude": 0.0,\n'
+        f'       "longitude": 0.0\n'
+        f'     }}\n'
+        f'  ]\n'
         f"}}\n"
     )
     payload = {"contents": [{"parts": [{"text": prompt}]}]}
@@ -596,6 +607,7 @@ async def run_briefing_generation_cron(force_update: bool = False, batch_limit: 
                 tactical_briefing_en=ai_res.get("tactical_briefing_en"),
                 last_winner=ai_res.get("last_winner"),
                 event_record=ai_res.get("event_record"),
+                spectator_zones_json=ai_res.get("spectator_zones"),
             )
             
             # Invalidate Redis briefing cache so new data is immediately served

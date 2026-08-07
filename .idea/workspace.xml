@@ -4,7 +4,10 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="65ca4ed0-d96f-49db-b2bf-c0d163a9c117" name="Changes" comment="Fixing f1 times interval sum." />
+    <list default="true" id="65ca4ed0-d96f-49db-b2bf-c0d163a9c117" name="Changes" comment="Atualização dos modelos para gerar os briefings.">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/briefing_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/briefing_service.py" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -64,7 +67,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1783932837831</updated>
-      <workItem from="1785968359074" duration="3288000" />
+      <workItem from="1785968359074" duration="8462000" />
     </task>
     <task id="LOCAL-00001" summary="Adding alembic to handle with db migrations.&#10;Added new table users.">
       <option name="closed" value="true" />
@@ -338,7 +341,55 @@
       <option name="project" value="LOCAL" />
       <updated>1785972036087</updated>
     </task>
-    <option name="localTasksCounter" value="35" />
+    <task id="LOCAL-00035" summary="Repair briefing service.">
+      <option name="closed" value="true" />
+      <created>1785972257028</created>
+      <option name="number" value="00035" />
+      <option name="presentableId" value="LOCAL-00035" />
+      <option name="project" value="LOCAL" />
+      <updated>1785972257028</updated>
+    </task>
+    <task id="LOCAL-00036" summary="Updating wrc briefing.">
+      <option name="closed" value="true" />
+      <created>1785972452591</created>
+      <option name="number" value="00036" />
+      <option name="presentableId" value="LOCAL-00036" />
+      <option name="project" value="LOCAL" />
+      <updated>1785972452591</updated>
+    </task>
+    <task id="LOCAL-00037" summary="Updating wrc briefing models.">
+      <option name="closed" value="true" />
+      <created>1786020404904</created>
+      <option name="number" value="00037" />
+      <option name="presentableId" value="LOCAL-00037" />
+      <option name="project" value="LOCAL" />
+      <updated>1786020404904</updated>
+    </task>
+    <task id="LOCAL-00038" summary="Fixed import.">
+      <option name="closed" value="true" />
+      <created>1786020956816</created>
+      <option name="number" value="00038" />
+      <option name="presentableId" value="LOCAL-00038" />
+      <option name="project" value="LOCAL" />
+      <updated>1786020956816</updated>
+    </task>
+    <task id="LOCAL-00039" summary="Fixed the repair data cron job.">
+      <option name="closed" value="true" />
+      <created>1786103993851</created>
+      <option name="number" value="00039" />
+      <option name="presentableId" value="LOCAL-00039" />
+      <option name="project" value="LOCAL" />
+      <updated>1786103993851</updated>
+    </task>
+    <task id="LOCAL-00040" summary="Atualização dos modelos para gerar os briefings.">
+      <option name="closed" value="true" />
+      <created>1786127368304</created>
+      <option name="number" value="00040" />
+      <option name="presentableId" value="LOCAL-00040" />
+      <option name="project" value="LOCAL" />
+      <updated>1786127368304</updated>
+    </task>
+    <option name="localTasksCounter" value="41" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -348,12 +399,6 @@
     <ignored-roots>
       <path value="$PROJECT_DIR$/openwrc" />
     </ignored-roots>
-    <MESSAGE value="Fixing twitter calls. created a twitter cron job." />
-    <MESSAGE value="fixing dates" />
-    <MESSAGE value="Improving social media requests for wrc." />
-    <MESSAGE value="Improving social media requests for F1." />
-    <MESSAGE value="Added briefing route." />
-    <MESSAGE value="Fixing briefing route." />
     <MESSAGE value="Fixing briefing weather information." />
     <MESSAGE value="Fixing f1 svg files." />
     <MESSAGE value="Added svg logic and spectator zones." />
@@ -373,6 +418,12 @@
     <MESSAGE value="Trying new models to populate briefing." />
     <MESSAGE value="Fixing some bd problems." />
     <MESSAGE value="Fixing f1 times interval sum." />
-    <option name="LAST_COMMIT_MESSAGE" value="Fixing f1 times interval sum." />
+    <MESSAGE value="Repair briefing service." />
+    <MESSAGE value="Updating wrc briefing." />
+    <MESSAGE value="Updating wrc briefing models." />
+    <MESSAGE value="Fixed import." />
+    <MESSAGE value="Fixed the repair data cron job." />
+    <MESSAGE value="Atualização dos modelos para gerar os briefings." />
+    <option name="LAST_COMMIT_MESSAGE" value="Atualização dos modelos para gerar os briefings." />
   </component>
 </project>

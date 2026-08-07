@@ -157,6 +157,7 @@ event_briefings_table = Table(
     Column('tactical_briefing_en', String, nullable=True),
     Column('last_winner', String, nullable=True),
     Column('event_record', String, nullable=True),
+    Column('spectator_zones_json', JSON, nullable=True),
     Column('updated_at', DateTime, default=func.now(), nullable=False),
 )
 
@@ -194,7 +195,7 @@ def run_migrations():
         logger.error(f"Error running Alembic migrations on startup: {e}")
 
 async def _ensure_stage_times_columns():
-    """Ensures stage_times table has category and event_id columns if connecting to a DB created prior to migration."""
+    """Ensures stage_times and event_briefings tables have missing columns if connecting to a DB created prior to migration."""
     try:
         async with AsyncSessionLocal() as db:
             try:
@@ -215,8 +216,25 @@ async def _ensure_stage_times_columns():
                 except Exception as ex:
                     await db.rollback()
                     logger.debug(f"Note during stage_times column check: {ex}")
+
+            try:
+                await db.execute(select(event_briefings_table.c.spectator_zones_json).limit(1))
+            except Exception:
+                await db.rollback()
+                try:
+                    from sqlalchemy import text
+                    engine_name = db.bind.dialect.name if db.bind else ""
+                    if "postgres" in str(engine_name).lower():
+                        await db.execute(text("ALTER TABLE event_briefings ADD COLUMN IF NOT EXISTS spectator_zones_json JSON;"))
+                    else:
+                        await db.execute(text("ALTER TABLE event_briefings ADD COLUMN spectator_zones_json JSON;"))
+                    await db.commit()
+                    logger.info("Successfully added missing spectator_zones_json column to event_briefings table.")
+                except Exception as ex:
+                    await db.rollback()
+                    logger.debug(f"Note during spectator_zones_json column check: {ex}")
     except Exception as e:
-        logger.debug(f"Skipped stage_times column check: {e}")
+        logger.debug(f"Skipped column check: {e}")
 
 async def init_db():
     """Runs Alembic migrations and column checks asynchronously on application startup."""
@@ -562,10 +580,27 @@ async def update_user_subscription_in_db(uid: str, sub_update: SubscriptionUpdat
 
 async def get_event_briefing_from_db(event_id: int) -> Optional[dict]:
     async with AsyncSessionLocal() as db:
-        stmt = select(event_briefings_table).where(event_briefings_table.c.event_id == event_id)
-        result = await db.execute(stmt)
-        row = result.mappings().first()
-        return dict(row) if row else None
+        try:
+            stmt = select(event_briefings_table).where(event_briefings_table.c.event_id == event_id)
+            result = await db.execute(stmt)
+            row = result.mappings().first()
+            return dict(row) if row else None
+        except Exception:
+            await db.rollback()
+            cols = [
+                event_briefings_table.c.event_id,
+                event_briefings_table.c.category,
+                event_briefings_table.c.surface_type_pt,
+                event_briefings_table.c.surface_type_en,
+                event_briefings_table.c.tactical_briefing_pt,
+                event_briefings_table.c.tactical_briefing_en,
+                event_briefings_table.c.last_winner,
+                event_briefings_table.c.event_record,
+            ]
+            stmt = select(*cols).where(event_briefings_table.c.event_id == event_id)
+            result = await db.execute(stmt)
+            row = result.mappings().first()
+            return dict(row) if row else None
 
 async def save_event_briefing_to_db(
     event_id: int,
@@ -576,6 +611,7 @@ async def save_event_briefing_to_db(
     tactical_briefing_en: Optional[str] = None,
     last_winner: Optional[str] = None,
     event_record: Optional[str] = None,
+    spectator_zones_json: Optional[dict] = None,
 ):
     async with AsyncSessionLocal() as db:
         stmt = select(event_briefings_table.c.event_id).where(event_briefings_table.c.event_id == event_id)
@@ -590,6 +626,7 @@ async def save_event_briefing_to_db(
             "tactical_briefing_en": tactical_briefing_en,
             "last_winner": last_winner,
             "event_record": event_record,
+            "spectator_zones_json": spectator_zones_json,
             "updated_at": func.now(),
         }
         

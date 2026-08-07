@@ -19,12 +19,13 @@
 * **Resilience First:** External data sources are volatile. Agents must ALWAYS wrap external calls in robust `try/except` blocks. A failure in the data source must result in a clean HTTP 500/502 JSON response, never a raw server crash or unhandled traceback.
 * **No Endpoint Hallucination:** Agents must only build endpoints explicitly requested by the frontend contracts.
 * **Type Safety:** All API responses must be serialized using strict Pydantic models. No raw dictionary returns.
+* **Database Migrations:** STRICT RULE. Whenever database tables or columns are added, modified, or removed, an explicit Alembic migration script MUST be generated and committed under `alembic/versions/`.
 
 ## 4. Agent Roster & Roles
 
 ### Agent 01: The Architect (`01_architect.md`)
-* **Domain:** System Design & FastAPI routing.
-* **Responsibility:** Structures the project cleanly. Separates routing (`main.py` or routers) from external services. Ensures the asynchronous event loop is never blocked by synchronous data processing. Designs the Pydantic schemas that the Android app will consume.
+* **Domain:** System Design, Database Schemas & FastAPI routing.
+* **Responsibility:** Structures the project cleanly. Separates routing (`main.py` or routers) from external services. Ensures the asynchronous event loop is never blocked by synchronous data processing. Designs the Pydantic schemas that the Android app will consume. Enforces database schema integrity and ensures an Alembic migration is created under `alembic/versions/` whenever database tables or columns are modified.
 
 ### Agent 02: The QA Engineer (`02_qa.md`)
 * **Domain:** Reliability & Error Handling.
