@@ -4,9 +4,9 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="65ca4ed0-d96f-49db-b2bf-c0d163a9c117" name="Changes" comment="Atualização dos modelos para gerar os briefings.">
+    <list default="true" id="65ca4ed0-d96f-49db-b2bf-c0d163a9c117" name="Changes" comment="Atualização da população do briefing para ir buscar as zonas de espeteculo.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/briefing_service.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/briefing_service.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ingestion/service.py" beforeDir="false" afterPath="$PROJECT_DIR$/ingestion/service.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -67,7 +67,8 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1783932837831</updated>
-      <workItem from="1785968359074" duration="8462000" />
+      <workItem from="1785968359074" duration="11332000" />
+      <workItem from="1788436054270" duration="3000" />
     </task>
     <task id="LOCAL-00001" summary="Adding alembic to handle with db migrations.&#10;Added new table users.">
       <option name="closed" value="true" />
@@ -389,7 +390,15 @@
       <option name="project" value="LOCAL" />
       <updated>1786127368304</updated>
     </task>
-    <option name="localTasksCounter" value="41" />
+    <task id="LOCAL-00041" summary="Atualização da população do briefing para ir buscar as zonas de espeteculo.">
+      <option name="closed" value="true" />
+      <created>1786128551626</created>
+      <option name="number" value="00041" />
+      <option name="presentableId" value="LOCAL-00041" />
+      <option name="project" value="LOCAL" />
+      <updated>1786128551626</updated>
+    </task>
+    <option name="localTasksCounter" value="42" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -399,7 +408,6 @@
     <ignored-roots>
       <path value="$PROJECT_DIR$/openwrc" />
     </ignored-roots>
-    <MESSAGE value="Fixing briefing weather information." />
     <MESSAGE value="Fixing f1 svg files." />
     <MESSAGE value="Added svg logic and spectator zones." />
     <MESSAGE value="Added missing locations." />
@@ -424,6 +432,7 @@
     <MESSAGE value="Fixed import." />
     <MESSAGE value="Fixed the repair data cron job." />
     <MESSAGE value="Atualização dos modelos para gerar os briefings." />
-    <option name="LAST_COMMIT_MESSAGE" value="Atualização dos modelos para gerar os briefings." />
+    <MESSAGE value="Atualização da população do briefing para ir buscar as zonas de espeteculo." />
+    <option name="LAST_COMMIT_MESSAGE" value="Atualização da população do briefing para ir buscar as zonas de espeteculo." />
   </component>
 </project>

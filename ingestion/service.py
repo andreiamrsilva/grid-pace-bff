@@ -15,25 +15,40 @@ import ingestion.openf1_client
 
 async def find_live_stages():
     """
-    Scans the calendar from the DB to find events that are currently active.
-    Then, fetches their stages using the appropriate Strategy to find which are 'Running'.
+    Scans the calendar from the DB to find events that are currently active today.
+    If no events are active today, caches empty result for 5 minutes and returns in <1ms.
+    Caches active stages in Redis for 20 seconds during live days to minimize Vercel CPU usage.
     """
     try:
-        all_events = await get_all_events_from_db()
         today = date.today()
+        from core.redis_service import get_cached_data, set_cached_data
+        
+        cache_key = f"live_stages_active:{today.isoformat()}"
+        cached = await get_cached_data(cache_key)
+        if cached is not None:
+            return cached
+
+        all_events = await get_all_events_from_db()
+        active_events = [e for e in all_events if e.start_date <= today <= e.finish_date]
+
+        if not active_events:
+            # No events active today — cache empty result for 5 minutes (300s) to conserve Vercel CPU
+            await set_cached_data(cache_key, [], expiration_seconds=300)
+            return []
 
         live_stages = []
-        for event in all_events:
-            if event.start_date <= today <= event.finish_date:
-                try:
-                    strategy = registry.get_strategy(event.category)
-                    stages = await strategy.fetch_event_stages(event.id)
-                    live_stages.extend([(event.id, s.id, event.category, event.name, s.name) for s in stages if s.is_live])
-                except ValueError as e:
-                    logger.warning(f"Strategy error for event {event.id}: {e}")
-                except Exception as e:
-                    logger.error(f"Error fetching stages for live event {event.id}: {e}")
+        for event in active_events:
+            try:
+                strategy = registry.get_strategy(event.category)
+                stages = await strategy.fetch_event_stages(event.id)
+                live_stages.extend([(event.id, s.id, event.category, event.name, s.name) for s in stages if getattr(s, 'is_live', False)])
+            except ValueError as e:
+                logger.warning(f"Strategy error for event {event.id}: {e}")
+            except Exception as e:
+                logger.error(f"Error fetching stages for live event {event.id}: {e}")
 
+        # Cache active live stages for 20s during race days
+        await set_cached_data(cache_key, live_stages, expiration_seconds=20)
         return live_stages
     except Exception as e:
         logger.error(f"Error finding live stages: {e}")
