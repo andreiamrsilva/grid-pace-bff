@@ -442,22 +442,23 @@ async def fetch_f1_session_times(session_key: int, meeting_key: int, session_nam
                         diff_to_first_str = None
                     else:
                         if isinstance(gap, (int, float)) and gap > 0:
-                            diff_to_first_str = f"+{gap:.3f}s"
+                            diff_to_first_str = f"{gap:.3f}s"
                             if winner_total_seconds:
                                 driver_time_seconds = winner_total_seconds + gap
                                 driver_time_str = format_seconds_to_time(driver_time_seconds)
                             else:
                                 driver_time_str = diff_to_first_str
                         elif isinstance(gap, str):
-                            diff_to_first_str = gap
-                            driver_time_str = gap
+                            clean_gap = gap[1:] if gap.startswith("+") else gap
+                            diff_to_first_str = clean_gap
+                            driver_time_str = clean_gap
                         else:
                             # Fallback if interval data is absent
                             if driver_laps and winner_total_seconds:
                                 total_s = sum(driver_laps)
                                 diff_s = total_s - winner_total_seconds
                                 if diff_s > 0:
-                                    diff_to_first_str = f"+{diff_s:.3f}s"
+                                    diff_to_first_str = f"{diff_s:.3f}s"
                                     driver_time_str = format_seconds_to_time(total_s)
                 else:
                     # Practice / Qualifying: fastest single lap
@@ -493,7 +494,7 @@ async def fetch_f1_session_times(session_key: int, meeting_key: int, session_nam
                         if s['position'] != 1 and s['time_seconds'] is not None:
                             diff_s = s['time_seconds'] - p1_time
                             if diff_s > 0:
-                                s['diff_to_first'] = f"+{diff_s:.3f}s"
+                                s['diff_to_first'] = f"{diff_s:.3f}s"
             
             standings = [
                 DriverTime(
