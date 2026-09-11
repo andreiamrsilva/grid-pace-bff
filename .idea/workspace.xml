@@ -4,9 +4,8 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="65ca4ed0-d96f-49db-b2bf-c0d163a9c117" name="Changes" comment="Atualização da população do briefing para ir buscar as zonas de espeteculo.">
+    <list default="true" id="65ca4ed0-d96f-49db-b2bf-c0d163a9c117" name="Changes" comment="Improvement do repair cron.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ingestion/service.py" beforeDir="false" afterPath="$PROJECT_DIR$/ingestion/service.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -56,7 +55,7 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-python-sdk-6fa658e1df1a-5bd6d13a2a75-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-262.8665.369" />
+        <option value="bundled-python-sdk-821f704e66d9-5bd6d13a2a75-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-262.9437.214" />
       </set>
     </attachedChunks>
   </component>
@@ -398,7 +397,39 @@
       <option name="project" value="LOCAL" />
       <updated>1786128551626</updated>
     </task>
-    <option name="localTasksCounter" value="42" />
+    <task id="LOCAL-00042" summary="Minimizar o uso do cpu da vercel.">
+      <option name="closed" value="true" />
+      <created>1788436109356</created>
+      <option name="number" value="00042" />
+      <option name="presentableId" value="LOCAL-00042" />
+      <option name="project" value="LOCAL" />
+      <updated>1788436109356</updated>
+    </task>
+    <task id="LOCAL-00043" summary="Updating the tests coverage">
+      <option name="closed" value="true" />
+      <created>1789123813671</created>
+      <option name="number" value="00043" />
+      <option name="presentableId" value="LOCAL-00043" />
+      <option name="project" value="LOCAL" />
+      <updated>1789123813671</updated>
+    </task>
+    <task id="LOCAL-00044" summary="Fixing redis service.">
+      <option name="closed" value="true" />
+      <created>1789137362845</created>
+      <option name="number" value="00044" />
+      <option name="presentableId" value="LOCAL-00044" />
+      <option name="project" value="LOCAL" />
+      <updated>1789137362845</updated>
+    </task>
+    <task id="LOCAL-00045" summary="Improvement do repair cron.">
+      <option name="closed" value="true" />
+      <created>1789138868890</created>
+      <option name="number" value="00045" />
+      <option name="presentableId" value="LOCAL-00045" />
+      <option name="project" value="LOCAL" />
+      <updated>1789138868890</updated>
+    </task>
+    <option name="localTasksCounter" value="46" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -408,10 +439,6 @@
     <ignored-roots>
       <path value="$PROJECT_DIR$/openwrc" />
     </ignored-roots>
-    <MESSAGE value="Fixing f1 svg files." />
-    <MESSAGE value="Added svg logic and spectator zones." />
-    <MESSAGE value="Added missing locations." />
-    <MESSAGE value="Fixed _get_wrc_dark_static_map_url" />
     <MESSAGE value="Fixed f1 stages maps url." />
     <MESSAGE value="Added briefing data to db." />
     <MESSAGE value="Added briefing logs." />
@@ -433,6 +460,10 @@
     <MESSAGE value="Fixed the repair data cron job." />
     <MESSAGE value="Atualização dos modelos para gerar os briefings." />
     <MESSAGE value="Atualização da população do briefing para ir buscar as zonas de espeteculo." />
-    <option name="LAST_COMMIT_MESSAGE" value="Atualização da população do briefing para ir buscar as zonas de espeteculo." />
+    <MESSAGE value="Minimizar o uso do cpu da vercel." />
+    <MESSAGE value="Updating the tests coverage" />
+    <MESSAGE value="Fixing redis service." />
+    <MESSAGE value="Improvement do repair cron." />
+    <option name="LAST_COMMIT_MESSAGE" value="Improvement do repair cron." />
   </component>
 </project>

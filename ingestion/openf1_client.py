@@ -129,11 +129,20 @@ async def fetch_json_with_retry(client: httpx.AsyncClient, url: str, allow_404: 
         response = await client.get(url, headers=headers)
         if allow_404 and response.status_code == 404:
             return []
+        if response.status_code == 429:
+            retry_after = response.headers.get("Retry-After")
+            wait_time = float(retry_after) if retry_after and retry_after.isdigit() else 5.0
+            logger.warning(f"OpenF1 429 Rate Limited on {url}. Sleeping {wait_time}s...")
+            await asyncio.sleep(wait_time)
+            response = await client.get(url, headers=headers)
         response.raise_for_status()
         return response.json()
     except httpx.HTTPStatusError as e:
         if allow_404 and e.response.status_code == 404:
             return []
+        if e.response.status_code == 429:
+            logger.warning(f"OpenF1 429 Rate Limited on {url}. Sleeping 6.0s on HTTPStatusError...")
+            await asyncio.sleep(6.0)
         raise
 
 async def get_race_winner_from_openf1(client: httpx.AsyncClient, session_key: int) -> Tuple[Optional[str], Optional[str], Optional[str]]:

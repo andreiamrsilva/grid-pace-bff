@@ -49,6 +49,12 @@ def format_ms_to_time(ms: int) -> str:
 async def fetch_json_with_retry(client: httpx.AsyncClient, url: str) -> Any:
     """Helper to fetch JSON from WRC API with exponential backoff."""
     response = await client.get(url)
+    if response.status_code == 429:
+        retry_after = response.headers.get("Retry-After")
+        wait_time = float(retry_after) if retry_after and retry_after.isdigit() else 5.0
+        logger.warning(f"WRC 429 Rate Limited on {url}. Sleeping {wait_time}s...")
+        await asyncio.sleep(wait_time)
+        response = await client.get(url)
     response.raise_for_status()
     return response.json()
 

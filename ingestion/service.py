@@ -389,13 +389,20 @@ async def run_stage_times_repair(event_id: Optional[int] = None, category: str =
             for stage in stages:
                 redis_key = f"live:times:{cat_lower}:{stage.id}"
                 await delete_cached_data(redis_key)
+
+                # Skip fetching if DB already has stage times for this stage during full repair
+                if not event_id:
+                    from core.database_service import get_stage_times_from_db
+                    existing = await get_stage_times_from_db(stage.id, ev_id, cat_upper)
+                    if existing and existing.standings and len(existing.standings) > 0:
+                        continue
                 
                 standings = await strategy.fetch_live_timing(ev_id, stage.id)
                 if standings and standings.standings:
                     await save_stage_times_to_db(stage.id, standings)
                     logger.info(f"Repaired DB stage times for {cat_upper} stage {stage.id} ({len(standings.standings)} drivers).")
-                # Add small pacing delay to avoid hitting OpenF1/OpenWRC 429 rate limits
-                await asyncio.sleep(0.3)
+                # Add pacing delay to avoid hitting OpenF1/OpenWRC 429 rate limits
+                await asyncio.sleep(0.8)
         await fix_completed_events_status_and_leader()
     except Exception as e:
         logger.error(f"Error during stage times repair: {e}")
