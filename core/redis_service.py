@@ -9,6 +9,8 @@ logger = logging.getLogger(__name__)
 # Try to get the Redis URL from the environment (useful for production)
 # Fallback to local Docker Redis for development
 REDIS_URL = settings.REDIS_URL
+if REDIS_URL.startswith("redis://") and (".upstash.io" in REDIS_URL or ":6379" in REDIS_URL and "localhost" not in REDIS_URL and "127.0.0.1" not in REDIS_URL):
+    REDIS_URL = REDIS_URL.replace("redis://", "rediss://", 1)
 
 # Create an async redis client pool
 redis_client = redis.from_url(REDIS_URL, decode_responses=True)
