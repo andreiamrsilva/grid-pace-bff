@@ -295,8 +295,58 @@ async def run_current_year_update():
                 logger.error(f"Error updating current year events for {category}: {e}")
                 
         await upsert_events(all_events)
+        await fix_completed_events_status_and_leader()
     except Exception as e:
         logger.error(f"Error in current year update orchestration: {e}")
+
+async def fix_completed_events_status_and_leader():
+    """
+    Scans past events in DB and ensures their status is set to 'Completed'
+    and populates current_leader / current_leader_logo_path from P1 standings.
+    """
+    try:
+        from datetime import date
+        today = date.today()
+        from core.database_service import AsyncSessionLocal, events_table, stages_table, stage_times_table, overall_standings_table
+        from sqlalchemy import select, update
+
+        async with AsyncSessionLocal() as db:
+            res_ev = await db.execute(select(events_table))
+            events = res_ev.mappings().all()
+
+            for e in events:
+                if e['finish_date'] and e['finish_date'] < today:
+                    leader_name = None
+                    leader_logo = None
+
+                    res_ov = await db.execute(select(overall_standings_table).where(overall_standings_table.c.event_id == e['id'], overall_standings_table.c.position == 1))
+                    ov_p1 = res_ov.mappings().first()
+                    if ov_p1:
+                        leader_name = ov_p1['driver_name']
+                        leader_logo = ov_p1['logo_path']
+                    else:
+                        res_stg = await db.execute(select(stages_table).where(stages_table.c.event_id == e['id']))
+                        stages = res_stg.mappings().all()
+                        if stages:
+                            race_stg = next((s for s in stages if s['name'] == 'Race'), stages[-1])
+                            res_p1 = await db.execute(select(stage_times_table).where(stage_times_table.c.stage_id == race_stg['id'], stage_times_table.c.position == 1))
+                            st_p1 = res_p1.mappings().first()
+                            if st_p1:
+                                leader_name = st_p1['driver_name']
+                                leader_logo = st_p1['logo_path']
+
+                    new_status = 'Completed'
+                    if e['status'] != new_status or (leader_name and e['current_leader'] != leader_name):
+                        await db.execute(
+                            update(events_table)
+                            .where(events_table.c.id == e['id'])
+                            .values(status=new_status, current_leader=leader_name or e['current_leader'], current_leader_logo_path=leader_logo or e['current_leader_logo_path'])
+                        )
+            await db.commit()
+            from core.redis_service import delete_cached_data
+            await delete_cached_data("cache:all_events")
+    except Exception as e:
+        logger.error(f"Error fixing completed events status and leader: {e}")
 
 async def run_stage_times_repair(event_id: Optional[int] = None, category: str = "wrc"):
     """
@@ -346,6 +396,7 @@ async def run_stage_times_repair(event_id: Optional[int] = None, category: str =
                     logger.info(f"Repaired DB stage times for {cat_upper} stage {stage.id} ({len(standings.standings)} drivers).")
                 # Add small pacing delay to avoid hitting OpenF1/OpenWRC 429 rate limits
                 await asyncio.sleep(0.3)
+        await fix_completed_events_status_and_leader()
     except Exception as e:
         logger.error(f"Error during stage times repair: {e}")
 
