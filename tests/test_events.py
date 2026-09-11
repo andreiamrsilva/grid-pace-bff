@@ -145,3 +145,50 @@ async def test_get_stage_times_wrc_api_error(mock_wrc_times):
     
     assert response.status_code == 502
     assert response.json() == {"detail": "External API error."}
+
+# --- Test Cases for /events/{category}/{event_id}/overall ---
+
+from models.overall_standings import OverallStandings, OverallDriverStanding
+
+MOCK_OVERALL_STANDINGS = OverallStandings(
+    event_id=1,
+    category="WRC",
+    standings=[
+        OverallDriverStanding(position=1, driver_name="T. Neuville", logo_path="/logos/hyundai.png", time="2h 25m 15.0s"),
+        OverallDriverStanding(position=2, driver_name="E. Evans", logo_path="/logos/toyota.png", diff_to_first="+16.1s")
+    ]
+)
+
+@patch("api.routers.events.get_cached_data", new_callable=AsyncMock)
+@patch("api.routers.events.get_overall_standings_from_db", new_callable=AsyncMock)
+@patch("api.routers.events.fetch_wrc_overall_standings", new_callable=AsyncMock)
+@patch("core.database_service.save_overall_standings_to_db", new_callable=AsyncMock)
+async def test_get_overall_standings_wrc_success(mock_save_db, mock_fetch_wrc, mock_get_db, mock_get_cache):
+    """Test successful retrieval of overall standings."""
+    mock_get_cache.return_value = None
+    mock_get_db.return_value = None
+    mock_fetch_wrc.return_value = MOCK_OVERALL_STANDINGS
+
+    response = client.get("/events/wrc/1/overall")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["event_id"] == 1
+    assert data["category"] == "WRC"
+    assert len(data["standings"]) == 2
+    assert data["standings"][0]["driver_name"] == "T. Neuville"
+
+@patch("api.routers.events.get_cached_data", new_callable=AsyncMock)
+@patch("api.routers.events.get_overall_standings_from_db", new_callable=AsyncMock)
+@patch("api.routers.events.fetch_wrc_overall_standings", new_callable=AsyncMock)
+async def test_get_overall_standings_source_unavailable(mock_fetch_wrc, mock_get_db, mock_get_cache):
+    """Test 502 Bad Gateway response when overall standings data source returns None."""
+    mock_get_cache.return_value = None
+    mock_get_db.return_value = None
+    mock_fetch_wrc.return_value = None
+
+    response = client.get("/events/wrc/1/overall")
+
+    assert response.status_code == 502
+    assert "Data source unavailable" in response.json()["detail"]
+
