@@ -587,7 +587,7 @@ async def run_timeline_validation_cron():
         logger.error(f"Error in timeline validation cron job: {e}")
 
 async def generate_briefing_with_gemini(event_name: str, category: str, country: str) -> Optional[dict]:
-    import os, json, httpx, asyncio
+    import os, json, httpx, asyncio, re
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         logger.info("GEMINI_API_KEY is not set. Skipping AI briefing generation.")
@@ -624,21 +624,41 @@ async def generate_briefing_with_gemini(event_name: str, category: str, country:
         f'  ]\n'
         f"}}\n"
     )
-    payload = {"contents": [{"parts": [{"text": prompt}]}]}
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {
+            "response_mime_type": "application/json"
+        }
+    }
 
     for url in endpoints:
         try:
             async with httpx.AsyncClient(timeout=20.0) as client:
                 res = await client.post(url, json=payload)
                 if res.status_code == 200:
-                    text = res.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
-                    if text.startswith("```json"):
-                        text = text[7:]
+                    raw_text = res.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
+                    text = raw_text
                     if text.startswith("```"):
-                        text = text[3:]
+                        parts = text.split("```")
+                        if len(parts) >= 2:
+                            text = parts[1]
+                            if text.startswith("json"):
+                                text = text[4:]
                     if text.endswith("```"):
                         text = text[:-3]
-                    return json.loads(text.strip())
+                    text = text.strip()
+
+                    match = re.search(r'\{.*\}', text, re.DOTALL)
+                    if match:
+                        text = match.group(0)
+
+                    try:
+                        return json.loads(text)
+                    except json.JSONDecodeError as je:
+                        logger.warning(f"Initial JSON parse failed for '{event_name}', attempting strict cleaning: {je}")
+                        # Clean unescaped newlines and tabs inside strings
+                        cleaned = re.sub(r'[\r\n]+', ' ', text)
+                        return json.loads(cleaned)
                 elif res.status_code == 429:
                     model_name = url.split("models/")[1].split(":")[0]
                     logger.warning(f"Gemini model '{model_name}' rate limited (429). Trying next model endpoint...")
