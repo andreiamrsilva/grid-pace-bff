@@ -4,10 +4,8 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="65ca4ed0-d96f-49db-b2bf-c0d163a9c117" name="Changes" comment="Improvement of repair cron.">
+    <list default="true" id="65ca4ed0-d96f-49db-b2bf-c0d163a9c117" name="Changes" comment="Added cache to weather api.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ingestion/openf1_client.py" beforeDir="false" afterPath="$PROJECT_DIR$/ingestion/openf1_client.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_openf1.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_openf1.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -439,7 +437,23 @@
       <option name="project" value="LOCAL" />
       <updated>1789159724863</updated>
     </task>
-    <option name="localTasksCounter" value="47" />
+    <task id="LOCAL-00047" summary="Fix the diff to first format in the f1.">
+      <option name="closed" value="true" />
+      <created>1789161089961</created>
+      <option name="number" value="00047" />
+      <option name="presentableId" value="LOCAL-00047" />
+      <option name="project" value="LOCAL" />
+      <updated>1789161089961</updated>
+    </task>
+    <task id="LOCAL-00048" summary="Added cache to weather api.">
+      <option name="closed" value="true" />
+      <created>1789233113027</created>
+      <option name="number" value="00048" />
+      <option name="presentableId" value="LOCAL-00048" />
+      <option name="project" value="LOCAL" />
+      <updated>1789233113027</updated>
+    </task>
+    <option name="localTasksCounter" value="49" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -449,8 +463,6 @@
     <ignored-roots>
       <path value="$PROJECT_DIR$/openwrc" />
     </ignored-roots>
-    <MESSAGE value="Added briefing data to db." />
-    <MESSAGE value="Added briefing logs." />
     <MESSAGE value="Added auto migrate variable." />
     <MESSAGE value="Fixing crash." />
     <MESSAGE value="Fixing too many requests." />
@@ -474,6 +486,8 @@
     <MESSAGE value="Fixing redis service." />
     <MESSAGE value="Improvement do repair cron." />
     <MESSAGE value="Improvement of repair cron." />
-    <option name="LAST_COMMIT_MESSAGE" value="Improvement of repair cron." />
+    <MESSAGE value="Fix the diff to first format in the f1." />
+    <MESSAGE value="Added cache to weather api." />
+    <option name="LAST_COMMIT_MESSAGE" value="Added cache to weather api." />
   </component>
 </project>

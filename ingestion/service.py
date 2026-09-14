@@ -301,8 +301,8 @@ async def run_current_year_update():
 
 async def fix_completed_events_status_and_leader():
     """
-    Scans past events in DB and ensures their status is set to 'Completed'
-    and populates current_leader / current_leader_logo_path from P1 standings.
+    Scans past/completed events in DB, ensures their status is set to 'Completed',
+    and populates current_leader / current_leader_logo_path from P1 standings or strategy API.
     """
     try:
         from datetime import date
@@ -315,7 +315,7 @@ async def fix_completed_events_status_and_leader():
             events = res_ev.mappings().all()
 
             for e in events:
-                if e['finish_date'] and e['finish_date'] < today:
+                if e['finish_date'] and e['finish_date'] <= today:
                     leader_name = None
                     leader_logo = None
 
@@ -335,12 +335,28 @@ async def fix_completed_events_status_and_leader():
                                 leader_name = st_p1['driver_name']
                                 leader_logo = st_p1['logo_path']
 
+                    # Fallback to fetching overall standings from strategy if leader is still missing
+                    if not leader_name and e.get('category'):
+                        try:
+                            strategy = registry.get_strategy(e['category'])
+                            overall = await strategy.fetch_overall_standings(e['id'])
+                            if overall and overall.standings:
+                                p1 = next((s for s in overall.standings if s.position == 1), overall.standings[0])
+                                leader_name = p1.driver_name
+                                leader_logo = p1.logo_path
+                        except Exception as ex:
+                            logger.warning(f"Could not fetch leader via strategy for event {e['id']}: {ex}")
+
                     new_status = 'Completed'
                     if e['status'] != new_status or (leader_name and e['current_leader'] != leader_name):
                         await db.execute(
                             update(events_table)
                             .where(events_table.c.id == e['id'])
-                            .values(status=new_status, current_leader=leader_name or e['current_leader'], current_leader_logo_path=leader_logo or e['current_leader_logo_path'])
+                            .values(
+                                status=new_status,
+                                current_leader=leader_name or e['current_leader'],
+                                current_leader_logo_path=leader_logo or e['current_leader_logo_path']
+                            )
                         )
             await db.commit()
             from core.redis_service import delete_cached_data
@@ -472,17 +488,16 @@ async def populate_historic_timeline(stage_id: int) -> list:
         
     # 4. YouTube Highlights
     try:
-        from ingestion.youtube_client import search_youtube_highlights
+        from ingestion.youtube_client import search_youtube_highlights, WRC_CHANNEL_ID
         event_obj = await get_event_by_id_from_db(stage.event_id)
         
         if event_obj:
-            # Make the query more restrictive to avoid videos from other sports like WEC
             year = start_time.year if start_time else datetime.now().year
-            query = f'"{event_obj.category}" {event_obj.name} {year} {stage.name} Highlights'
+            query = f"{event_obj.name} {stage.name} Highlights"
         else:
-            query = f'"WRC" {stage.name} Highlights'
+            query = f"WRC {stage.name} Highlights"
             
-        yt_events = await search_youtube_highlights(query, published_after=start_time, channel_id="UC5-51l67x6y2uT-1sPzWkYA")
+        yt_events = await search_youtube_highlights(query, published_after=start_time, channel_id=WRC_CHANNEL_ID)
         if yt_events:
             events.extend(yt_events)
     except Exception as e:

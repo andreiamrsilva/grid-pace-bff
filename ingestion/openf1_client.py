@@ -151,10 +151,15 @@ async def get_race_winner_from_openf1(client: httpx.AsyncClient, session_key: in
     """
     try:
         position_data = await fetch_json_with_retry(
-            client, f"{OPENF1_API_URL}/position?session_key={session_key}&position=1"
+            client, f"{OPENF1_API_URL}/position?session_key={session_key}&position=1", allow_404=True
         )
         
         if not position_data:
+            # Fallback to fetch_f1_session_times P1 driver
+            standings = await fetch_f1_session_times(session_key, 0, "Race")
+            if standings and standings.standings:
+                p1 = standings.standings[0]
+                return p1.driver_name, None, p1.time
             return None, None, None
             
         position_data.sort(key=lambda x: x['date'], reverse=True)
@@ -163,12 +168,12 @@ async def get_race_winner_from_openf1(client: httpx.AsyncClient, session_key: in
         driver_number = final_p1_record['driver_number']
         
         driver_data = await fetch_json_with_retry(
-            client, f"{OPENF1_API_URL}/drivers?session_key={session_key}&driver_number={driver_number}"
+            client, f"{OPENF1_API_URL}/drivers?session_key={session_key}&driver_number={driver_number}", allow_404=True
         )
         
         winner_time = None
         laps_data = await fetch_json_with_retry(
-            client, f"{OPENF1_API_URL}/laps?session_key={session_key}&driver_number={driver_number}"
+            client, f"{OPENF1_API_URL}/laps?session_key={session_key}&driver_number={driver_number}", allow_404=True
         )
         if laps_data:
             valid_laps = [lap['lap_duration'] for lap in laps_data if lap.get('lap_duration') is not None]
@@ -414,6 +419,8 @@ async def fetch_f1_session_times(session_key: int, meeting_key: int, session_nam
             
             winner_laps = laps_by_driver.get(winner_number, []) if winner_number else []
             winner_total_seconds = sum(winner_laps) if winner_laps else None
+            max_race_laps = max([len(l) for l in laps_by_driver.values()], default=0)
+            dnf_threshold = max(1, int(max_race_laps * 0.90)) if max_race_laps > 0 else 0
 
             # 5. Construct standings
             temp_standings = []
@@ -427,15 +434,23 @@ async def fetch_f1_session_times(session_key: int, meeting_key: int, session_nam
                     pos_change = initial_pos - final_pos
                 
                 driver_laps = laps_by_driver.get(driver_number, [])
+                laps_completed = len(driver_laps)
                 driver_interval = latest_intervals.get(driver_number, {})
                 gap = driver_interval.get('gap_to_leader')
 
                 driver_time_seconds = None
                 driver_time_str = None
                 diff_to_first_str = None
+                driver_status = "Finished"
 
                 if session_name in ["Race", "Sprint"]:
-                    if final_pos == 1:
+                    # FIA Rule: Drivers completing < 90% of winner's laps are classified DNF
+                    if max_race_laps > 5 and laps_completed < dnf_threshold:
+                        driver_status = "DNF"
+                        driver_time_str = "DNF"
+                        diff_to_first_str = None
+                        driver_time_seconds = None
+                    elif final_pos == 1:
                         if winner_total_seconds:
                             driver_time_seconds = winner_total_seconds
                             driver_time_str = format_seconds_to_time(winner_total_seconds)
@@ -466,25 +481,26 @@ async def fetch_f1_session_times(session_key: int, meeting_key: int, session_nam
                         driver_time_seconds = min(driver_laps)
                         driver_time_str = format_seconds_to_time(driver_time_seconds)
 
-                if final_pos is not None or driver_time_seconds is not None:
+                if final_pos is not None or driver_time_seconds is not None or driver_status == "DNF":
                     temp_standings.append({
                         'entry_id': driver_number,
                         'driver_name': driver_info.get('full_name', f"Driver {driver_number}"),
                         'logo_path': get_logo_path(driver_info.get('team_name')),
-                        'status': "Finished",
+                        'status': driver_status,
                         'time_seconds': driver_time_seconds,
                         'time_str': driver_time_str,
                         'diff_to_first': diff_to_first_str,
                         'position': final_pos,
-                        'position_change': pos_change
+                        'position_change': pos_change,
+                        'laps_completed': laps_completed
                     })
 
             if not temp_standings:
                 logger.warning(f"Failed to extract any valid standings for session {session_key}")
                 return None
 
-            # Sort temp_standings by position
-            temp_standings.sort(key=lambda x: x['position'] or 999)
+            # Sort temp_standings: Finished drivers by position, DNF drivers at the end
+            temp_standings.sort(key=lambda x: (1 if x['status'] == "DNF" else 0, x['position'] or 999))
 
             # Compute practice / qualifying diffs relative to P1
             if session_name not in ["Race", "Sprint"] and temp_standings:
@@ -789,10 +805,41 @@ async def fetch_f1_race_control_messages(session_key: int) -> List[TimelineEvent
                     )
                     if tweets:
                         events.extend(tweets)
-                        events.sort(key=lambda x: x.timestamp)
                 except Exception as ex:
                     logger.warning(f"Could not fetch F1 tweets for session {session_key}: {ex}")
-                    
+
+            # Fetch YouTube Highlights video for the F1 session
+            try:
+                from ingestion.youtube_client import search_youtube_highlights, F1_CHANNEL_ID
+                yt_events = []
+                # Resolve session details if available to build accurate query
+                session_name = "Race"
+                try:
+                    s_info = await fetch_json_with_retry(client, f"{OPENF1_API_URL}/sessions?session_key={session_key}", allow_404=True)
+                    if s_info and isinstance(s_info, list) and len(s_info) > 0:
+                        s_obj = s_info[0]
+                        m_key = s_obj.get("meeting_key")
+                        s_name = s_obj.get("session_name", "Race")
+                        session_name = s_name
+                        m_info = await fetch_json_with_retry(client, f"{OPENF1_API_URL}/meetings?meeting_key={m_key}", allow_404=True)
+                        if m_info and isinstance(m_info, list) and len(m_info) > 0:
+                            m_name = m_info[0].get("meeting_name", "Spanish Grand Prix")
+                            year = m_info[0].get("year", 2026)
+                            yt_query = f"{session_name} Highlights {year} {m_name}"
+                            yt_events = await search_youtube_highlights(yt_query, channel_id=F1_CHANNEL_ID)
+                except Exception:
+                    pass
+
+                if not yt_events:
+                    yt_query = f"{session_name} Highlights 2026 Spanish Grand Prix"
+                    yt_events = await search_youtube_highlights(yt_query, channel_id=F1_CHANNEL_ID)
+
+                if yt_events:
+                    events.extend(yt_events)
+            except Exception as ex:
+                logger.warning(f"Could not fetch F1 YouTube highlights for session {session_key}: {ex}")
+
+            events.sort(key=lambda x: x.timestamp)
             return events
             
     except Exception as e:

@@ -84,11 +84,9 @@ async def _fetch_wrc_events_for_years(years: List[int]) -> List[CalendarEvent]:
                 elif round_info.event.start_date <= today <= round_info.event.finish_date:
                     event_status = "Running"
                     try:
-                        # Ensure we only show "Running" if there is an active stage right now
                         event_stages = await _fetch_wrc_event_stages(round_info.event.event_id)
-                        # Removed logic that downgrades Running to Future event when overnight
-                        if event_stages and not any(s.is_live for s in event_stages):
-                            pass
+                        if event_stages and all(s.status in ("Completed", "Interrupted") for s in event_stages):
+                            event_status = "Completed"
                     except Exception as e:
                         logger.warning(f"Failed to fetch stages to determine WRC live status for event {round_info.event.event_id}: {e}")
 
