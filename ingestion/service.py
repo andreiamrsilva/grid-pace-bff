@@ -601,7 +601,8 @@ async def generate_briefing_with_gemini(event_name: str, category: str, country:
     prompt = (
         f"Atue como um Especialista Engenheiro de Desportos Motorizados ({category}). "
         f"Gere uma análise tática completa, descreva o tipo de piso, identifique o último vencedor (last_winner), "
-        f"o recorde oficial da prova (event_record) e identifique as Zonas de Espetáculo reais/oficiais (spectator_zones) com coordenadas GPS precisas para o evento: {event_name} ({country}). "
+        f"o recorde oficial da prova (event_record) e identifique entre 2 a 4 Zonas de Espetáculo reais/oficiais (spectator_zones) com coordenadas GPS precisas para o evento: {event_name} ({country}). "
+        f"O número de Zonas de Espetáculo deve variar naturalmente (2, 3 ou 4) consoante a extensão e pontos de interesse do circuito ou rali. "
         f"Retorne ESTRITAMENTE um objeto JSON sem formatação markdown ou blocos de código adicionais, no formato:\n"
         f"{{\n"
         f'  "surface_type_pt": "...",\n'
