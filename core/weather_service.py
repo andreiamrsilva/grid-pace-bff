@@ -12,9 +12,13 @@ logger = logging.getLogger(__name__)
 
 OPEN_METEO_API_URL = "https://api.open-meteo.com/v1/forecast"
 DEFAULT_CACHE_TTL = 3600  # 1 hour cache duration
+FALLBACK_CACHE_TTL = 900   # 15 minutes cache duration for estimated fallback forecasts
 HTTP_HEADERS = {
     "User-Agent": "GridPaceBFF/1.0 (https://github.com/andreiamrsilva/grid-pace-bff)"
 }
+
+# Concurrency control semaphore to enforce max 1 parallel request to Open-Meteo free API
+_OPENMETEO_SEMAPHORE = asyncio.Semaphore(1)
 
 # Secondary in-memory cache to handle Redis failures or local burst requests
 _MEMORY_CACHE: Dict[str, Dict[str, Any]] = {}
@@ -86,10 +90,146 @@ async def _get_stale_fallback(key: str) -> Optional[Dict[str, Any]]:
     return _get_memory_cache(key, allow_stale=True)
 
 
+async def _fetch_from_openmeteo_with_retry(
+    client: httpx.AsyncClient,
+    url: str,
+    params: Dict[str, Any],
+    max_retries: int = 2
+) -> Optional[Dict[str, Any]]:
+    """
+    Executes HTTP GET against Open-Meteo API with concurrency control (Semaphore)
+    and automatic retry backoff on 429 rate limit responses.
+    """
+    async with _OPENMETEO_SEMAPHORE:
+        for attempt in range(max_retries + 1):
+            try:
+                response = await client.get(url, params=params)
+                if response.status_code == 429:
+                    reason = ""
+                    try:
+                        reason = response.json().get("reason", "")
+                    except Exception:
+                        pass
+
+                    if attempt < max_retries:
+                        backoff = 1.0 * (2 ** attempt)
+                        logger.warning(
+                            f"Open-Meteo API 429 Rate Limit (attempt {attempt + 1}/{max_retries + 1}). "
+                            f"Reason: '{reason}'. Retrying in {backoff}s..."
+                        )
+                        await asyncio.sleep(backoff)
+                        continue
+                    else:
+                        logger.warning(
+                            f"Open-Meteo API 429 Rate Limit persisted after {max_retries + 1} attempts. Reason: '{reason}'."
+                        )
+                        req = getattr(response, "request", None) or httpx.Request("GET", url)
+                        raise httpx.HTTPStatusError(
+                            f"429 Client Error: {reason or 'Too Many Requests'}",
+                            request=req,
+                            response=response
+                        )
+
+                if response.status_code >= 400:
+                    req = getattr(response, "request", None) or httpx.Request("GET", url)
+                    raise httpx.HTTPStatusError(
+                        f"{response.status_code} Client Error",
+                        request=req,
+                        response=response
+                    )
+
+                return response.json()
+            except httpx.HTTPStatusError as e:
+                if attempt == max_retries:
+                    raise e
+            except Exception as e:
+                if attempt == max_retries:
+                    raise e
+                await asyncio.sleep(0.5)
+    return None
+
+
+def _generate_estimated_weather_briefing(
+    latitude: float,
+    longitude: float,
+    start_date: Optional[date] = None,
+    finish_date: Optional[date] = None,
+    language: str = "pt"
+) -> WeatherBriefing:
+    """
+    Generates a realistic seasonal fallback weather briefing when external APIs are rate limited or unavailable.
+    """
+    is_en = language.lower().startswith("en")
+    condition_str = "Previsão Estimada (Serviço Indisponível)" if not is_en else "Estimated Forecast (Service Unavailable)"
+
+    target_start = start_date or date.today()
+    target_finish = finish_date or (target_start + timedelta(days=2))
+    month = target_start.month
+
+    # Simple seasonal climate approximation based on latitude & month
+    if abs(latitude) < 23.5:  # Tropical
+        base_min, base_max = 22.0, 30.0
+    elif month in (6, 7, 8):  # Northern Summer
+        base_min, base_max = (18.0, 28.0) if latitude > 0 else (5.0, 15.0)
+    elif month in (12, 1, 2):  # Northern Winter
+        base_min, base_max = (4.0, 12.0) if latitude > 0 else (18.0, 28.0)
+    else:  # Spring / Autumn
+        base_min, base_max = 12.0, 22.0
+
+    forecast_days = []
+    curr = target_start
+    while curr <= target_finish:
+        forecast_days.append(
+            WeatherDaySummary(
+                date=curr,
+                temp_min=base_min,
+                temp_max=base_max,
+                rain_probability=20,
+                weather_code=2,
+                condition=condition_str
+            )
+        )
+        curr += timedelta(days=1)
+        if len(forecast_days) >= 7:
+            break
+
+    return WeatherBriefing(
+        latitude=latitude,
+        longitude=longitude,
+        forecast_days=forecast_days
+    )
+
+
+def _generate_estimated_weather_forecast(latitude: float, longitude: float) -> WeatherForecast:
+    """Generates a seasonal fallback WeatherForecast when external APIs are rate limited or unavailable."""
+    now = datetime.now(timezone.utc)
+    month = now.month
+    if abs(latitude) < 23.5:
+        base_min, base_max = 22.0, 30.0
+    elif month in (6, 7, 8):
+        base_min, base_max = (18.0, 28.0) if latitude > 0 else (5.0, 15.0)
+    elif month in (12, 1, 2):
+        base_min, base_max = (4.0, 12.0) if latitude > 0 else (18.0, 28.0)
+    else:
+        base_min, base_max = 12.0, 22.0
+
+    avg_temp = round((base_min + base_max) / 2, 1)
+
+    return WeatherForecast(
+        latitude=latitude,
+        longitude=longitude,
+        elevation=0.0,
+        hourly=[],
+        current_temperature=avg_temp,
+        current_precipitation_probability=20,
+        current_weather_code=2
+    )
+
+
 async def fetch_weather_forecast(latitude: float, longitude: float) -> Optional[WeatherForecast]:
     """
     Fetches the weather forecast for a given location using Open-Meteo API.
-    Utilizes Redis and in-memory caching to avoid HTTP 429 rate limit errors.
+    Utilizes Redis, in-memory caching, concurrency locks, auto-retries, and seasonal fallbacks.
     """
     cache_key = _make_forecast_cache_key(latitude, longitude)
     
@@ -111,9 +251,9 @@ async def fetch_weather_forecast(latitude: float, longitude: float) -> Optional[
 
     try:
         async with httpx.AsyncClient(timeout=10.0, headers=HTTP_HEADERS) as client:
-            response = await client.get(OPEN_METEO_API_URL, params=params)
-            response.raise_for_status()
-            data = response.json()
+            data = await _fetch_from_openmeteo_with_retry(client, OPEN_METEO_API_URL, params)
+            if not data:
+                raise ValueError("Empty data returned from Open-Meteo API")
 
             hourly_data = data.get("hourly", {})
             times = hourly_data.get("time", [])
@@ -152,14 +292,14 @@ async def fetch_weather_forecast(latitude: float, longitude: float) -> Optional[
             )
 
             # Store in cache
-            await _store_cached_weather(cache_key, forecast.model_dump(mode='json'))
+            await _store_cached_weather(cache_key, forecast.model_dump(mode='json'), ttl=DEFAULT_CACHE_TTL)
             return forecast
 
     except httpx.HTTPStatusError as e:
         if e.response is not None and e.response.status_code == 429:
             logger.warning(
-                f"Open-Meteo API rate limit (429 Too Many Requests) hit for ({latitude}, {longitude}). "
-                f"Checking for stale cached weather fallback."
+                f"Open-Meteo API rate limit (429) persisted for ({latitude}, {longitude}). "
+                f"Attempting stale cache fallback or estimated forecast."
             )
             stale_data = await _get_stale_fallback(cache_key)
             if stale_data:
@@ -167,9 +307,15 @@ async def fetch_weather_forecast(latitude: float, longitude: float) -> Optional[
                     return WeatherForecast(**stale_data)
                 except Exception as parse_err:
                     logger.error(f"Error parsing stale weather forecast cache: {parse_err}")
-            return None
+
+            fallback = _generate_estimated_weather_forecast(latitude, longitude)
+            await _store_cached_weather(cache_key, fallback.model_dump(mode='json'), ttl=FALLBACK_CACHE_TTL)
+            return fallback
+
         logger.error(f"HTTP error fetching weather forecast from Open-Meteo for {latitude}, {longitude}: {e}")
-        return None
+        fallback = _generate_estimated_weather_forecast(latitude, longitude)
+        return fallback
+
     except Exception as e:
         logger.error(f"Failed to fetch weather forecast from Open-Meteo for {latitude}, {longitude}: {e}")
         stale_data = await _get_stale_fallback(cache_key)
@@ -178,7 +324,9 @@ async def fetch_weather_forecast(latitude: float, longitude: float) -> Optional[
                 return WeatherForecast(**stale_data)
             except Exception:
                 pass
-        return None
+
+        fallback = _generate_estimated_weather_forecast(latitude, longitude)
+        return fallback
 
 
 WMO_WEATHER_MAP_PT = {
@@ -245,7 +393,7 @@ async def fetch_event_weather_briefing(
 ) -> Optional[WeatherBriefing]:
     """
     Fetches weather forecast for an event location and aggregates hourly data into a daily briefing.
-    Utilizes Redis and in-memory caching to prevent Open-Meteo HTTP 429 rate limit issues.
+    Utilizes Redis, in-memory caching, concurrency locks, auto-retries, and seasonal fallbacks.
     """
     cache_key = _make_briefing_cache_key(latitude, longitude, start_date, finish_date, language)
 
@@ -266,9 +414,9 @@ async def fetch_event_weather_briefing(
 
     try:
         async with httpx.AsyncClient(timeout=10.0, headers=HTTP_HEADERS) as client:
-            response = await client.get(OPEN_METEO_API_URL, params=params)
-            response.raise_for_status()
-            data = response.json()
+            data = await _fetch_from_openmeteo_with_retry(client, OPEN_METEO_API_URL, params)
+            if not data:
+                raise ValueError("Empty data returned from Open-Meteo API")
 
             daily_data = data.get("daily", {})
             times = daily_data.get("time", [])
@@ -308,7 +456,6 @@ async def fetch_event_weather_briefing(
                     logger.warning(f"Error parsing daily weather forecast at index {i}: {e}")
                     continue
 
-            # Only return forecast days that strictly match the event date range (start_date <= date <= finish_date)
             final_forecast = matching_forecast_days
 
             briefing = WeatherBriefing(
@@ -318,14 +465,14 @@ async def fetch_event_weather_briefing(
             )
 
             # Store in cache
-            await _store_cached_weather(cache_key, briefing.model_dump(mode='json'))
+            await _store_cached_weather(cache_key, briefing.model_dump(mode='json'), ttl=DEFAULT_CACHE_TTL)
             return briefing
 
     except httpx.HTTPStatusError as e:
         if e.response is not None and e.response.status_code == 429:
             logger.warning(
-                f"Open-Meteo API rate limit (429 Too Many Requests) hit for ({latitude}, {longitude}). "
-                f"Checking for stale cached weather briefing fallback."
+                f"Open-Meteo API rate limit (429) persisted for ({latitude}, {longitude}). "
+                f"Attempting stale cache fallback or estimated briefing."
             )
             stale_data = await _get_stale_fallback(cache_key)
             if stale_data:
@@ -333,9 +480,15 @@ async def fetch_event_weather_briefing(
                     return WeatherBriefing(**stale_data)
                 except Exception as parse_err:
                     logger.error(f"Error parsing stale weather briefing cache: {parse_err}")
-            return None
+
+            fallback = _generate_estimated_weather_briefing(latitude, longitude, start_date, finish_date, language)
+            await _store_cached_weather(cache_key, fallback.model_dump(mode='json'), ttl=FALLBACK_CACHE_TTL)
+            return fallback
+
         logger.error(f"HTTP error fetching event weather briefing from Open-Meteo for {latitude}, {longitude}: {e}")
-        return None
+        fallback = _generate_estimated_weather_briefing(latitude, longitude, start_date, finish_date, language)
+        return fallback
+
     except Exception as e:
         logger.error(f"Failed to fetch event weather briefing for {latitude}, {longitude}: {e}")
         stale_data = await _get_stale_fallback(cache_key)
@@ -344,4 +497,6 @@ async def fetch_event_weather_briefing(
                 return WeatherBriefing(**stale_data)
             except Exception:
                 pass
-        return None
+
+        fallback = _generate_estimated_weather_briefing(latitude, longitude, start_date, finish_date, language)
+        return fallback
