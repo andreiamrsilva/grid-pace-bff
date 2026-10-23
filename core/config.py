@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     OPENF1_USERNAME: Optional[str] = None
     OPENF1_PASSWORD: Optional[str] = None
     ERGAST_API_URL: str = "https://api.jolpi.ca/ergast/f1"
+    OPEN_METEO_API_KEY: Optional[str] = None
     
     # Security
     CRON_SECRET: Optional[str] = None
