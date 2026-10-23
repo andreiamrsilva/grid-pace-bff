@@ -4,9 +4,7 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="65ca4ed0-d96f-49db-b2bf-c0d163a9c117" name="Changes" comment=" Fixing weather services.">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-    </list>
+    <list default="true" id="65ca4ed0-d96f-49db-b2bf-c0d163a9c117" name="Changes" comment=" Fixing weather services." />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -69,14 +67,6 @@
       <updated>1783932837831</updated>
       <workItem from="1785968359074" duration="11332000" />
       <workItem from="1788436054270" duration="3000" />
-    </task>
-    <task id="LOCAL-00003" summary="Updated news apis.">
-      <option name="closed" value="true" />
-      <created>1783965961999</created>
-      <option name="number" value="00003" />
-      <option name="presentableId" value="LOCAL-00003" />
-      <option name="project" value="LOCAL" />
-      <updated>1783965961999</updated>
     </task>
     <task id="LOCAL-00004" summary="Updated news apis.">
       <option name="closed" value="true" />
@@ -462,7 +452,15 @@
       <option name="project" value="LOCAL" />
       <updated>1790239602588</updated>
     </task>
-    <option name="localTasksCounter" value="52" />
+    <task id="LOCAL-00052" summary=" Fixing weather services.">
+      <option name="closed" value="true" />
+      <created>1792794864323</created>
+      <option name="number" value="00052" />
+      <option name="presentableId" value="LOCAL-00052" />
+      <option name="project" value="LOCAL" />
+      <updated>1792794864323</updated>
+    </task>
+    <option name="localTasksCounter" value="53" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

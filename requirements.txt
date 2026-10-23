@@ -4,7 +4,8 @@ httpx
 pydantic
 pydantic-extra-types
 pycountry
-sqlalchemy
+sqlalchemy[asyncio]
+greenlet
 redis
 feedparser
 pytest
